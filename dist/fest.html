@@ -1,0 +1,37 @@
+<!doctype html>
+<!-- =========================================================
+     fest.html – FEST-ÜBERSICHT: Gast wählt W1 Festguthaben oder W2 Festmarken.
+     Logik: js/pages/fest.js   ·   Styles: css/seiten.css
+     ========================================================= -->
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=0.5, maximum-scale=4, user-scalable=yes, viewport-fit=cover" />
+  <title>FestPay – Fest – Bezahlweg wählen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/test.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/seiten.css" />
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <button class="icon-btn light" onclick="history.length > 1 ? history.back() : (location.href='index.html')" aria-label="Zurück"><i data-lucide="arrow-left"></i></button>
+      <button class="icon-btn" data-menu aria-label="Menü"><i data-lucide="menu"></i></button>
+    </div>
+    <main id="root"></main>
+  </div>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.99.2/dist/umd/supabase.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/demo-data.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/telemetry.js"></script>
+  <script src="js/pages/fest.js"></script>
+</body>
+</html>

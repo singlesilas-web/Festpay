@@ -1,0 +1,62 @@
+<!doctype html>
+<!-- =========================================================
+     index.html – STARTSEITE / KARTE
+     Gast verschiebt die Karte, landet der Pin in einer Fest-Zone,
+     erscheint das Fest unten im Sheet. Logik: js/pages/karte.js
+     ========================================================= -->
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=0.5, maximum-scale=4, user-scalable=yes, viewport-fit=cover" />
+  <title>FestPay – Feste in deiner Nähe</title>
+  <meta name="description" content="Digital bezahlen auf Festen – ohne Kasse, ohne Papierwertkarte." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/test.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/karte.css" />
+</head>
+<body>
+  <div class="app">
+    <div class="map-wrap" id="mapWrap">
+      <div class="map" id="map"></div>
+
+      <div class="pin"><div class="pin-head"><i data-lucide="footprints" id="pinIcon"></i></div><div class="pin-dot"></div></div>
+
+      <div class="brand-pill"><i data-lucide="party-popper"></i>FestPay</div>
+      <div class="map-ui left">
+        <button class="icon-btn" id="btnSearch" aria-label="Feste suchen"><i data-lucide="search"></i></button>
+        <a class="icon-btn" href="marken.html" aria-label="Meine Festmarken"><i data-lucide="ticket" class="accent"></i></a>
+      </div>
+      <div class="map-ui right">
+        <button class="icon-btn" data-menu aria-label="Menü"><i data-lucide="menu"></i></button>
+      </div>
+      <div class="map-ui zoom" aria-label="Kartenzoom">
+        <button class="icon-btn" id="zoomIn" aria-label="Karte vergrößern">+</button>
+        <button class="icon-btn" id="zoomOut" aria-label="Karte verkleinern">−</button>
+        <button class="icon-btn" id="zoomFit" aria-label="Gesamte Karte anzeigen"><i data-lucide="maximize"></i></button>
+      <button class="icon-btn" id="btnLocate" aria-label="Zum nächsten Fest"><i data-lucide="navigation"></i></button>
+      </div>
+
+      <div class="sheet" id="sheet"></div>
+
+      <div class="search-panel" id="searchPanel">
+        <div class="row" style="margin-bottom:18px"><h2>Feste</h2><div class="spacer"></div>
+          <button class="icon-btn light" id="btnSearchClose" aria-label="Schließen"><i data-lucide="x"></i></button></div>
+        <div class="list" id="festList"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.99.2/dist/umd/supabase.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/demo-data.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/telemetry.js"></script>
+  <script src="js/pages/karte.js"></script>
+</body>
+</html>
