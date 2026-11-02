@@ -48,6 +48,16 @@ Der Ursprung `https://singlesilas-web.github.io` ist im Analytics-Endpunkt berei
 
 Nur `dist/` als Webverzeichnis veröffentlichen. Niemals Service-Role-Schlüssel, Kennwörter oder `.env`-Dateien committen.
 
+## Helfer pro Fest (Klickdummy)
+
+Im **Profil** schaltet die Rolle **Helfer** den Helferzugang für **Demo-Fest A** frei – ohne zusätzliche E-Mail-Eingabe. Die Rollenwahl startet keine Kamera und öffnet keinen Scanner. Erst auf der Fest-Seite erscheint neben den beiden Bezahlwegen die dritte Karte **Helfer / Scanner öffnen**. Demo-Fest B erhält dadurch keinen Helferzugang.
+
+Betreiber können beim Anlegen eigener Feste im Tab **Helfer** Namen und E-Mail-Adressen eintragen. Für diese eigenen Feste wird die Demo-E-Mail im Profil mit der jeweiligen Helferliste abgeglichen. Dies ist eine lokale Simulation, keine Registrierung echter Helfer-Accounts.
+
+Der Scanner öffnet sich erst über die Helfer-Karte und startet dann die Kamera. Er akzeptiert ausschließlich Guthabencodes dieses Fests. Ohne Fest-Auswahl oder ohne Zuordnung kann nicht gescannt oder abgebucht werden. **Als Gast zum Fest** führt zur normalen Fest-Auswahl zurück, ohne die Helferzuordnung zu entfernen. Ein Wechsel zur Demo-Rolle Gast entfernt den automatischen Helferzugang für Fest A. Eigene Feste unterstützen Helferlisten nur bei aktivem W1.
+
+Für echte gemeinsame Helfer-Accounts und geräteübergreifende Zuordnungen wäre ein eigener, serverseitig geschützter Geschäftsbereich erforderlich. Die bestehende Supabase-Anbindung dient weiterhin ausschließlich der Testanalyse.
+
 ## Testaufzeichnung
 
 - Tests beginnen ausschließlich nach Zustimmung und Auswahl von W1, W2 oder freier Erkundung.
@@ -63,7 +73,7 @@ Das Projekt `festpay-klickdummy` in Frankfurt ist verbunden. Demo-Zahlungen blei
 
 Alle Analytics-Tabellen haben RLS. Gäste haben keine direkten Tabellenrechte. Ein kontrollierter Endpunkt schreibt nur mit zufälligem Sitzungstoken und validiert die Ereignisse. Der Service-Role-Schlüssel bleibt in der Supabase-Laufzeit. Origin-Prüfung und Sitzungsbudget ersetzen keine umfassende Missbrauchsbegrenzung für große öffentliche Tests.
 
-Unter `admin.html` können sich Analysten registrieren und ihre E-Mail bestätigen. **Registrierung oder Demo-Rollenwechsel allein erteilen keine Adminrechte.** Eine konkrete Adresse muss nach ausdrücklicher Freigabe serverseitig in `analytics_admin_invites` eingetragen werden. Der private Auth-Trigger übernimmt berechtigte, bestätigte Accounts in `analytics_admins`. Bei bereits bestätigten Accounts muss die Freigabe zusätzlich serverseitig anhand ihrer Auth-UUID vorgenommen werden. Gegenwärtig ist noch kein Admin freigegeben.
+Unter `admin.html` können sich Analysten registrieren und ihre E-Mail bestätigen. **Registrierung oder Demo-Rollenwechsel allein erteilen keine Adminrechte.** Eine konkrete Adresse muss nach ausdrücklicher Freigabe serverseitig in `analytics_admin_invites` eingetragen werden. Der private Auth-Trigger übernimmt berechtigte, bestätigte Accounts in `analytics_admins`. Bei bereits bestätigten Accounts muss die Freigabe zusätzlich serverseitig anhand ihrer Auth-UUID vorgenommen werden. Adminzugänge werden separat serverseitig freigegeben. Die Demo-Rolle Helfer oder Betreiber gewährt keinen Zugriff auf Testdaten.
 
 Es ist **keine automatische Datenlöschung aktiv**. `supabase/retention.sql` enthält einen Vorschlag für 90 Tage und darf erst nach ausdrücklicher Zustimmung ausgeführt werden. Der Einwilligungstext nennt aktuell manuelle Aufbewahrung und Löschung.
 
@@ -86,7 +96,7 @@ Der **Prozess-CSV-Export** enthält `case_id, activity, timestamp, sequence, tas
 ## Prüfen
 
 ```bash
-node --test tests/telemetry.test.cjs
+node --test tests/*.test.cjs
 ```
 
 Vor Freigabe neuer Versionen zusätzlich beide Bezahlwege im Browser prüfen. Bei Änderungen an der Datenbank RLS und Advisors kontrollieren. Die bereits geprüfte Anbindung speichert Ereignisse, verhindert Duplikate, weist falsche Sitzungstoken ab und sperrt den direkten Gast-Lesezugriff.
