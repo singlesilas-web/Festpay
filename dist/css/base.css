@@ -1,0 +1,76 @@
+/* =========================================================
+   base.css – Design-System (Farben, Schriften, Grundlayout)
+   Hier NUR globale Tokens & Grundstile ändern.
+   ========================================================= */
+:root {
+  --bg: #ffffff;
+  --surface: #f4f4f2;
+  --surface-2: #ebebe7;
+  --ink: #111111;
+  --ink-2: #4b4b48;
+  --ink-3: #8a8a85;
+  --line: #e2e2dd;
+  --accent: #ff5a36;          /* Festrot – Hauptakzent */
+  --accent-soft: #ffe7e0;
+  --accent-ink: #ffffff;
+  --ok: #12a150;
+  --ok-soft: #dff5e8;
+  --warn: #e8a400;
+  --danger: #d92d20;
+  --zone: rgba(255, 90, 54, 0.18);
+  --zone-line: #ff5a36;
+  --map-land: #eef0e8;
+  --map-green: #d6e8c8;
+  --map-road: #ffffff;
+  --map-water: #cfe3f2;
+  --map-build: #e2e2da;
+  --radius: 18px;
+  --radius-lg: 28px;
+  --shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.25);
+  --shadow-sheet: 0 -10px 40px -10px rgba(0, 0, 0, 0.18);
+  --font-head: "Sora", system-ui, sans-serif;
+  --font-body: "Manrope", system-ui, sans-serif;
+  --ease: cubic-bezier(.2, .9, .25, 1.15);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; }
+body {
+  font-family: var(--font-body);
+  background: var(--surface-2);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3 { font-family: var(--font-head); letter-spacing: -0.02em; }
+h1 { font-size: 30px; line-height: 1.1; }
+h2 { font-size: 22px; }
+h3 { font-size: 17px; }
+p { line-height: 1.45; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; cursor: pointer; border: 0; background: none; color: inherit; }
+input, select, textarea { font: inherit; }
+
+/* App-Rahmen: auf dem Handy volle Breite, auf Desktop als Phone-Frame zentriert */
+.app {
+  position: relative;
+  max-width: 480px;
+  min-height: 100vh;
+  margin: 0 auto;
+  background: var(--bg);
+  overflow: hidden;
+}
+@media (min-width: 700px) {
+  body { padding: 24px 0; }
+  .app { min-height: calc(100vh - 48px); border-radius: 36px; box-shadow: var(--shadow); }
+}
+
+.page { padding: 20px 20px 120px; }
+.muted { color: var(--ink-3); }
+.small { font-size: 13px; }
+.center { text-align: center; }
+.stack > * + * { margin-top: 12px; }
+.row { display: flex; align-items: center; gap: 12px; }
+.spacer { flex: 1; }
+.hidden { display: none !important; }
+
+i[data-lucide], svg.lucide { width: 22px; height: 22px; stroke-width: 2; flex-shrink: 0; }

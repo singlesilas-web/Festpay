@@ -1,0 +1,109 @@
+/* =========================================================
+   seiten.css – Styles der Unterseiten
+   Abschnitte pro Feature, bitte nur im eigenen Abschnitt arbeiten.
+   ========================================================= */
+
+/* ---------- fest.html: W1 / W2 Auswahl ---------- */
+.weg-card {
+  display: block; width: 100%; text-align: left; border-radius: var(--radius-lg);
+  padding: 22px; background: var(--surface); position: relative; overflow: hidden;
+  transition: transform .2s var(--ease);
+}
+.weg-card:active { transform: scale(.98); }
+.weg-card.dark { background: var(--ink); color: var(--bg); }
+.weg-card .tag { font: 800 12px var(--font-head); letter-spacing: .08em; color: var(--accent); }
+.weg-card h2 { margin: 6px 0 6px; font-size: 26px; }
+.weg-card p { font-size: 14px; opacity: .75; max-width: 85%; }
+.weg-card .big-icon { position: absolute; right: -10px; bottom: -14px; width: 110px; height: 110px; opacity: .12; stroke-width: 1.5; }
+.weg-card.off { opacity: .4; pointer-events: none; }
+
+/* ---------- guthaben.html: W1 QR ---------- */
+.wallet {
+  background: var(--ink); color: var(--bg); border-radius: var(--radius-lg); padding: 24px; text-align: center;
+  position: relative; overflow: hidden;
+}
+.wallet .saldo { font: 800 44px var(--font-head); margin: 6px 0 18px; }
+.qr-box { background: var(--bg); border-radius: 20px; padding: 18px; display: inline-block; position: relative; }
+.qr-box canvas, .qr-box img { display: block; width: 210px; height: 210px; }
+.qr-scanline { position: absolute; left: 12px; right: 12px; height: 3px; background: var(--accent); border-radius: 3px; animation: scan 2.4s ease-in-out infinite; box-shadow: 0 0 12px var(--accent); }
+@keyframes scan { 0%,100% { top: 14px; } 50% { top: calc(100% - 16px); } }
+.live-time { font-variant-numeric: tabular-nums; font-size: 13px; opacity: .7; margin-top: 12px; display: flex; gap: 6px; justify-content: center; align-items: center; }
+.live-time i { width: 14px; height: 14px; color: var(--ok); }
+
+/* ---------- speisekarte.html ---------- */
+.menu-item { display: flex; align-items: center; gap: 14px; padding: 14px 0; }
+.menu-item + .menu-item { border-top: 1px solid var(--line); }
+.menu-item .name { font-weight: 700; }
+.qty { display: flex; align-items: center; gap: 10px; }
+.qty button { width: 36px; height: 36px; border-radius: 10px; background: var(--surface); display: grid; place-items: center; }
+.qty button.plus { background: var(--ink); color: var(--bg); }
+.qty span { min-width: 18px; text-align: center; font-weight: 800; }
+.cat-title { font: 800 13px var(--font-head); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin: 22px 0 4px; }
+
+/* ---------- marken.html: Festmarken & Entwerten ---------- */
+.marke {
+  position: relative; border-radius: 22px; overflow: hidden; user-select: none; -webkit-user-select: none;
+  background: var(--ink); color: var(--bg); padding: 20px; touch-action: manipulation;
+  -webkit-touch-callout: none;
+}
+.marke + .marke { margin-top: 14px; }
+/* bewegter Holo-Streifen – zeigt: Live-Bild, kein Screenshot */
+.marke::before {
+  content: ""; position: absolute; inset: -50%;
+  background: linear-gradient(115deg, transparent 40%, rgba(255,90,54,.35) 50%, transparent 60%);
+  animation: holo 3s linear infinite;
+}
+@keyframes holo { from { transform: translateX(-30%); } to { transform: translateX(30%); } }
+.marke > * { position: relative; }
+.marke .head { display: flex; align-items: center; gap: 12px; }
+.marke .name { font: 800 20px var(--font-head); }
+.marke .perf { border-top: 2px dashed rgba(255,255,255,.25); margin: 16px -20px; }
+.marke .hold-hint { display: flex; gap: 8px; align-items: center; font-size: 13px; opacity: .8; }
+.marke .ring { position: absolute; right: 18px; bottom: 14px; width: 54px; height: 54px; }
+.marke .ring circle { fill: none; stroke-width: 5; }
+.marke .ring .bg { stroke: rgba(255,255,255,.15); }
+.marke .ring .fg { stroke: var(--accent); stroke-linecap: round; stroke-dasharray: 151; stroke-dashoffset: 151; transform: rotate(-90deg); transform-origin: center; }
+.marke.holding { transform: scale(.98); transition: transform .2s; }
+
+/* Entwertet-Zustand */
+.marke.used { background: var(--surface); color: var(--ink-3); }
+.marke.used::before { display: none; }
+.marke.used .perf { border-color: var(--line); }
+
+/* Vollbild-Entwertungsanimation (für Helfer sichtbar) */
+.validate-overlay {
+  position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; text-align: center;
+  background: var(--ok); color: var(--bg); animation: ovIn .3s ease-out;
+}
+.validate-overlay .stamp {
+  width: 180px; height: 180px; border-radius: 50%; border: 8px solid var(--bg);
+  display: grid; place-items: center; margin: 0 auto 24px; animation: stamp .6s var(--ease), spin 6s linear .6s infinite;
+}
+.validate-overlay .stamp i { width: 90px; height: 90px; stroke-width: 2.5; animation: spin 6s linear .6s infinite reverse; }
+.validate-overlay h1 { font-size: 40px; }
+.validate-overlay .clock { font: 800 28px var(--font-head); font-variant-numeric: tabular-nums; margin-top: 10px; }
+.validate-overlay .pulse { position: absolute; inset: 0; background: radial-gradient(circle, rgba(255,255,255,.35), transparent 60%); animation: pulse 1.2s ease-in-out infinite; pointer-events: none; }
+@keyframes ovIn { from { opacity: 0; } }
+@keyframes stamp { from { transform: scale(2.4) rotate(-30deg); opacity: 0; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes pulse { 50% { opacity: .2; transform: scale(1.2); } }
+
+/* ---------- helfer.html ---------- */
+.scanner { aspect-ratio: 1; border-radius: var(--radius-lg); background: var(--ink); overflow: hidden; position: relative; display: grid; place-items: center; color: var(--bg); }
+.scanner #reader { position: absolute; inset: 0; }
+.scanner #reader video { object-fit: cover; width: 100% !important; height: 100% !important; }
+.scanner .frame { width: 64%; aspect-ratio: 1; border: 4px solid var(--accent); border-radius: 24px; position: relative; z-index: 2; pointer-events: none; }
+.result { animation: pop .4s var(--ease); }
+@keyframes pop { from { transform: translateY(16px); opacity: 0; } }
+.keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.keypad button { height: 56px; border-radius: 14px; background: var(--surface); font: 700 20px var(--font-head); }
+
+/* ---------- betreiber.html ---------- */
+.mini-map { aspect-ratio: 1; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); cursor: crosshair; background: var(--map-land); }
+.mini-map svg { width: 100%; height: 100%; display: block; }
+.tag-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.tag-list span { display: inline-flex; align-items: center; gap: 6px; background: var(--surface); padding: 8px 12px; border-radius: 99px; font-weight: 700; font-size: 14px; }
+.tag-list button i { width: 16px; height: 16px; }
+.switch { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; }
+.switch input { width: 46px; height: 28px; accent-color: var(--accent); }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }

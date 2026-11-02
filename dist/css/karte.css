@@ -1,0 +1,74 @@
+/* =========================================================
+   karte.css – Startseite mit Karte, Fest-Zonen & Bottom-Sheet
+   ========================================================= */
+.map-wrap { position: fixed; inset: 0; max-width: 480px; margin: 0 auto; overflow: hidden; touch-action: none; background: var(--map-land); cursor: grab; }
+@media (min-width: 700px) { .map-wrap { position: absolute; } }
+.map-wrap.dragging { cursor: grabbing; }
+.map { position: absolute; top: 0; left: 0; width: 1600px; height: 1600px; will-change: transform; }
+.map.animate { transition: transform .28s ease-out; }
+.map svg { width: 100%; height: 100%; display: block; }
+
+.zone { fill: var(--zone); stroke: var(--zone-line); stroke-width: 3; transition: fill .4s, stroke-width .4s; }
+.zone.active { fill: rgba(255, 90, 54, .32); stroke-width: 5; }
+.zone-label rect { fill: var(--bg); stroke: var(--ink); stroke-width: 2; }
+.zone-label text { font: 700 22px var(--font-head); fill: var(--ink); }
+.zone-label.active rect { fill: var(--accent); stroke: var(--accent); }
+.zone-label.active text { fill: var(--accent-ink); }
+
+/* Fixer Standort-Pin in der Mitte (wie EasyPark-Auto) */
+.pin {
+  position: absolute; left: 50%; top: 50%; z-index: 5; pointer-events: none;
+  transform: translate(-50%, -100%); transition: transform .35s var(--ease);
+}
+.pin-head {
+  width: 58px; height: 58px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
+  background: var(--ink); display: grid; place-items: center; box-shadow: var(--shadow);
+  transition: background .35s, border-radius .35s, transform .5s var(--ease);
+}
+.pin-head i { transform: rotate(45deg); color: var(--bg); width: 26px; height: 26px; }
+.pin-dot { position: absolute; left: 50%; bottom: -14px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; background: var(--accent); border: 3px solid var(--bg); box-shadow: 0 0 0 10px rgba(255,90,54,.18); }
+.lifted .pin { transform: translate(-50%, calc(-100% - 18px)); }
+.lifted .pin-dot { box-shadow: 0 0 0 22px rgba(255,90,54,.12); }
+.inside .pin-head { background: var(--accent); border-radius: 50%; transform: rotate(0) scale(1.12); }
+.inside .pin-head i { transform: none; }
+.inside .pin-dot { opacity: 0; }
+
+/* Steuerbuttons */
+.map-ui { position: absolute; z-index: 6; display: flex; flex-direction: column; gap: 14px; }
+.map-ui.left { top: 24px; left: 20px; }
+.map-ui.right { top: 24px; right: 20px; }
+
+
+.brand-pill { position: absolute; top: 30px; left: 50%; transform: translateX(-50%); z-index: 6; background: var(--bg); padding: 10px 16px; border-radius: 99px; font: 800 15px var(--font-head); box-shadow: var(--shadow); display: flex; gap: 8px; align-items: center; }
+.brand-pill i { color: var(--accent); width: 18px; height: 18px; }
+
+/* Bottom-Sheet */
+.sheet {
+  position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 7;
+  background: rgba(255,255,255,.94); backdrop-filter: blur(14px);
+  border-radius: var(--radius-lg); padding: 14px 20px 22px; box-shadow: var(--shadow-sheet);
+  transition: transform .45s var(--ease);
+}
+.sheet .grip { width: 44px; height: 5px; border-radius: 9px; background: var(--line); margin: 0 auto 14px; }
+.sheet h2 { font-size: 26px; }
+.sheet .sub { color: var(--ink-3); margin: 6px 0 16px; }
+.fest-card {
+  display: flex; align-items: center; gap: 14px; width: 100%; text-align: left;
+  border: 2px solid var(--ink); border-radius: 18px; padding: 16px; background: var(--bg);
+  animation: pop .45s var(--ease);
+}
+.fest-card .t { font-weight: 800; font-size: 17px; }
+.fest-card .s { font-size: 14px; color: var(--ink-3); }
+@keyframes pop { from { transform: translateY(20px) scale(.96); opacity: 0; } }
+
+/* Suchliste */
+.search-panel { position: absolute; inset: 0; background: var(--bg); z-index: 20; padding: 24px 20px; transform: translateY(100%); transition: transform .4s var(--ease); overflow: auto; }
+.search-panel.open { transform: none; }
+
+.map { transform-origin: 0 0; }
+.map-ui.zoom { right:20px; top:90px; gap:8px; }
+.map-ui.zoom .icon-btn { flex:0 0 48px; width:48px; height:48px; }
+.map-ui.zoom #btnLocate { margin-top:8px; }
+.map-ui.zoom button { font-size:25px; font-weight:700; }
+.pin-head svg { transform:rotate(45deg);color:white; }
+.inside .pin-head svg {transform:none;}
