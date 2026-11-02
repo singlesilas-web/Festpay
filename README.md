@@ -2,7 +2,11 @@
 
 FestPay simuliert zwei Bezahlwege auf Vereinsfesten: **W1 Festguthaben** (aufladen und QR-Code vorzeigen) und **W2 Festmarken** (Speisekarte, Kauf und Entwertung). Alle Zahlungen sind simuliert.
 
-**Öffentlicher Klickdummy:** https://festpay-klicktest-silas.chicchair12.chatgpt.site
+**Öffentlicher Testlink:** https://singlesilas-web.github.io/Festpay/
+
+**Repository:** https://github.com/singlesilas-web/Festpay
+
+Die frühere Vorschau bleibt unter https://festpay-klicktest-silas.chicchair12.chatgpt.site erreichbar; sie wird unabhängig veröffentlicht.
 
 ## Gemeinsam entwickeln
 
@@ -38,9 +42,9 @@ git push -u origin feature/meine-aenderung
 
 ## Veröffentlichung
 
-Der oben verlinkte Klickdummy ist bereits veröffentlicht. Ein GitHub-Commit allein verändert diesen bestehenden Link nicht.
+GitHub Pages ist aktiviert. Pushes und gemergte Pull Requests nach `main` veröffentlichen den Ordner `dist/` über `.github/workflows/pages.yml` automatisch. Die Website ist unter dem Testlink oben erreichbar. Unter **Actions → Deploy static clickdummy** lassen sich Status und Fehler ablesen; bei Bedarf kann der Workflow dort manuell gestartet werden.
 
-Zusätzlich enthält das Repository einen **GitHub Pages Workflow**. Für dessen erste Aktivierung unter **Settings → Pages → Build and deployment → Source: GitHub Actions** wählen. Anschließend den Workflow **Deploy static clickdummy** unter **Actions** starten. Danach veröffentlichen Pushes nach `main` automatisch die Website. Die tatsächliche Pages-URL erscheint im Workflow; sie ist erst nach erfolgreicher Bereitstellung live. Der zugehörige Ursprung `https://singlesilas-web.github.io` ist im Analytics-Endpunkt bereits freigegeben.
+Der Ursprung `https://singlesilas-web.github.io` ist im Analytics-Endpunkt bereits freigegeben. Der frühere ChatGPT-Sites-Link aktualisiert sich unabhängig und wird durch GitHub-Commits nicht verändert.
 
 Nur `dist/` als Webverzeichnis veröffentlichen. Niemals Service-Role-Schlüssel, Kennwörter oder `.env`-Dateien committen.
 
