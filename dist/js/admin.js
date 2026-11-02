@@ -2,7 +2,7 @@
   localStorage.setItem('festpay_exclude_device','1');sessionStorage.removeItem('festpay_test_session_v2');
   const $=id=>document.getElementById(id),C=APP_CONFIG;
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const names={'index.html':'Karte','fest.html':'Fest','guthaben.html':'Guthaben','speisekarte.html':'Speisekarte','bezahlen.html':'Bezahlen','marken.html':'Meine Marken',wallet_topped_up:'Guthaben aufgeladen',tokens_purchased:'Marken gekauft',token_redeemed:'Marke entwertet',wallet_charged:'Guthaben abgebucht'};
+  const names={'index.html':'Karte','fest.html':'Fest','guthaben.html':'Guthaben','speisekarte.html':'Speisekarte','bezahlen.html':'Bezahlen','marken.html':'Meine Marken',wallet_topped_up:'Guthaben aufgeladen',tokens_purchased:'Marken gekauft',token_redeemed:'Marke entwertet',wallet_charged:'Guthaben abgebucht',helper_scanner_opened:'Helfer-Scanner geöffnet'};
   const label=e=>e.type==='activity'?(names[e.props.activity]||e.props.activity):(names[e.screen]||e.screen);
   let client,sessions=[],events=[],filtered=[],sample=false;
   const configured=/^https:\/\//.test(C.ANALYTICS_URL)&&!!C.ANALYTICS_KEY;

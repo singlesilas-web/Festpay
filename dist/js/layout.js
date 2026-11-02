@@ -3,6 +3,7 @@
    Menü (Drawer), Toast, Euro-Format, URL-Parameter, Icons.
    ========================================================= */
 window.UI = (function () {
+  const escape = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const euro = (n) => Number(n).toLocaleString("de-DE", { style: "currency", currency: "EUR" });
   const param = (k) => new URLSearchParams(location.search).get(k);
   const icons = () => window.lucide && lucide.createIcons();
@@ -29,7 +30,6 @@ window.UI = (function () {
         <a href="index.html"><i data-lucide="map"></i>Karte</a>
         <a href="marken.html"><i data-lucide="ticket"></i>Meine Festmarken</a>
         <a href="profil.html"><i data-lucide="user-round"></i>Profil &amp; Rolle</a>
-        ${rolle !== "gast" ? `<a href="helfer.html"><i data-lucide="scan-line"></i>Helfer-Scanner</a>` : ""}
         ${rolle === "betreiber" ? `<a href="betreiber.html"><i data-lucide="layout-dashboard"></i>Betreiber-Bereich</a>` : ""}
         <a href="login.html"><i data-lucide="log-in"></i>Anmelden</a>
       </div>`;
@@ -47,5 +47,5 @@ window.UI = (function () {
   }
 
   document.addEventListener("DOMContentLoaded", () => { menu(); demoFlag(); icons(); });
-  return { euro, param, icons, toast };
+  return { escape, euro, param, icons, toast };
 })();

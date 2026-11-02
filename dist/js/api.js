@@ -87,10 +87,36 @@ window.API = (function () {
       await sb.from("aufladeoptionen").insert(fest.aufladeoptionen.map((b) => ({ fest_id: data.id, betrag: b })));
       if (fest.speisekarte.length)
         await sb.from("speisekarte_items").insert(fest.speisekarte.map((i) => ({ fest_id: data.id, name: i.name, preis: i.preis, icon: i.icon, kategorie: i.kategorie })));
+      // TODO Echtbetrieb: Tabelle fest_helfer (fest_id, name, email) inkl. RLS anlegen.
+      if (fest.helfer?.length)
+        await sb.from("fest_helfer").insert(fest.helfer.map((h) => ({ fest_id: data.id, name: h.name, email: h.email })));
       return { data };
     }
     const s = state(); fest.id = "eigen-" + uid(); s.eigeneFeste.push(fest); save(s);
     return { data: fest };
+  }
+
+  // ---------- Helfer-Zuordnung pro Fest ----------
+  // Ein Konto ist Helfer eines Fests, wenn seine E-Mail in der Helferliste des Fests steht.
+  // Klickdummy: E-Mail wird im Profil als Demo-E-Mail hinterlegt.
+  async function getEmail() {
+    if (window.sb) return (await getUser())?.email || null;
+    return state().email || null;
+  }
+  function setDemoEmail(mail) { const s = state(); s.email = (mail || "").trim().toLowerCase() || null; save(s); }
+  async function istHelferFuer(festId) {
+    if (!festId) return false;
+    const fest = await getFest(festId);
+    if (!fest?.w1_aktiv) return false;
+    // Demo role grants membership in Fest A only; no mail entry is needed.
+    if (!window.sb && festId === "demo-weinfest") return (await getRolle()) === "helfer";
+    const mail = (await getEmail())?.trim().toLowerCase();
+    if (!mail) return false;
+    if (window.sb) {
+      const { data } = await sb.from("fest_helfer").select("email").eq("fest_id", festId).ilike("email", mail).maybeSingle();
+      return !!data;
+    }
+    return (fest.helfer || []).some((h) => (h.email || "").trim().toLowerCase() === mail);
   }
 
   // ---------- W1: Festguthaben ----------
@@ -111,7 +137,9 @@ window.API = (function () {
   }
   async function abbuchen(festId, userId, betrag) {
     if (window.sb) return sb.rpc("guthaben_abbuchen", { _fest_id: festId, _user_id: userId, _betrag: betrag });
+    if (!(await istHelferFuer(festId))) return { error: { message: "Für dieses Fest nicht als Helfer eingetragen" } };
     const s = state(); const k = festId + ":" + userId;
+    if (!(betrag > 0) || !Number.isFinite(betrag)) return { error: { message: "Ungültiger Betrag" } };
     if ((s.guthaben[k] || 0) < betrag) return { error: { message: "Guthaben reicht nicht aus" } };
     s.guthaben[k] -= betrag; save(s); return { error: null, data: s.guthaben[k] };
   }
@@ -145,6 +173,7 @@ window.API = (function () {
   return {
     getUser, getRolle, setDemoRolle, login, registrieren, logout,
     getFeste, getFest, getAufladeoptionen, getSpeisekarte, festSpeichern,
+    getEmail, setDemoEmail, istHelferFuer,
     getGuthaben, aufladen, abbuchen, markenKaufen, getMarken, markeEntwerten,
     istDemo: () => !window.sb,
   };
