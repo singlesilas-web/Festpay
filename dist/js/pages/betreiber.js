@@ -2,6 +2,7 @@
    betreiber.js – Betreiber-Bereich
    Fest anlegen: Name, Ort, Zone auf Karte zeichnen (Punkte antippen),
    W1/W2 aktivieren, Aufladebeträge, Speisekarte.
+   Tab "Helfer": Helfer (Name + E-Mail) dem Fest zuordnen.
    ========================================================= */
 (async function () {
   const root = document.getElementById("root");
@@ -11,11 +12,24 @@
     return UI.icons();
   }
   const ICONS = ["cup-soda", "beer", "wine", "coffee", "sandwich", "pizza", "ice-cream-cone", "utensils"];
-  const f = { name: "", ort: "", zone: [], w1_aktiv: true, w2_aktiv: true, aufladeoptionen: [10, 20, 30], speisekarte: [] };
+  const f = { name: "", ort: "", zone: [], w1_aktiv: true, w2_aktiv: true, aufladeoptionen: [10, 20, 30], speisekarte: [], helfer: [] };
 
   root.innerHTML = `
     <div class="page-head"><h1>Fest anlegen</h1><p>Steck deinen Bereich digital ab und leg fest, wie Gäste zahlen.</p></div>
     <div class="page stack">
+      <div class="segment"><button class="active" data-tab="fest">Fest</button><button data-tab="helfer">Helfer</button></div>
+
+      <div id="tabHelfer" class="stack hidden">
+        <p class="small muted">Eingetragene Helfer sehen beim Fest zusätzlich den Scanner. Zuordnung über die E-Mail ihres Kontos.</p>
+        <div class="list" id="helferList"></div>
+        <div class="card stack">
+          <input class="input" id="hName" placeholder="Name" aria-label="Name des Helfers">
+          <input class="input" id="hMail" type="email" placeholder="E-Mail" aria-label="E-Mail des Helfers">
+          <button class="btn btn-dark btn-sm" id="addHelfer" style="width:100%"><i data-lucide="user-plus"></i>Helfer hinzufügen</button>
+        </div>
+      </div>
+
+      <div id="tabFest" class="stack">
       <label class="field"><span>Name des Fests</span><input class="input" id="name" placeholder="Name eingeben"></label>
       <label class="field"><span>Ort</span><input class="input" id="ort" placeholder="Ort eingeben"></label>
 
@@ -43,6 +57,7 @@
           <select class="input" id="iIcon">${ICONS.map((i) => `<option>${i}</option>`).join("")}</select>
           <button class="btn btn-dark btn-sm" id="addItem" style="width:100%"><i data-lucide="plus"></i>Artikel hinzufügen</button>
         </div>
+      </div>
       </div>
     </div>
     <div class="cta-bar"><button class="btn" id="save"><i data-lucide="save"></i>Fest veröffentlichen</button></div>`;
@@ -99,6 +114,31 @@
     ["iName", "iPreis", "iKat"].forEach((id) => (document.getElementById(id).value = "")); drawMenu();
   };
 
+  // ---------- Tabs ----------
+  root.querySelectorAll("[data-tab]").forEach((b) => (b.onclick = () => {
+    root.querySelectorAll("[data-tab]").forEach((x) => x.classList.toggle("active", x === b));
+    document.getElementById("tabFest").classList.toggle("hidden", b.dataset.tab !== "fest");
+    document.getElementById("tabHelfer").classList.toggle("hidden", b.dataset.tab !== "helfer");
+  }));
+
+  // ---------- Helfer ----------
+  function drawHelfer() {
+    document.getElementById("helferList").innerHTML = f.helfer.map((h, n) => `
+      <div class="list-item"><span class="badge-icon soft"><i data-lucide="scan-line"></i></span>
+        <span style="flex:1"><div class="title">${UI.escape(h.name)}</div><div class="sub">${UI.escape(h.email)}</div></span>
+        <button data-rh="${n}" aria-label="Entfernen"><i data-lucide="trash-2"></i></button></div>`).join("")
+      || `<div class="list-item muted">Noch keine Helfer</div>`;
+    UI.icons();
+    document.querySelectorAll("[data-rh]").forEach((b) => (b.onclick = () => { f.helfer.splice(+b.dataset.rh, 1); drawHelfer(); }));
+  }
+  document.getElementById("addHelfer").onclick = () => {
+    const name = document.getElementById("hName").value.trim(), email = document.getElementById("hMail").value.trim().toLowerCase();
+    if (!name || !/^\S+@\S+\.\S+$/.test(email)) return UI.toast("Name und gültige E-Mail angeben", "info");
+    if (f.helfer.some((h) => h.email === email)) return UI.toast("E-Mail ist schon eingetragen", "info");
+    f.helfer.push({ name, email });
+    ["hName", "hMail"].forEach((id) => (document.getElementById(id).value = "")); drawHelfer();
+  };
+
   document.getElementById("save").onclick = async () => {
     f.name = document.getElementById("name").value.trim(); f.ort = document.getElementById("ort").value.trim();
     if (!f.name) return UI.toast("Name fehlt", "info");
@@ -108,5 +148,5 @@
     UI.toast("Fest veröffentlicht"); setTimeout(() => (location.href = "index.html"), 700);
   };
 
-  drawMap(); drawTops(); drawMenu();
+  drawMap(); drawTops(); drawMenu(); drawHelfer();
 })();
