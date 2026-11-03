@@ -2,6 +2,7 @@
    speisekarte.js – W2 Festmarken: Speisekarte & Warenkorb
    ========================================================= */
 (async function () {
+  if (!(await UI.gastZugang(UI.param("id")))) return;
   const root = document.getElementById("root");
   const fest = await API.getFest(UI.param("id"));
   if (!fest) { root.innerHTML = `<div class="empty"><i data-lucide="calendar-x-2"></i><h3>Fest nicht gefunden</h3></div>`; return UI.icons(); }

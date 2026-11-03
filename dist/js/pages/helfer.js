@@ -18,15 +18,15 @@
   if (!Array.isArray(hidden)) hidden = [];
   let scanned = null, amount = '', scanner = null, cameraActive = false, cameraStarting = false, processing = false;
   root.innerHTML = `
-    <div class="page-head"><h1>Helfer · Scanner</h1><p>${UI.escape(fest.name)} – QR-Code vom Festguthaben des Gastes scannen.</p></div>
-    <div class="page stack">
-      <a class="btn btn-ghost btn-sm" href="${festivalUrl}" data-track="helper-return-to-festival"><i data-lucide="user-round"></i>Als Gast zum Fest</a>
-      <div class="card stack"><h2>1. Bestellung zusammenstellen</h2>
-        <div class="grid-2" id="products"></div>
+    <div class="page-head helper-head"><h1>Helfer · Scanner</h1><p>${UI.escape(fest.name)} – QR-Code vom Festguthaben des Gastes scannen.</p></div>
+    <div class="page stack helper-workspace">
+
+      <div class="card stack helper-order"><h3>1. Bestellung zusammenstellen</h3>
+        <div class="grid-2 helper-products" id="products"></div>
         <details><summary>Artikel ein- und ausblenden</summary><div id="visibility" class="stack"></div></details>
         <label class="field"><span>Betrag in € (auch manuell möglich)</span><input class="input" id="orderAmount" type="number" min="0.01" max="9999.99" step="0.01" placeholder="0,00"></label>
         <p id="orderSummary" role="status"></p><button class="btn btn-ghost" id="clearOrder">Bestellung zurücksetzen</button>
-      </div><h2>2. QR-Code scannen</h2>
+      </div><h3>2. QR-Code scannen</h3>
       <div class="scanner"><div id="reader"></div><div class="frame"></div></div>
       <div class="grid-2">
         <button class="btn btn-dark btn-sm" id="cam" style="width:100%"><i data-lucide="camera"></i>Kamera starten</button>
@@ -53,7 +53,7 @@
     status.textContent = 'Kamerazugriff erlauben, um einen Gast-Code zu scannen.';
     try {
       scanner ??= new Html5Qrcode('reader');
-      await scanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: 220 }, text => onScan(text));
+      await scanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: 130 }, text => onScan(text));
       cameraActive = true;
       status.textContent = 'Scanner bereit – zeige den QR-Code für dieses Fest.';
     } catch {

@@ -9,7 +9,9 @@
   const wrap = document.getElementById("mapWrap");
   const map = document.getElementById("map");
   const sheet = document.getElementById("sheet");
-  const feste = (await API.getFeste()).filter(f => API.istFestAktiv(f));
+  const helperRole = (await API.getRolle()) === "helfer";
+  const feste = [];
+  for (const f of await API.getFeste()) if (API.istFestAktiv(f) && (!helperRole || await API.istHelferFuer(f.id))) feste.push(f);
   const balances = new Map(await Promise.all(feste.map(async f => [f.id, await API.getGuthaben(f.id)])));
   let tx = 0, ty = 0, aktuell = null;
 
@@ -123,9 +125,9 @@
     } else {
       const w = [aktuell.w1_aktiv && "Festguthaben", aktuell.w2_aktiv && "Festmarken"].filter(Boolean).join(" · ");
       sheet.innerHTML = `<div class="grip"></div><h2>Fest gefunden</h2><p class="sub">Du bist in der Zone von</p>
-        <a class="fest-card" href="${balances.get(aktuell.id) > 0 ? "guthaben" : "fest"}.html?id=${aktuell.id}">
+        <a class="fest-card" href="${helperRole ? `helfer.html?fest=${encodeURIComponent(aktuell.id)}` : `${balances.get(aktuell.id) > 0 ? "guthaben" : "fest"}.html?id=${encodeURIComponent(aktuell.id)}`}">
           <span class="badge-icon accent"><i data-lucide="tent"></i></span>
-          <span style="flex:1"><div class="t">${balances.get(aktuell.id) > 0 ? "Meinen QR-Code zeigen" : UI.escape(aktuell.name)}</div><div class="s">${aktuell.ort || ""} · ${w}</div></span>
+          <span style="flex:1"><div class="t">${helperRole ? "Scanner öffnen" : balances.get(aktuell.id) > 0 ? "Meinen QR-Code zeigen" : UI.escape(aktuell.name)}</div><div class="s">${aktuell.ort || ""} · ${w}</div></span>
           <i data-lucide="chevron-right"></i></a>`;
     }
     UI.icons();

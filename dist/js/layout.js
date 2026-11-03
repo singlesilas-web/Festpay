@@ -16,8 +16,14 @@ window.UI = (function () {
     clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("show"), 2400);
   }
 
+  async function gastZugang(festId) {
+    if ((await API.getRolle()) !== "helfer") return true;
+    location.replace(festId && await API.istHelferFuer(festId) ? `helfer.html?fest=${encodeURIComponent(festId)}` : "index.html");
+    return false;
+  }
   async function menu() {
     const rolle = await API.getRolle();
+    document.querySelectorAll("[data-guest-only]").forEach(el => el.hidden = rolle === "helfer");
     const eigene = [];
     for (const f of await API.getFeste()) if (await API.istBetreiberFuer(f.id)) eigene.push(f);
     const bg = document.createElement("div"); bg.className = "drawer-bg";
@@ -30,7 +36,7 @@ window.UI = (function () {
       <span class="role-tag">Rolle: ${rolle}</span>
       <div style="margin-top:16px">
         <a href="index.html"><i data-lucide="map"></i>Karte</a>
-        <a href="marken.html"><i data-lucide="ticket"></i>Meine Festmarken</a>
+        ${rolle !== "helfer" ? `<a href="marken.html"><i data-lucide="ticket"></i>Meine Festmarken</a><a href="guthaben.html"><i data-lucide="qr-code"></i>Mein Guthaben / QR-Code</a>` : ""}
         <a href="profil.html"><i data-lucide="user-round"></i>Profil &amp; Rolle</a>
         ${rolle === "betreiber" ? `<a href="betreiber.html"><i data-lucide="layout-dashboard"></i>Betreiber-Bereich</a>` : ""}
         ${eigene.map(f => `<a href="fest.html?id=${encodeURIComponent(f.id)}">${escape(f.name)}</a>`).join("")}
@@ -50,5 +56,5 @@ window.UI = (function () {
   }
 
   document.addEventListener("DOMContentLoaded", () => { menu(); demoFlag(); icons(); });
-  return { escape, euro, param, icons, toast };
+  return { gastZugang, escape, euro, param, icons, toast };
 })();

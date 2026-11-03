@@ -72,3 +72,5 @@
 .map-ui.zoom button { font-size:25px; font-weight:700; }
 .pin-head svg { transform:rotate(45deg);color:white; }
 .inside .pin-head svg {transform:none;}
+
+[data-guest-only][hidden] { display:none !important; }

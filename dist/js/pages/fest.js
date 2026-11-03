@@ -9,6 +9,7 @@
     root.innerHTML = `<div class="empty"><i data-lucide="calendar-x-2"></i><h3>Fest nicht gefunden</h3><p>Geh zurück zur Karte.</p></div>`;
     return UI.icons();
   }
+  if (!(await UI.gastZugang(fest.id))) return;
   const saldo = await API.getGuthaben(fest.id);
   const helfer = fest.w1_aktiv && (await API.istHelferFuer(fest.id));
   root.innerHTML = `

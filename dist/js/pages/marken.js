@@ -5,6 +5,7 @@
    so erkennt der Helfer sofort, dass es kein Screenshot ist.
    ========================================================= */
 (async function () {
+  if (!(await UI.gastZugang(UI.param("id")))) return;
   const root = document.getElementById("root");
   const HALTEZEIT = 1500;
 

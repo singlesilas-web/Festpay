@@ -4,8 +4,17 @@
    QR-Inhalt: FESTPAY|<festId>|<userId>  (Helfer liest Guthaben live)
    ========================================================= */
 (async function () {
+  if (!(await UI.gastZugang(UI.param("id")))) return;
   const root = document.getElementById("root");
-  const fest = await API.getFest(UI.param("id"));
+  let festId = UI.param("id");
+  if (!festId) {
+    const funded = [];
+    for (const f of await API.getFeste()) if (f.w1_aktiv && await API.getGuthaben(f.id) > 0) funded.push(f);
+    if (funded.length === 1) { location.replace(`guthaben.html?id=${encodeURIComponent(funded[0].id)}`); return; }
+    root.innerHTML = `<div class="page-head"><h1>Mein Guthaben / QR-Code</h1></div><div class="page stack">${funded.length ? funded.map(f => `<a class="btn btn-dark" href="guthaben.html?id=${encodeURIComponent(f.id)}">${UI.escape(f.name)} · QR-Code zeigen</a>`).join("") : `<p>Noch kein Guthaben aufgeladen.</p><a class="btn" href="index.html">Fest auswählen</a>`}</div>`;
+    return UI.icons();
+  }
+  const fest = await API.getFest(festId);
   if (!fest) { root.innerHTML = `<div class="empty"><i data-lucide="calendar-x-2"></i><h3>Fest nicht gefunden</h3></div>`; return UI.icons(); }
   const user = await API.getUser();
   const optionen = await API.getAufladeoptionen(fest.id);

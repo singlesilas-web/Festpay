@@ -5,6 +5,7 @@
    über eine Server-Funktion anbinden, Buchung erst nach Bestätigung (Webhook).
    ========================================================= */
 (async function () {
+  if (!(await UI.gastZugang(UI.param("id")))) return;
   const root = document.getElementById("root");
   const c = JSON.parse(sessionStorage.getItem("checkout") || "null");
   if (!c) { root.innerHTML = `<div class="empty"><i data-lucide="shopping-cart"></i><h3>Nichts zu bezahlen</h3></div>`; return UI.icons(); }

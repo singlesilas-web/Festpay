@@ -108,3 +108,9 @@ Eigene Feste haben Anfang und Ende (lokale Uhrzeit des Browsers). Die Karte und 
 Die Speise- und Getränkekarte gilt auch für W1. Helfer tippen Artikel mehrfach an; die App summiert die Preise. Alternativ ist eine manuelle Betragseingabe möglich. Erst danach wird gescannt und die Abbuchung bestätigt. Nach erfolgreicher Abbuchung beginnt eine neue Bestellung. Artikel lassen sich über **Artikel ein- und ausblenden** pro lokalem Nutzer und Fest dauerhaft konfigurieren.
 
 Nach dem Aufladen erscheint der neue Saldo in einem großen Dialog mit dem Hinweis zum Vorzeigen des QR-Codes. Bei vorhandenem Guthaben führt die Karte innerhalb der Festzone direkt zum eigenen QR-Code. Alle diese Funktionen bleiben lokale Simulationen; es gibt keine Synchronisierung zwischen Geräten oder echte Zahlungen.
+
+### Rollenführung und QR-Schnellzugriff
+
+Die Rolle Helfer sieht nur zugeordnete Feste und öffnet von dort direkt den Scanner. Gastseiten (Guthaben/QR, Festmarken, Speisekarte und Checkout) leiten Helfer zurück in ihren Helferbereich; Gast-Verknüpfungen sind ausgeblendet. Ein passender E-Mail-Eintrag allein erteilt in der Rolle Gast keinen Helferzugang. Betreiber behalten den Helferzugang zu eigenen Festen.
+
+Der QR-Button auf der Startkarte öffnet bei genau einem Fest mit Guthaben direkt dessen Code. Bei mehreren Guthaben erscheint eine Festauswahl. Betrag und Scanner stehen in einer kompakten Helferansicht untereinander. Die Icon-Auswahl beim Anlegen zeigt die Symbole in einem aufklappbaren Raster.

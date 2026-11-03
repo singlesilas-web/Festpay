@@ -123,6 +123,7 @@ window.API = (function () {
     const fest = await getFest(festId);
     if (!fest?.w1_aktiv) return false;
     if (await istBetreiberFuer(festId)) return true;
+    if ((await getRolle()) !== "helfer") return false;
     // Demo role grants membership in Fest A only; no mail entry is needed.
     if (!window.sb && festId === "demo-weinfest") return (await getRolle()) === "helfer";
     const mail = (await getEmail())?.trim().toLowerCase();

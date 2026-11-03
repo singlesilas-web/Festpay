@@ -19,7 +19,7 @@
   f.helfer ??= []; f.speisekarte ??= [];
   root.innerHTML = `
     <div class="page-head"><h1>${editId ? "Fest bearbeiten" : "Fest anlegen"}</h1><p>Steck deinen Bereich digital ab und leg fest, wie Gäste zahlen.</p></div>
-    <div class="page stack">
+    <div class="page stack festival-form">
       <div class="segment"><button class="active" data-tab="fest">Fest</button><button data-tab="helfer">Helfer</button></div>
 
       <div id="tabHelfer" class="stack hidden">
@@ -59,16 +59,27 @@
         <div class="card stack" style="margin-top:10px">
           <input class="input" id="iName" placeholder="Artikel">
           <div class="grid-2"><input class="input" id="iPreis" type="number" step="0.5" placeholder="Preis €"><input class="input" id="iKat" placeholder="Kategorie"></div>
-          <select class="input" id="iIcon"><option value="" disabled selected>Icon</option>${ICONS.map((i) => `<option>${i}</option>`).join("")}</select>
+          <input type="hidden" id="iIcon" value="">
+          <details class="icon-picker"><summary><span id="iconPreview">Icon auswählen</span></summary>
+            <div class="icon-options" role="group" aria-label="Icon auswählen">${ICONS.map(i => `<button type="button" data-icon="${i}" aria-label="${({"cup-soda":"Softdrink",beer:"Bier",wine:"Wein",coffee:"Kaffee",sandwich:"Sandwich",pizza:"Pizza","ice-cream-cone":"Eis",utensils:"Speise"})[i]}"><i data-lucide="${i}"></i></button>`).join("")}</div>
+          </details>
           <button class="btn btn-dark btn-sm" id="addItem" style="width:100%"><i data-lucide="plus"></i>Artikel hinzufügen</button>
         </div>
       </div>
       </div>
-    </div>
-    <div class="page"><button class="btn" id="save"><i data-lucide="save"></i>${editId ? "Änderungen speichern" : "Fest veröffentlichen"}</button></div>`;
+    <button class="btn" id="save"><i data-lucide="save"></i>${editId ? "Änderungen speichern" : "Fest veröffentlichen"}</button></div>`;
   ["name", "ort", "start", "ende"].forEach(id => { document.getElementById(id).value = f[id] || ""; });
   UI.icons();
 
+  function showIcon() {
+    const value = document.getElementById("iIcon").value;
+    document.getElementById("iconPreview").innerHTML = value ? `<i data-lucide="${value}"></i> Icon ändern` : "Icon auswählen";
+    root.querySelectorAll('[data-icon]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.icon === value)));
+    UI.icons();
+  }
+  root.querySelectorAll('[data-icon]').forEach(b => b.onclick = () => {
+    document.getElementById("iIcon").value = b.dataset.icon; showIcon(); b.closest('details').open = false;
+  });
   // ---------- Zone zeichnen ----------
   const mm = document.getElementById("mm");
   function drawMap() {
@@ -117,7 +128,7 @@
     document.querySelectorAll("[data-ei]").forEach(b => b.onclick = () => {
       const i = f.speisekarte[+b.dataset.ei]; editingItem = i.id;
       document.getElementById("iName").value = i.name; document.getElementById("iPreis").value = i.preis;
-      document.getElementById("iKat").value = i.kategorie; document.getElementById("iIcon").value = i.icon;
+      document.getElementById("iKat").value = i.kategorie; document.getElementById("iIcon").value = i.icon; showIcon();
       drawMenu(); document.getElementById("iName").focus();
     });
     document.querySelectorAll("[data-ri]").forEach((b) => (b.onclick = () => { f.speisekarte.splice(+b.dataset.ri, 1); drawMenu(); }));
@@ -129,7 +140,7 @@
     if (editingItem) f.speisekarte[f.speisekarte.findIndex(i => i.id === editingItem)] = item;
     else f.speisekarte.push(item);
     editingItem = null;
-    ["iName", "iPreis", "iKat", "iIcon"].forEach((id) => (document.getElementById(id).value = "")); drawMenu();
+    ["iName", "iPreis", "iKat", "iIcon"].forEach((id) => (document.getElementById(id).value = "")); showIcon(); drawMenu();
   };
 
   // ---------- Tabs ----------
@@ -161,10 +172,10 @@
     f.name = document.getElementById("name").value.trim(); f.ort = document.getElementById("ort").value.trim();
     function invalid(id, message) {
       document.querySelector('[data-tab="fest"]').click();
-      const el = document.getElementById(id); el.setAttribute("aria-invalid", "true");
+      const el = document.getElementById(id); el.classList.add("field-error"); el.setAttribute("aria-invalid", "true");
       el.scrollIntoView({ behavior: "smooth", block: "center" }); el.focus({preventScroll:true}); UI.toast(message, "info");
     }
-    root.querySelectorAll('[aria-invalid]').forEach(el => el.removeAttribute('aria-invalid'));
+    root.querySelectorAll('[aria-invalid]').forEach(el => { el.removeAttribute('aria-invalid'); el.classList.remove("field-error"); });
     f.start = document.getElementById("start").value; f.ende = document.getElementById("ende").value;
     if (editingItem || document.getElementById("iName").value.trim()) return invalid("iName", "Artikel zuerst mit Artikel hinzufügen übernehmen");
     if (!f.name) return invalid("name", "Name fehlt");
@@ -180,5 +191,6 @@
     UI.toast(editId ? "Fest gespeichert" : "Fest veröffentlicht"); setTimeout(() => (location.href = "index.html"), 700);
   };
 
+  root.addEventListener("input", e => { e.target.removeAttribute("aria-invalid"); e.target.classList.remove("field-error"); });
   drawMap(); drawTops(); drawMenu(); drawHelfer();
 })();
