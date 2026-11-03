@@ -115,7 +115,7 @@ dialog::backdrop { background:#0009; }
 .festival-form > #save { margin-top: 16px; width: 100%; }
 .icon-options { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:12px; }
 .icon-options button { display:grid; place-items:center; min-height:52px; border:2px solid var(--line); border-radius:12px; background:var(--surface); }
-.icon-options button[aria-pressed="true"] { border-color:var(--ink); background:var(--accent); }
+.icon-options button[aria-pressed="true"] { border-color:#fff; background:var(--accent); color:var(--accent-ink); }
 #iconPreview { display:inline-flex; align-items:center; gap:10px; }
 .input.field-error, .field-error { border:3px solid #c52222 !important; background-color:#fff0f0 !important; box-shadow:0 0 0 5px #c5222228 !important; animation:field-alert .6s ease 2; }
 @keyframes field-alert { 50% { box-shadow:0 0 0 9px #c5222244; } }
@@ -179,3 +179,15 @@ dialog::backdrop { background:#0009; }
  .helper-workspace #cameraStatus { line-height:1.2; }
  .scan-confirm { gap:5px; padding:10px; }
 }
+
+.festival-dates { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; }
+.festival-dates .field { min-width:0; }
+.festival-dates .input { min-width:0; max-width:100%; padding:0 6px; font-size:12px; }
+#resetZone { width:100%; height:48px; }
+.topup-dialog { margin:auto; inset:0; width:360px; max-width:calc(100vw - 40px); max-height:calc(100dvh - 40px); overflow:auto; padding:28px 24px 24px; text-align:center; box-shadow:0 20px 70px #0003; }
+.topup-dialog h2 { font-size:19px; line-height:1.3; }
+.topup-success-icon { display:grid; place-items:center; width:48px; height:48px; margin:0 auto 16px; border-radius:50%; background:var(--accent-soft); color:var(--accent); }
+.topup-label { margin-top:20px; font-size:13px; color:var(--ink-2); }
+.topup-balance { margin-top:4px; font-size:32px; font-weight:800; line-height:1.2; }
+#topupHint { margin-top:18px; font-size:15px; line-height:1.6; color:var(--ink-2); }
+.topup-dialog .btn { margin-top:24px; height:48px; }

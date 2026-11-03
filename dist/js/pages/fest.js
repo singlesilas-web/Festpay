@@ -10,6 +10,10 @@
     return UI.icons();
   }
   if (!(await UI.gastZugang(fest.id))) return;
+  if ((await API.getRolle()) === "gast" && !!fest.w1_aktiv !== !!fest.w2_aktiv) {
+    location.replace(`${fest.w1_aktiv ? "guthaben" : "speisekarte"}.html?id=${encodeURIComponent(fest.id)}`);
+    return;
+  }
   const saldo = await API.getGuthaben(fest.id);
   const helfer = fest.w1_aktiv && (await API.istHelferFuer(fest.id));
   root.innerHTML = `

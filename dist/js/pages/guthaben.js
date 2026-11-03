@@ -40,8 +40,12 @@
   if (sessionStorage.getItem("topupSuccess") === fest.id) {
     sessionStorage.removeItem("topupSuccess");
     const dialog = document.createElement("dialog");
-    dialog.innerHTML = `<h2>Dein neues Guthaben beträgt</h2><p style="font-size:36px;font-weight:800;margin:20px 0">${UI.euro(saldo)}</p><p style="font-size:24px;line-height:1.5">Zeige deinen QR-Code am Stand. Der Helfer scannt und bucht ab.</p><button class="btn" style="margin-top:24px">QR-Code zeigen</button>`;
-    document.body.appendChild(dialog); dialog.querySelector("button").onclick = () => {dialog.close();dialog.remove();}; dialog.showModal();
+    dialog.className = "topup-dialog";
+    dialog.setAttribute("aria-labelledby", "topupTitle");
+    dialog.setAttribute("aria-describedby", "topupHint");
+    dialog.innerHTML = `<div class="topup-success-icon"><i data-lucide="check"></i></div><h2 id="topupTitle">Guthaben aufgeladen</h2><p class="topup-label">Dein neues Guthaben</p><p class="topup-balance">${UI.euro(saldo)}</p><p id="topupHint">Zeige deinen QR-Code am Stand.<br>Der Helfer scannt und bucht ab.</p><button class="btn">QR-Code zeigen</button>`;
+    dialog.addEventListener("close", () => dialog.remove(), {once:true});
+    document.body.appendChild(dialog); dialog.querySelector("button").onclick = () => dialog.close(); dialog.showModal();
   }
   UI.icons();
 

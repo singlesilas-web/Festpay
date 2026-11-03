@@ -35,8 +35,8 @@
       <div id="tabFest" class="stack">
       <label class="field"><span>Name des Fests</span><input class="input" id="name" placeholder="Name eingeben"></label>
 
-      <label class="field"><span>Anfang</span><input class="input" id="start" type="datetime-local"></label>
-      <label class="field"><span>Ende</span><input class="input" id="ende" type="datetime-local"></label>
+      <div class="festival-dates"><label class="field"><span>Anfang</span><input class="input" id="start" type="datetime-local"></label>
+      <label class="field"><span>Ende</span><input class="input" id="ende" type="datetime-local"></label></div>
       <h3 style="margin-top:12px">Fest-Zone</h3>
       <p class="small muted">Tippe Eckpunkte auf die Karte (mind. 3).</p>
       <div class="mini-map" id="mm" tabindex="-1"></div>
