@@ -114,3 +114,9 @@ Nach dem Aufladen erscheint der neue Saldo in einem großen Dialog mit dem Hinwe
 Die Rolle Helfer sieht nur zugeordnete Feste und öffnet von dort direkt den Scanner. Gastseiten (Guthaben/QR, Festmarken, Speisekarte und Checkout) leiten Helfer zurück in ihren Helferbereich; Gast-Verknüpfungen sind ausgeblendet. Ein passender E-Mail-Eintrag allein erteilt in der Rolle Gast keinen Helferzugang. Betreiber behalten den Helferzugang zu eigenen Festen.
 
 Der QR-Button auf der Startkarte öffnet bei genau einem Fest mit Guthaben direkt dessen Code. Bei mehreren Guthaben erscheint eine Festauswahl. Betrag und Scanner stehen in einer kompakten Helferansicht untereinander. Die Icon-Auswahl beim Anlegen zeigt die Symbole in einem aufklappbaren Raster.
+
+### Betreiberformular und kompakte Helferkasse
+
+Das manuelle Ortsfeld entfällt. Die aktuelle SVG-Karte besitzt keine geografischen Koordinaten; eine automatische Ortsermittlung ist deshalb erst mit einer echten Kartenanbindung möglich. Bestehende Ortsangaben bleiben in gespeicherten Festen erhalten. Der Zonen-Reset steht unter der Karte. Kategorien werden aus einer festen Liste gewählt; vorhandene individuelle Kategorien bleiben beim Bearbeiten erhalten. Die Icon-Palette ist standardmäßig geöffnet.
+
+Die Helferkasse zeigt Artikelkacheln mit Symbol, Preis und Anzahl sowie ein bearbeitbares Gesamtfeld. Bei umfangreichen Karten scrollt die Artikelliste innerhalb ihres Bereichs. Nach dem Scan erscheint die Bestätigung direkt über der Kamerafläche; Abbrechen behält die Bestellung, Abbuchen setzt sie nach erfolgreicher Buchung zurück.

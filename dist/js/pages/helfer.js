@@ -16,24 +16,24 @@
   const preferenceKey = `festpay_hidden_${(await API.getUser()).id}_${festId}`;
   let hidden; try { hidden = JSON.parse(localStorage.getItem(preferenceKey) || '[]'); } catch { hidden = []; }
   if (!Array.isArray(hidden)) hidden = [];
-  let scanned = null, amount = '', scanner = null, cameraActive = false, cameraStarting = false, processing = false;
+  let scanned = null, amount = '', scanner = null, cameraActive = false, cameraStarting = false, processing = false, booking = false;
+  const quantities = new Map();
   root.innerHTML = `
-    <div class="page-head helper-head"><h1>Helfer · Scanner</h1><p>${UI.escape(fest.name)} – QR-Code vom Festguthaben des Gastes scannen.</p></div>
+    <div class="page-head helper-head"><h1>Kasse & Scanner</h1><p>${UI.escape(fest.name)}</p></div>
     <div class="page stack helper-workspace">
 
-      <div class="card stack helper-order"><h3>1. Bestellung zusammenstellen</h3>
-        <div class="grid-2 helper-products" id="products"></div>
-        <details><summary>Artikel ein- und ausblenden</summary><div id="visibility" class="stack"></div></details>
-        <label class="field"><span>Betrag in € (auch manuell möglich)</span><input class="input" id="orderAmount" type="number" min="0.01" max="9999.99" step="0.01" placeholder="0,00"></label>
-        <p id="orderSummary" role="status"></p><button class="btn btn-ghost" id="clearOrder">Bestellung zurücksetzen</button>
-      </div><h3>2. QR-Code scannen</h3>
-      <div class="scanner"><div id="reader"></div><div class="frame"></div></div>
+      <section class="helper-order" aria-label="Bestellung">
+        <div class="order-heading"><h3>Was wird bezahlt?</h3><details class="product-settings"><summary aria-label="Artikel ein- und ausblenden"><i data-lucide="sliders-horizontal"></i></summary><div id="visibility" class="stack"></div></details></div>
+        <div class="helper-products" id="products"></div>
+        <div class="order-total"><label for="orderAmount">Gesamt <span>auch manuell</span></label><div class="amount-entry"><input id="orderAmount" type="number" min="0.01" max="9999.99" step="0.01" placeholder="0,00" aria-label="Betrag in Euro"><span>€</span></div><button class="icon-btn light" id="clearOrder" aria-label="Bestellung zurücksetzen"><i data-lucide="rotate-ccw"></i></button></div>
+        <p id="orderSummary" role="status" class="small muted"></p>
+      </section>
+      <div class="scanner"><div id="reader"></div><div class="frame"></div><div id="result" hidden></div></div>
       <div class="grid-2">
         <button class="btn btn-dark btn-sm" id="cam" style="width:100%"><i data-lucide="camera"></i>Kamera starten</button>
         ${API.istDemo() ? '<button class="btn btn-ghost btn-sm" id="sim" style="width:100%"><i data-lucide="wand-sparkles"></i>Scan simulieren</button>' : ''}
       </div>
       <p class="small muted" id="cameraStatus" role="status">Zuerst Artikel wählen oder Betrag eingeben.</p>
-      <div id="result"></div>
     </div>`;
   UI.icons();
   window.TestLog?.event('activity', { activity: 'helper_scanner_opened' });
@@ -47,7 +47,7 @@
   }
   async function startCamera() {
     if (!(Number(amount) > 0)) return UI.toast('Zuerst Bestellung zusammenstellen', 'info');
-    if (cameraActive || cameraStarting) return;
+    if (cameraActive || cameraStarting || scanned) return;
     if (!window.Html5Qrcode) { status.textContent = 'Kamera konnte nicht geladen werden. Bitte erneut versuchen.'; return; }
     cameraStarting = true; cameraButton.disabled = true;
     status.textContent = 'Kamerazugriff erlauben, um einen Gast-Code zu scannen.';
@@ -80,6 +80,7 @@
       if (qrFestId !== festId) return UI.toast('QR-Code gehört zu einem anderen Fest', 'x-circle');
       if (!(await API.istHelferFuer(festId))) return UI.toast('Kein Helferzugang für dieses Fest', 'shield-alert');
       scanned = { userId, balance: await API.getGuthaben(festId, userId) };
+      document.getElementById('orderAmount').disabled = true;
       await stopCamera();
       status.textContent = 'Gast-Code erkannt. Bestellung prüfen und abbuchen.';
       document.getElementById('orderAmount').disabled = true; renderResult();
@@ -87,47 +88,64 @@
   }
   function renderResult() {
     const result = document.getElementById('result');
-    result.innerHTML = `<div class="card result stack">
-      <div class="row"><span class="badge-icon accent"><i data-lucide="wallet"></i></span><div style="flex:1"><div class="small muted">${UI.escape(fest.name)}</div><h3>Guthaben ${UI.euro(scanned.balance)}</h3></div></div>
-      <div class="center"><div class="small muted">Abbuchen</div><h1 id="amt">${UI.euro(Number(amount || 0) / 100)}</h1></div>
-      <button class="btn" id="book"><i data-lucide="check"></i>Abbuchen</button></div>`;
+    result.hidden = false;
+    result.innerHTML = `<div class="scan-confirm" role="dialog" aria-labelledby="confirmTitle">
+      <div class="confirm-label" id="confirmTitle"><i data-lucide="circle-check"></i>Code erkannt</div>
+      <strong class="confirm-amount">${UI.euro(Number(amount || 0) / 100)}</strong>
+      <p>Guthaben: ${UI.euro(scanned.balance)}</p>
+      <div class="confirm-actions"><button class="btn btn-ghost" id="cancelScan">Abbrechen</button><button class="btn" id="book">Abbuchen</button></div></div>`;
     UI.icons();
+    document.getElementById('book').focus({preventScroll:true});
+    document.getElementById('cancelScan').onclick = () => { if (booking) return; clearScan(); status.textContent = 'Bestellung bleibt erhalten. Nächsten Code scannen.'; };
     document.getElementById('book').onclick = async event => {
       const euro = Number(amount || 0) / 100;
       if (!euro) return UI.toast('Betrag eingeben', 'info');
+      if (booking) return;
+      booking = true;
       const button = event.currentTarget; button.disabled = true;
+      document.getElementById('cancelScan').disabled = true;
       try {
         const response = await API.abbuchen(festId, scanned.userId, euro);
         if (response.error) return UI.toast(response.error.message, 'alert-triangle');
         scanned.balance = await API.getGuthaben(festId, scanned.userId);
-        amount = ''; scanned = null; document.getElementById('result').innerHTML = ''; document.getElementById('orderAmount').disabled = false; updateOrder(); UI.toast(`${UI.euro(euro)} abgebucht`); status.textContent = 'Nächste Bestellung zusammenstellen.';
-      } finally { button.disabled = false; }
+        amount = ''; quantities.clear(); clearScan(); updateOrder(); UI.toast(`${UI.euro(euro)} abgebucht`); status.textContent = 'Nächste Bestellung zusammenstellen.';
+      } finally { booking = false; button.disabled = false; const cancel = document.getElementById('cancelScan'); if (cancel) cancel.disabled = false; }
     };
+  }
+  function clearScan() {
+    scanned = null; const result = document.getElementById('result'); result.hidden = true; result.innerHTML = '';
+    document.getElementById('orderAmount').disabled = false;
+    document.getElementById('cam').focus({preventScroll:true});
   }
   function updateOrder() {
     document.getElementById('orderAmount').value = amount ? (Number(amount) / 100).toFixed(2) : '';
-    document.getElementById('orderSummary').textContent = `Gesamt: ${UI.euro(Number(amount || 0) / 100)}`;
+    const count = [...quantities.values()].reduce((a,b) => a+b,0);
+    document.getElementById('orderSummary').textContent = count ? `${count} Artikel ausgewählt` : 'Artikel antippen oder Betrag eingeben';
+    drawProducts();
   }
   function drawProducts() {
-    document.getElementById('products').innerHTML = items.filter(i => !hidden.includes(i.id)).map(i => `<button class="btn btn-dark" data-product="${UI.escape(i.id)}">${UI.escape(i.name)} · ${UI.euro(i.preis)}</button>`).join('');
+    document.getElementById('products').innerHTML = items.filter(i => !hidden.includes(i.id)).map(i => `<button class="product-tile ${quantities.has(i.id) ? 'selected' : ''}" data-product="${UI.escape(i.id)}" aria-label="${UI.escape(i.name)} hinzufügen" aria-pressed="${quantities.has(i.id)}"><span class="product-icon"><i data-lucide="${UI.escape(i.icon || 'utensils')}"></i></span><span class="product-copy"><b>${UI.escape(i.name)}</b><span>${UI.euro(i.preis)}</span></span><span class="product-count">${quantities.get(i.id) || '+'}</span></button>`).join('') || '<p class="small muted">Keine Artikel sichtbar. Passe die Auswahl oben rechts an oder gib den Betrag ein.</p>';
     document.getElementById('visibility').innerHTML = items.map(i => `<label><input type="checkbox" data-visible="${UI.escape(i.id)}" ${hidden.includes(i.id) ? '' : 'checked'}> ${UI.escape(i.name)}</label>`).join('');
     root.querySelectorAll('[data-product]').forEach(b => b.onclick = () => {
       if (scanned) return;
       const item = items.find(i => i.id === b.dataset.product);
+      quantities.set(item.id, (quantities.get(item.id) || 0) + 1);
       amount = String(Number(amount || 0) + Math.round(Number(item.preis) * 100)); updateOrder();
     });
     root.querySelectorAll('[data-visible]').forEach(b => b.onchange = () => {
       hidden = hidden.filter(id => id !== b.dataset.visible); if (!b.checked) hidden.push(b.dataset.visible);
       localStorage.setItem(preferenceKey, JSON.stringify(hidden)); drawProducts();
     });
+    UI.icons();
   }
   document.getElementById('orderAmount').oninput = e => {
+    quantities.clear(); drawProducts();
     const value = Number(e.target.value); amount = Number.isFinite(value) && value > 0 ? String(Math.round(value * 100)) : '';
     document.getElementById('orderSummary').textContent = `Gesamt: ${UI.euro(Number(amount || 0) / 100)}`;
   };
   document.getElementById('clearOrder').onclick = async () => {
-    await stopCamera(); scanned = null; amount = ''; document.getElementById('result').innerHTML = '';
-    document.getElementById('orderAmount').disabled = false; updateOrder();
+    if (booking) return;
+    await stopCamera(); amount = ''; quantities.clear(); clearScan(); updateOrder();
   };
   drawProducts(); updateOrder();
 })();
