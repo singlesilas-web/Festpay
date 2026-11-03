@@ -46,7 +46,6 @@ window.UI = (function () {
         <a href="index.html"><i data-lucide="map"></i>Karte</a>
         ${rolle !== "helfer" ? `<a href="marken.html"><i data-lucide="ticket"></i>Meine Festmarken</a><a href="guthaben.html"><i data-lucide="qr-code"></i>Mein Guthaben / QR-Code</a>` : ""}
         <a href="profil.html"><i data-lucide="user-round"></i>Profil &amp; Rolle</a>
-        ${rolle === "betreiber" ? `<a href="betreiber.html"><i data-lucide="layout-dashboard"></i>Betreiber-Bereich</a>` : ""}
         ${eigene.map(f => `<a href="fest.html?id=${encodeURIComponent(f.id)}">${escape(f.name)}</a>`).join("")}
         <a href="login.html"><i data-lucide="log-in"></i>Anmelden</a>
       </div>`;
