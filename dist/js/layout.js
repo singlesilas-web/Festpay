@@ -18,6 +18,8 @@ window.UI = (function () {
 
   async function menu() {
     const rolle = await API.getRolle();
+    const eigene = [];
+    for (const f of await API.getFeste()) if (await API.istBetreiberFuer(f.id)) eigene.push(f);
     const bg = document.createElement("div"); bg.className = "drawer-bg";
     const d = document.createElement("nav"); d.className = "drawer";
     d.innerHTML = `
@@ -31,6 +33,7 @@ window.UI = (function () {
         <a href="marken.html"><i data-lucide="ticket"></i>Meine Festmarken</a>
         <a href="profil.html"><i data-lucide="user-round"></i>Profil &amp; Rolle</a>
         ${rolle === "betreiber" ? `<a href="betreiber.html"><i data-lucide="layout-dashboard"></i>Betreiber-Bereich</a>` : ""}
+        ${eigene.map(f => `<a href="fest.html?id=${encodeURIComponent(f.id)}">${escape(f.name)}</a>`).join("")}
         <a href="login.html"><i data-lucide="log-in"></i>Anmelden</a>
       </div>`;
     document.body.append(bg, d);

@@ -14,6 +14,8 @@
   root.innerHTML = `
     <div class="page-head"><h1>${fest.name}</h1><p>${fest.ort || ""} – Wie möchtest du bezahlen?</p></div>
     <div class="page stack">
+      ${await API.istBetreiberFuer(fest.id) ? `<a class="btn btn-dark" href="betreiber.html?id=${encodeURIComponent(fest.id)}">Bearbeiten</a>` : ""}
+      ${saldo > 0 ? `<a class="btn" href="guthaben.html?id=${encodeURIComponent(fest.id)}">Meinen QR-Code zeigen</a>` : ""}
 
       <a class="weg-card dark ${fest.w1_aktiv ? "" : "off"}" href="guthaben.html?id=${fest.id}">
         <div class="tag">W1</div><h2>Festguthaben</h2>

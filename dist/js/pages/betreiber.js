@@ -12,10 +12,13 @@
     return UI.icons();
   }
   const ICONS = ["cup-soda", "beer", "wine", "coffee", "sandwich", "pizza", "ice-cream-cone", "utensils"];
-  const f = { name: "", ort: "", zone: [], w1_aktiv: true, w2_aktiv: true, aufladeoptionen: [10, 20, 30], speisekarte: [], helfer: [] };
+  const editId = UI.param("id");
+  if (editId && !(await API.istBetreiberFuer(editId))) { root.textContent = "Kein Betreiberzugang zu diesem Fest."; return; }
+  const f = editId ? structuredClone(await API.getFest(editId)) : { name: "", ort: "", zone: [], w1_aktiv: true, w2_aktiv: true, aufladeoptionen: [10, 20, 30], speisekarte: [], helfer: [] };
 
+  f.helfer ??= []; f.speisekarte ??= [];
   root.innerHTML = `
-    <div class="page-head"><h1>Fest anlegen</h1><p>Steck deinen Bereich digital ab und leg fest, wie Gäste zahlen.</p></div>
+    <div class="page-head"><h1>${editId ? "Fest bearbeiten" : "Fest anlegen"}</h1><p>Steck deinen Bereich digital ab und leg fest, wie Gäste zahlen.</p></div>
     <div class="page stack">
       <div class="segment"><button class="active" data-tab="fest">Fest</button><button data-tab="helfer">Helfer</button></div>
 
@@ -33,10 +36,12 @@
       <label class="field"><span>Name des Fests</span><input class="input" id="name" placeholder="Name eingeben"></label>
       <label class="field"><span>Ort</span><input class="input" id="ort" placeholder="Ort eingeben"></label>
 
+      <label class="field"><span>Anfang</span><input class="input" id="start" type="datetime-local"></label>
+      <label class="field"><span>Ende</span><input class="input" id="ende" type="datetime-local"></label>
       <h3 style="margin-top:12px">Fest-Zone</h3>
       <p class="small muted">Tippe Eckpunkte auf die Karte (mind. 3).</p>
-      <div class="mini-map" id="mm"></div>
       <button class="btn btn-ghost btn-sm" id="resetZone"><i data-lucide="rotate-ccw"></i>Zone zurücksetzen</button>
+      <div class="mini-map" id="mm" tabindex="-1"></div>
 
       <h3 style="margin-top:12px">Bezahlwege</h3>
       <div class="card">
@@ -49,18 +54,19 @@
         <div class="row" style="margin-top:10px"><input class="input" id="newTop" type="number" min="1" placeholder="Betrag in €"><button class="icon-btn" id="addTop" aria-label="Hinzufügen"><i data-lucide="plus"></i></button></div>
       </div>
 
-      <div id="w2box"><h3 style="margin-top:12px">Speisekarte (W2)</h3>
+      <div id="w2box"><h3 style="margin-top:12px">Speise- und Getränkekarte</h3>
         <div class="list" id="menu"></div>
         <div class="card stack" style="margin-top:10px">
           <input class="input" id="iName" placeholder="Artikel">
           <div class="grid-2"><input class="input" id="iPreis" type="number" step="0.5" placeholder="Preis €"><input class="input" id="iKat" placeholder="Kategorie"></div>
-          <select class="input" id="iIcon">${ICONS.map((i) => `<option>${i}</option>`).join("")}</select>
+          <select class="input" id="iIcon"><option value="" disabled selected>Icon</option>${ICONS.map((i) => `<option>${i}</option>`).join("")}</select>
           <button class="btn btn-dark btn-sm" id="addItem" style="width:100%"><i data-lucide="plus"></i>Artikel hinzufügen</button>
         </div>
       </div>
       </div>
     </div>
-    <div class="cta-bar"><button class="btn" id="save"><i data-lucide="save"></i>Fest veröffentlichen</button></div>`;
+    <div class="page"><button class="btn" id="save"><i data-lucide="save"></i>${editId ? "Änderungen speichern" : "Fest veröffentlichen"}</button></div>`;
+  ["name", "ort", "start", "ende"].forEach(id => { document.getElementById(id).value = f[id] || ""; });
   UI.icons();
 
   // ---------- Zone zeichnen ----------
@@ -83,8 +89,10 @@
   // ---------- W1/W2 ----------
   const w1 = document.getElementById("w1"), w2 = document.getElementById("w2");
   const sync = () => { f.w1_aktiv = w1.checked; f.w2_aktiv = w2.checked;
-    document.getElementById("w1box").classList.toggle("hidden", !w1.checked); document.getElementById("w2box").classList.toggle("hidden", !w2.checked); };
-  w1.onchange = w2.onchange = sync;
+    document.getElementById("w1box").classList.toggle("hidden", !w1.checked); document.getElementById("w2box").classList.toggle("hidden", !w1.checked && !w2.checked); };
+  w1.checked = f.w1_aktiv; w2.checked = f.w2_aktiv;
+  w1.disabled = w2.disabled = !!editId;
+  w1.onchange = w2.onchange = sync; sync();
 
   function drawTops() {
     document.getElementById("tops").innerHTML = f.aufladeoptionen.sort((a, b) => a - b)
@@ -98,20 +106,30 @@
     document.getElementById("newTop").value = ""; drawTops();
   };
 
+  let editingItem = null;
   function drawMenu() {
     document.getElementById("menu").innerHTML = f.speisekarte.map((i, n) => `
       <div class="list-item"><span class="badge-icon soft"><i data-lucide="${i.icon}"></i></span>
-        <span style="flex:1"><div class="title">${i.name}</div><div class="sub">${i.kategorie} · ${UI.euro(i.preis)}</div></span>
-        <button data-ri="${n}" aria-label="Entfernen"><i data-lucide="trash-2"></i></button></div>`).join("")
+        <span style="flex:1"><div class="title">${UI.escape(i.name)}</div><div class="sub">${UI.escape(i.kategorie)} · ${UI.euro(i.preis)}</div></span>
+        <button data-ei="${n}" aria-label="Artikel bearbeiten">Bearbeiten</button><button data-ri="${n}" aria-label="Entfernen"><i data-lucide="trash-2"></i></button></div>`).join("")
       || `<div class="list-item muted">Noch keine Artikel</div>`;
     UI.icons();
+    document.querySelectorAll("[data-ei]").forEach(b => b.onclick = () => {
+      const i = f.speisekarte[+b.dataset.ei]; editingItem = i.id;
+      document.getElementById("iName").value = i.name; document.getElementById("iPreis").value = i.preis;
+      document.getElementById("iKat").value = i.kategorie; document.getElementById("iIcon").value = i.icon;
+      drawMenu(); document.getElementById("iName").focus();
+    });
     document.querySelectorAll("[data-ri]").forEach((b) => (b.onclick = () => { f.speisekarte.splice(+b.dataset.ri, 1); drawMenu(); }));
   }
   document.getElementById("addItem").onclick = () => {
     const name = document.getElementById("iName").value.trim(), preis = Number(document.getElementById("iPreis").value);
     if (!name || !(preis > 0)) return UI.toast("Name und Preis angeben", "info");
-    f.speisekarte.push({ id: Math.random().toString(36).slice(2), name, preis, kategorie: document.getElementById("iKat").value.trim() || "Sonstiges", icon: document.getElementById("iIcon").value });
-    ["iName", "iPreis", "iKat"].forEach((id) => (document.getElementById(id).value = "")); drawMenu();
+    const item = { id: editingItem || Math.random().toString(36).slice(2), name, preis, kategorie: document.getElementById("iKat").value.trim() || "Sonstiges", icon: document.getElementById("iIcon").value || "utensils" };
+    if (editingItem) f.speisekarte[f.speisekarte.findIndex(i => i.id === editingItem)] = item;
+    else f.speisekarte.push(item);
+    editingItem = null;
+    ["iName", "iPreis", "iKat", "iIcon"].forEach((id) => (document.getElementById(id).value = "")); drawMenu();
   };
 
   // ---------- Tabs ----------
@@ -141,11 +159,25 @@
 
   document.getElementById("save").onclick = async () => {
     f.name = document.getElementById("name").value.trim(); f.ort = document.getElementById("ort").value.trim();
-    if (!f.name) return UI.toast("Name fehlt", "info");
-    if (f.zone.length < 3) return UI.toast("Zone braucht mind. 3 Punkte", "info");
+    function invalid(id, message) {
+      document.querySelector('[data-tab="fest"]').click();
+      const el = document.getElementById(id); el.setAttribute("aria-invalid", "true");
+      el.scrollIntoView({ behavior: "smooth", block: "center" }); el.focus({preventScroll:true}); UI.toast(message, "info");
+    }
+    root.querySelectorAll('[aria-invalid]').forEach(el => el.removeAttribute('aria-invalid'));
+    f.start = document.getElementById("start").value; f.ende = document.getElementById("ende").value;
+    if (editingItem || document.getElementById("iName").value.trim()) return invalid("iName", "Artikel zuerst mit Artikel hinzufügen übernehmen");
+    if (!f.name) return invalid("name", "Name fehlt");
+    if (!f.ort) return invalid("ort", "Ort fehlt");
+    if (!f.start) return invalid("start", "Anfang fehlt");
+    if (!f.ende || Date.parse(f.ende) <= Date.parse(f.start)) return invalid("ende", "Ende muss nach dem Anfang liegen");
+    if (f.zone.length < 3) return invalid("mm", "Zone braucht mind. 3 Punkte");
+    if (!f.w1_aktiv && !f.w2_aktiv) return invalid("w1", "Mindestens einen Bezahlweg wählen");
+    if (f.w1_aktiv && !f.aufladeoptionen.length) return invalid("newTop", "Aufladebetrag hinzufügen");
+    if ((f.w1_aktiv || f.w2_aktiv) && !f.speisekarte.length) return invalid("iName", "Artikel zur Speisekarte hinzufügen");
     const res = await API.festSpeichern(f);
     if (res.error) return UI.toast(res.error.message, "alert-triangle");
-    UI.toast("Fest veröffentlicht"); setTimeout(() => (location.href = "index.html"), 700);
+    UI.toast(editId ? "Fest gespeichert" : "Fest veröffentlicht"); setTimeout(() => (location.href = "index.html"), 700);
   };
 
   drawMap(); drawTops(); drawMenu(); drawHelfer();

@@ -28,6 +28,12 @@
         : `<div class="empty"><i data-lucide="coins"></i><p>Der Betreiber hat noch keine Aufladebeträge hinterlegt.</p></div>`}
     </div>
     <div class="cta-bar"><button class="btn" id="go" disabled><i data-lucide="plus-circle"></i>Betrag wählen</button></div>`;
+  if (sessionStorage.getItem("topupSuccess") === fest.id) {
+    sessionStorage.removeItem("topupSuccess");
+    const dialog = document.createElement("dialog");
+    dialog.innerHTML = `<h2>Dein neues Guthaben beträgt</h2><p style="font-size:36px;font-weight:800;margin:20px 0">${UI.euro(saldo)}</p><p style="font-size:24px;line-height:1.5">Zeige deinen QR-Code am Stand. Der Helfer scannt und bucht ab.</p><button class="btn" style="margin-top:24px">QR-Code zeigen</button>`;
+    document.body.appendChild(dialog); dialog.querySelector("button").onclick = () => {dialog.close();dialog.remove();}; dialog.showModal();
+  }
   UI.icons();
 
   new QRCode(document.getElementById("qr"), { text: `FESTPAY|${fest.id}|${user?.id}`, width: 210, height: 210 });

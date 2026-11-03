@@ -50,11 +50,11 @@ Nur `dist/` als Webverzeichnis veröffentlichen. Niemals Service-Role-Schlüssel
 
 ## Helfer pro Fest (Klickdummy)
 
-Im **Profil** schaltet die Rolle **Helfer** den Helferzugang für **Demo-Fest A** frei – ohne zusätzliche E-Mail-Eingabe. Die Rollenwahl startet keine Kamera und öffnet keinen Scanner. Erst auf der Fest-Seite erscheint neben den beiden Bezahlwegen die dritte Karte **Helfer / Scanner öffnen**. Demo-Fest B erhält dadurch keinen Helferzugang.
+Im **Profil** schaltet die Rolle **Helfer** den Helferzugang für **Demo-Fest A** frei – ohne zusätzliche E-Mail-Eingabe. Die Rollenwahl startet keine Kamera und öffnet keinen Scanner. Betreiber eigener Feste erhalten ebenfalls Helferzugang. Erst auf der Fest-Seite erscheint neben den beiden Bezahlwegen die dritte Karte **Helfer / Scanner öffnen**. Demo-Fest B erhält dadurch keinen Helferzugang.
 
 Betreiber können beim Anlegen eigener Feste im Tab **Helfer** Namen und E-Mail-Adressen eintragen. Für diese eigenen Feste wird die Demo-E-Mail im Profil mit der jeweiligen Helferliste abgeglichen. Dies ist eine lokale Simulation, keine Registrierung echter Helfer-Accounts.
 
-Der Scanner öffnet sich erst über die Helfer-Karte und startet dann die Kamera. Er akzeptiert ausschließlich Guthabencodes dieses Fests. Ohne Fest-Auswahl oder ohne Zuordnung kann nicht gescannt oder abgebucht werden. **Als Gast zum Fest** führt zur normalen Fest-Auswahl zurück, ohne die Helferzuordnung zu entfernen. Ein Wechsel zur Demo-Rolle Gast entfernt den automatischen Helferzugang für Fest A. Eigene Feste unterstützen Helferlisten nur bei aktivem W1.
+Der Scanner öffnet sich erst über die Helfer-Karte ; die Kamera startet erst nach Auswahl von Artikeln oder Eingabe eines Betrags und einem Klick auf „Kamera starten“. Er akzeptiert ausschließlich Guthabencodes dieses Fests. Ohne Fest-Auswahl oder ohne Zuordnung kann nicht gescannt oder abgebucht werden. **Als Gast zum Fest** führt zur normalen Fest-Auswahl zurück, ohne die Helferzuordnung zu entfernen. Ein Wechsel zur Demo-Rolle Gast entfernt den automatischen Helferzugang für Fest A. Eigene Feste unterstützen Helferlisten nur bei aktivem W1.
 
 Für echte gemeinsame Helfer-Accounts und geräteübergreifende Zuordnungen wäre ein eigener, serverseitig geschützter Geschäftsbereich erforderlich. Die bestehende Supabase-Anbindung dient weiterhin ausschließlich der Testanalyse.
 
@@ -100,3 +100,11 @@ node --test tests/*.test.cjs
 ```
 
 Vor Freigabe neuer Versionen zusätzlich beide Bezahlwege im Browser prüfen. Bei Änderungen an der Datenbank RLS und Advisors kontrollieren. Die bereits geprüfte Anbindung speichert Ereignisse, verhindert Duplikate, weist falsche Sitzungstoken ab und sperrt den direkten Gast-Lesezugriff.
+
+## Festverwaltung und Helferbestellungen
+
+Eigene Feste haben Anfang und Ende (lokale Uhrzeit des Browsers). Die Karte und Suche zeigen sie ab Anfang bis vor Ende. Im Menü bleiben eigene Feste auch vorher und nachher erreichbar. Auf der Festseite öffnet **Bearbeiten** die vorausgefüllte Verwaltung; Bezahlwege W1/W2 bleiben unveränderlich. Bestehende eigene Feste ohne Eigentümerkennung werden dem bisherigen lokalen Browserkonto zugeordnet. Demo-Feste ohne Laufzeit bleiben sichtbar.
+
+Die Speise- und Getränkekarte gilt auch für W1. Helfer tippen Artikel mehrfach an; die App summiert die Preise. Alternativ ist eine manuelle Betragseingabe möglich. Erst danach wird gescannt und die Abbuchung bestätigt. Nach erfolgreicher Abbuchung beginnt eine neue Bestellung. Artikel lassen sich über **Artikel ein- und ausblenden** pro lokalem Nutzer und Fest dauerhaft konfigurieren.
+
+Nach dem Aufladen erscheint der neue Saldo in einem großen Dialog mit dem Hinweis zum Vorzeigen des QR-Codes. Bei vorhandenem Guthaben führt die Karte innerhalb der Festzone direkt zum eigenen QR-Code. Alle diese Funktionen bleiben lokale Simulationen; es gibt keine Synchronisierung zwischen Geräten oder echte Zahlungen.

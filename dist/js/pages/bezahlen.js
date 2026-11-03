@@ -50,6 +50,7 @@
     await new Promise((r) => setTimeout(r, 1200));
     const res = c.typ === "w1" ? await API.aufladen(c.festId, c.betrag, wahl) : await API.markenKaufen(c.festId, c.positionen, wahl);
     if (res?.error) { btn.disabled = false; btn.textContent = "Erneut versuchen"; return UI.toast(res.error.message, "alert-triangle"); }
+    if (c.typ === "w1") sessionStorage.setItem("topupSuccess", c.festId);
     sessionStorage.removeItem("checkout");
     UI.toast("Zahlung erfolgreich");
     setTimeout(() => (location.href = c.zurueck), 700);

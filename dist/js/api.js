@@ -92,10 +92,24 @@ window.API = (function () {
         await sb.from("fest_helfer").insert(fest.helfer.map((h) => ({ fest_id: data.id, name: h.name, email: h.email })));
       return { data };
     }
-    const s = state(); fest.id = "eigen-" + uid(); s.eigeneFeste.push(fest); save(s);
+    const s = state();
+    if (fest.id) {
+      const index = s.eigeneFeste.findIndex(f => f.id === fest.id);
+      if (index < 0 || !(await istBetreiberFuer(fest.id))) return { error: { message: "Kein Betreiberzugang" } };
+      const old = s.eigeneFeste[index];
+      s.eigeneFeste[index] = { ...fest, owner_id: old.owner_id || s.userId, w1_aktiv: old.w1_aktiv, w2_aktiv: old.w2_aktiv };
+    } else { fest.id = "eigen-" + uid(); fest.owner_id = s.userId; s.eigeneFeste.push(fest); }
+    save(s);
     return { data: fest };
   }
 
+  async function istBetreiberFuer(id) {
+    const f = await getFest(id), u = await getUser();
+    return (await getRolle()) === "betreiber" && !!f && (f.owner_id === u?.id || (!window.sb && !f.owner_id && state().eigeneFeste.some(x => x.id === id)));
+  }
+  function istFestAktiv(f, now = Date.now()) {
+    return (!f.start || Date.parse(f.start) <= now) && (!f.ende || now < Date.parse(f.ende));
+  }
   // ---------- Helfer-Zuordnung pro Fest ----------
   // Ein Konto ist Helfer eines Fests, wenn seine E-Mail in der Helferliste des Fests steht.
   // Klickdummy: E-Mail wird im Profil als Demo-E-Mail hinterlegt.
@@ -108,6 +122,7 @@ window.API = (function () {
     if (!festId) return false;
     const fest = await getFest(festId);
     if (!fest?.w1_aktiv) return false;
+    if (await istBetreiberFuer(festId)) return true;
     // Demo role grants membership in Fest A only; no mail entry is needed.
     if (!window.sb && festId === "demo-weinfest") return (await getRolle()) === "helfer";
     const mail = (await getEmail())?.trim().toLowerCase();
@@ -172,7 +187,7 @@ window.API = (function () {
 
   return {
     getUser, getRolle, setDemoRolle, login, registrieren, logout,
-    getFeste, getFest, getAufladeoptionen, getSpeisekarte, festSpeichern,
+    istBetreiberFuer, istFestAktiv, getFeste, getFest, getAufladeoptionen, getSpeisekarte, festSpeichern,
     getEmail, setDemoEmail, istHelferFuer,
     getGuthaben, aufladen, abbuchen, markenKaufen, getMarken, markeEntwerten,
     istDemo: () => !window.sb,
