@@ -199,3 +199,13 @@ dialog::backdrop { background:#0009; }
 #w2box > h3 { margin-bottom:16px; }
 #w2box > .card { margin-top:16px !important; }
 .festival-dates .input:focus-visible { outline:2px solid var(--ink); outline-offset:-2px; }
+/* Match both payment setup headings, including mobile text autosizing. */
+#w1box > h3, #w2box > h3 {
+  font-family:var(--font-head);
+  font-size:17px;
+  font-weight:700;
+  line-height:1.35;
+  letter-spacing:-0.02em;
+  -webkit-text-size-adjust:none;
+  text-size-adjust:none;
+}
