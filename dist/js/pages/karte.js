@@ -126,7 +126,7 @@
       const w = [aktuell.w1_aktiv && "Festguthaben", aktuell.w2_aktiv && "Festmarken"].filter(Boolean).join(" · ");
       sheet.innerHTML = `<div class="grip"></div><h2>Fest gefunden</h2><p class="sub">Du bist in der Zone von</p>
         <a class="fest-card" href="${helperRole ? `helfer.html?fest=${encodeURIComponent(aktuell.id)}` : `${balances.get(aktuell.id) > 0 ? "guthaben" : "fest"}.html?id=${encodeURIComponent(aktuell.id)}`}">
-          <span class="badge-icon accent"><i data-lucide="tent"></i></span>
+          <span class="badge-icon accent"><i data-lucide="${UI.festIcon(aktuell.id)}"></i></span>
           <span style="flex:1"><div class="t">${helperRole ? "Scanner öffnen" : balances.get(aktuell.id) > 0 ? "Meinen QR-Code zeigen" : UI.escape(aktuell.name)}</div><div class="s">${aktuell.ort || ""} · ${w}</div></span>
           <i data-lucide="chevron-right"></i></a>`;
     }
@@ -137,7 +137,7 @@
   const panel = document.getElementById("searchPanel");
   function openSearch() {
     document.getElementById("festList").innerHTML = feste.length
-      ? feste.map((f) => `<button class="list-item" data-id="${f.id}"><span class="badge-icon soft"><i data-lucide="tent"></i></span>
+      ? feste.map((f) => `<button class="list-item" data-id="${f.id}"><span class="badge-icon soft"><i data-lucide="${UI.festIcon(f.id)}"></i></span>
           <span style="flex:1"><div class="title">${f.name}</div><div class="sub">${f.ort || ""}</div></span><i data-lucide="map-pin"></i></button>`).join("")
       : `<div class="empty"><i data-lucide="calendar-x-2"></i><h3>Keine Feste</h3><p>Es sind noch keine Feste angelegt.</p></div>`;
     panel.classList.add("open"); UI.icons();

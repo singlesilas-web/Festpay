@@ -8,6 +8,14 @@ window.UI = (function () {
   const param = (k) => new URLSearchParams(location.search).get(k);
   const icons = () => window.lucide && lucide.createIcons();
 
+  function festIcon(id) {
+    const choices = ["party-popper", "music", "ferris-wheel", "balloon", "flag", "pennant", "sparkles", "calendar-days", "drum", "ticket"];
+    // Festival IDs are random; hashing assigns a stable, varied icon across devices.
+    let hash = 2166136261;
+    for (const char of String(id || "")) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619) >>> 0;
+    return choices[hash % choices.length];
+  }
+
   function toast(text, icon = "check-circle-2") {
     let t = document.querySelector(".toast");
     if (!t) { t = document.createElement("div"); t.className = "toast"; document.body.appendChild(t); }
@@ -56,5 +64,5 @@ window.UI = (function () {
   }
 
   document.addEventListener("DOMContentLoaded", () => { menu(); demoFlag(); icons(); });
-  return { gastZugang, escape, euro, param, icons, toast };
+  return { festIcon, gastZugang, escape, euro, param, icons, toast };
 })();

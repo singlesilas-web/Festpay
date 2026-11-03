@@ -24,7 +24,7 @@
     <div class="page stack">
       <div class="info"><i data-lucide="info"></i><span>${c.typ === "w1" ? "Das Guthaben gilt nur auf diesem Fest." : "Deine Marken findest du danach unter „Meine Festmarken“."}</span></div>
       <div class="list">
-        <div class="list-item"><span class="badge-icon accent"><i data-lucide="tent"></i></span>
+        <div class="list-item"><span class="badge-icon accent"><i data-lucide="${UI.festIcon(c.festId)}"></i></span>
           <span style="flex:1"><div class="title">${fest?.name || ""}</div><div class="sub">${c.typ === "w1" ? "W1 · Festguthaben aufladen" : "W2 · " + c.positionen.reduce((a, p) => a + p.menge, 0) + " Festmarken"}</div></span></div>
       </div>
       <h3 style="margin-top:20px">Zahlungsweise</h3>

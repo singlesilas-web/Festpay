@@ -180,7 +180,7 @@ dialog::backdrop { background:#0009; }
  .scan-confirm { gap:5px; padding:10px; }
 }
 
-.festival-dates { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; }
+.festival-dates { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px; }
 .festival-dates .field { min-width:0; }
 .festival-dates .input { min-width:0; max-width:100%; padding:0 6px; font-size:12px; }
 #resetZone { width:100%; height:48px; }
@@ -191,3 +191,11 @@ dialog::backdrop { background:#0009; }
 .topup-balance { margin-top:4px; font-size:32px; font-weight:800; line-height:1.2; }
 #topupHint { margin-top:18px; font-size:15px; line-height:1.6; color:var(--ink-2); }
 .topup-dialog .btn { margin-top:24px; height:48px; }
+
+.festival-dates .field { overflow:hidden; }
+.festival-dates .input { display:block; inline-size:100%; min-inline-size:0; }
+.festival-dates .input::-webkit-date-and-time-value { min-width:0; text-align:left; }
+.festival-dates .input::-webkit-datetime-edit { padding:0; }
+#w2box > h3 { margin-bottom:16px; }
+#w2box > .card { margin-top:16px !important; }
+.festival-dates .input:focus-visible { outline:2px solid var(--ink); outline-offset:-2px; }
