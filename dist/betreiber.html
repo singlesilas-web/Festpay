@@ -14,8 +14,51 @@
   <link rel="stylesheet" href="css/test.css" />
   <link rel="stylesheet" href="css/components.css" />
   <link rel="stylesheet" href="css/seiten.css" />
+  <style>
+    /* Give the operator form room at normal size and when zooming out. */
+    .operator-page .app { max-width: 720px; display: flex; flex-direction: column; }
+    .operator-page #root { flex: 1; display: flex; flex-direction: column; }
+    .operator-page .topbar,
+    .operator-page .page-head { padding-inline: clamp(20px, 4vw, 40px); }
+    .operator-page .page-head { padding-top: 28px; padding-bottom: 12px; }
+    .operator-page .festival-form {
+      flex: 1; display: flex; flex-direction: column;
+      gap: clamp(24px, 2.5vh, 48px);
+      padding: 24px clamp(20px, 4vw, 40px) 40px;
+    }
+    .operator-page .festival-form > * + * { margin-top: 0; }
+    .operator-page #tabFest {
+      flex: 1; display: flex; flex-direction: column;
+      justify-content: space-between; gap: clamp(16px, 1.5vh, 32px);
+    }
+    .operator-page #tabFest > * { flex-shrink: 0; }
+    .operator-page #tabFest > * + * { margin-top: 0; }
+    .operator-page #tabFest > h3,
+    .operator-page #w1box > h3,
+    .operator-page #w2box > h3 { margin-top: 16px !important; margin-bottom: 8px; }
+    .operator-page #tabFest .mini-map { width: 100%; }
+    .operator-page .festival-form .card { padding: clamp(20px, 3vw, 28px); }
+    .operator-page .festival-form .card.stack > * + * { margin-top: 16px; }
+    .operator-page .festival-form .input { min-width: 0; }
+    .operator-page .festival-form .row .icon-btn { flex-shrink: 0; }
+    .operator-page .festival-form .grid-2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+    .operator-page .festival-dates { gap: 20px; }
+    .operator-page .festival-form > #save { margin-top: 8px; min-height: 56px; }
+    @media (min-width: 540px) {
+      .operator-page .festival-dates .input { font-size: 15px; padding-inline: 12px; }
+      .operator-page .festival-form .switch { padding-block: 20px; }
+    }
+    @media (min-width: 700px) {
+      .operator-page { padding-inline: 24px; }
+    }
+    @media (max-width: 359px) {
+      .operator-page .festival-dates,
+      .operator-page .festival-form .grid-2 { grid-template-columns: minmax(0, 1fr); }
+      .operator-page .festival-dates .input { font-size: 14px; padding-inline: 12px; }
+    }
+  </style>
 </head>
-<body>
+<body class="operator-page">
   <div class="app">
     <div class="topbar">
       <button class="icon-btn light" onclick="history.length > 1 ? history.back() : (location.href='index.html')" aria-label="Zurück"><i data-lucide="arrow-left"></i></button>
