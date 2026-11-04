@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow">
+<title>Dein Feedback · Festpay</title>
+<link rel="stylesheet" href="survey.css">
+<script src="survey.js" defer></script>
+</head>
+<body>
+<header><span class="brand">festpay<span class="dot">.</span></span><span class="badge">FEEDBACK ZUM APP-TEST</span></header>
+<main>
+<div class="intro"><span class="eyebrow">DEINE MEINUNG ZÄHLT</span><h1>Wie war dein<br>Festpay-Test?</h1><p>Danke fürs Ausprobieren! Hilf uns, Festpay besser zu machen. Es gibt keine richtigen oder falschen Antworten.</p><div class="facts"><span>◷ Etwa 2 Minuten</span><span>Ohne Anmeldung</span></div></div>
+<div id="survey-shell">
+<div class="progress-label"><span id="step-label">1 von 3 · Dein Test</span><span id="progress-text">Los geht’s</span></div><progress id="progress" value="1" max="3" aria-label="Fortschritt"></progress>
+<form id="survey" novalidate>
+<section data-step="0" aria-labelledby="heading-0"><h2 id="heading-0" tabindex="-1">Kurz zu deinem Hintergrund</h2><p class="hint">Bitte wähle jeweils eine Antwort.</p>
+<div id="context-questions"></div></section>
+<section data-step="1" aria-labelledby="heading-1" hidden><h2 id="heading-1" tabindex="-1">Dein Eindruck von Festpay</h2><p class="hint">Wie sehr stimmst du den Aussagen zu?</p><p class="scale-key">1 = stimme gar nicht zu · 2 = stimme eher nicht zu<br>3 = neutral · 4 = stimme eher zu · 5 = stimme voll zu</p><div id="experience-questions"></div></section>
+<section data-step="2" aria-labelledby="heading-2" hidden><h2 id="heading-2" tabindex="-1">Zum Schluss: dein Fazit</h2><div id="value-questions"><p class="hint">Antworte aus deiner Rolle im echten Leben.</p><p class="scale-key">1 = stimme gar nicht zu · 2 = stimme eher nicht zu<br>3 = neutral · 4 = stimme eher zu · 5 = stimme voll zu</p><div id="value-ratings"></div></div>
+<label class="feedback-label" for="feedback">Was sollten wir als Erstes verbessern? <span class="optional">Optional</span></label><p class="hint" id="feedback-hint">Ein kurzer Satz genügt. Bitte keine Namen oder persönlichen Daten eintragen.</p><textarea id="feedback" name="feedback" maxlength="500" rows="3" aria-describedby="feedback-hint" placeholder="Mir hat gefehlt, dass …"></textarea>
+<details><summary>Was passiert mit deinen Antworten?</summary><p>Deine Antworten werden zur Auswertung und Verbesserung des Festpay-Studienprojekts in Supabase (Region Frankfurt) gespeichert. Wir fragen weder Namen noch E-Mail-Adresse ab und verknüpfen diese Umfrage nicht mit App-Konten oder Testprotokollen. Die Umfrage zeichnet keine Klicks auf. Zugriff auf die Antworten hat das Projektteam über Supabase; andere Teilnehmende können sie nicht lesen. Die Löschung erfolgt manuell durch das Projektteam. Hosting-Anbieter können technische Zugriffsprotokolle führen. Die Teilnahme ist freiwillig.</p></details>
+<label class="consent"><input type="checkbox" id="consent" name="consent" required><span>Ich möchte freiwillig teilnehmen und bin mit der beschriebenen Speicherung und Auswertung meiner Antworten einverstanden.</span></label>
+</section>
+<p id="error" role="alert" hidden></p>
+<div class="actions"><button type="button" id="back" class="secondary" hidden>Zurück</button><button type="button" id="next" class="primary">Weiter <span aria-hidden="true">→</span></button><button type="submit" id="submit" class="primary" hidden>Feedback absenden</button></div>
+<p class="footnote">Alle Fragen außer dem Freitext sind erforderlich. Bei Skalen kannst du „Nicht beurteilbar“ wählen.</p>
+</form></div>
+<section id="success" hidden aria-live="polite"><div class="success-icon" aria-hidden="true">✓</div><h2 tabindex="-1">Danke für dein Feedback!</h2><p>Deine Antworten wurden gespeichert und helfen uns, Festpay zu verbessern.</p><p class="hint">Du kannst dieses Fenster jetzt schließen.</p></section>
+<noscript>Bitte aktiviere JavaScript, um den Fragebogen auszufüllen.</noscript>
+</main><footer>Festpay · Studierendenprojekt · Eigenständige Testumfrage</footer>
+</body></html>
