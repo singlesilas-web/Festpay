@@ -7,13 +7,13 @@
   const sections = [...document.querySelectorAll('[data-step]')];
   const back = document.getElementById('back'), next = document.getElementById('next'), submit = document.getElementById('submit');
   const error = document.getElementById('error');
-  const labels = ['Dein Test', 'Bedienung & Gestaltung', 'Dein Fazit'];
+  const labels = ['Dein Test', 'Deine Aufgaben', 'Bedienung & Gestaltung', 'Dein Fazit'];
   let step = 0, sending = false, sent = false, pendingPayload = null;
   const id = crypto.randomUUID(); // One independent submission ID, retained for retries only.
   const context = [
     ['real_role','Welche Rolle passt im echten Leben am ehesten zu dir?', [['guest','Gast auf Festen'],['helper','Helfer/in am Verkaufsstand'],['organizer','Veranstalter/in oder Vereinsorganisation'],['none','Keine dieser Rollen']]],
-    ['prior_problem','Hast du auf Festen schon Schwierigkeiten mit Bargeld oder Papiermarken erlebt?', [['yes','Ja'],['partly','Teilweise'],['no','Nein'],['no_experience','Bisher keine Erfahrung damit']]],
-    ['task_success','Wie viele deiner Testaufgaben konntest du ohne Hilfe abschließen?', [['all','Alle'],['mostly','Die meisten'],['partly','Einige'],['none','Keine'],['free','Ich habe die App frei erkundet']]]
+    ['payment_practicality','Wie praktisch findest du das Bezahlen mit Bargeld oder Wertmarken auf Festen?', [['1','Sehr unpraktisch'],['2','Eher unpraktisch'],['3','Weder praktisch noch unpraktisch'],['4','Eher praktisch'],['5','Sehr praktisch'],['0','Keine Erfahrung']]],
+    ['payment_preference','Wie würdest du auf einem Fest am liebsten bezahlen?', [['cash','Bargeld'],['tokens','Wertmarken'],['digital','Digital mit einer Lösung wie Festpay'],['no_preference','Keine Präferenz'],['cannot_judge','Kann ich nicht beurteilen']]]
   ];
   const experience = [
     ['ease','Die App ist einfach zu bedienen.'],
@@ -38,6 +38,33 @@
     field.append(list); return field;
   }
   context.forEach(q => document.getElementById('context-questions').append(question(...q)));
+  const tasks = [
+    ['task_topup', 'Festguthaben aufladen'],
+    ['task_qr', 'Den eigenen QR-Code zum Bezahlen finden und anzeigen'],
+    ['task_buy_tokens', 'Festmarken kaufen'],
+    ['task_redeem_token', 'Eine Festmarke entwerten']
+  ];
+  const statuses = [['done','Geschafft'],['with_help','Mit Hilfe geschafft'],['failed','Nicht geschafft'],['not_tried','Nicht ausprobiert']];
+  for (const [index, [name, title]] of tasks.entries()) {
+    const card = document.createElement('details'); card.className = 'task-card'; card.dataset.task = name; card.open = index === 0;
+    card.innerHTML = `<summary><span class="task-number">${index+1}</span><span class="task-title">${title}<span class="task-state">Bitte auswählen</span></span></summary><fieldset><legend>Wie ist dir diese Aufgabe gelungen?</legend><select name="${name}" id="${name}" required aria-label="${title}: Ergebnis"><option value="" disabled selected>Ergebnis auswählen</option>${statuses.map(([value,label]) => `<option value="${value}">${label}</option>`).join('')}</select><label class="task-note" hidden for="${name}_note">Wo bist du hängen geblieben? <span class="optional">Optional</span><textarea id="${name}_note" name="${name}_note" maxlength="300" rows="2" disabled placeholder="Zum Beispiel: Ich habe den nächsten Schritt nicht gefunden."></textarea><span class="hint">Ein kurzer Satz reicht. Bitte keine persönlichen Daten.</span></label></fieldset>`;
+    document.getElementById('task-questions').append(card);
+  }
+  function updateTasks() {
+    for (const [name] of tasks) {
+      const card = document.querySelector(`[data-task="${name}"]`), select = form.elements[name];
+      const needsNote = ['with_help','failed'].includes(select.value);
+      card.querySelector('.task-note').hidden = !needsNote;
+      form.elements[`${name}_note`].disabled = !needsNote;
+      card.querySelector('.task-state').textContent = statuses.find(([value]) => value === select.value)?.[1] || 'Bitte auswählen';
+      card.classList.toggle('answered', !!select.value);
+    }
+  }
+  document.getElementById('all-done').addEventListener('click', () => {
+    for (const [name] of tasks) { form.elements[name].value = 'done'; document.querySelector(`[data-task="${name}"]`).open = false; }
+    document.querySelectorAll('.task-card .invalid').forEach(el => el.classList.remove('invalid'));
+    error.hidden = true; updateTasks();
+  });
   const scale = [['1','1'],['2','2'],['3','3'],['4','4'],['5','5'],['0','Nicht beurteilbar']];
   experience.forEach(([name,title]) => document.getElementById('experience-questions').append(question(name,title,scale,true)));
   value.forEach(([name,title]) => document.getElementById('value-ratings').append(question(name,title,scale,true)));
@@ -48,27 +75,28 @@
   }
   function showStep() {
     sections.forEach((s,i) => { s.hidden = i !== step; });
-    back.hidden = step === 0; next.hidden = step === 2; submit.hidden = step !== 2;
-    document.getElementById('step-label').textContent = `${step+1} von 3 · ${labels[step]}`;
-    document.getElementById('progress-text').textContent = ['Los geht’s','Dein Eindruck','Fast geschafft'][step];
+    back.hidden = step === 0; next.hidden = step === labels.length-1; submit.hidden = step !== labels.length-1;
+    document.getElementById('step-label').textContent = `${step+1} von ${labels.length} · ${labels[step]}`;
+    document.getElementById('progress-text').textContent = ['Los geht’s','Deine Erfahrungen','Dein Eindruck','Fast geschafft'][step];
     document.getElementById('progress').value = step+1;
     error.hidden = true; document.getElementById(`heading-${step}`).focus();
   }
   function validate() {
-    const invalid = [...sections[step].querySelectorAll('input,textarea')].find(el => !el.disabled && !el.checkValidity());
+    const invalid = [...sections[step].querySelectorAll('input,select,textarea')].find(el => !el.disabled && !el.checkValidity());
     if (!invalid) return true;
     error.textContent = invalid.name === 'consent' ? 'Bitte stimme der Speicherung und Auswertung zu, wenn du teilnehmen möchtest.' : 'Bitte beantworte die markierte Frage. Du kannst bei Skalen auch „Nicht beurteilbar“ wählen.';
-    error.hidden = false; (invalid.closest('fieldset') || invalid.closest('label')).classList.add('invalid'); invalid.focus(); return false;
+    error.hidden = false; const card = invalid.closest('.task-card'); if (card) card.open = true; (invalid.closest('fieldset') || invalid.closest('label')).classList.add('invalid'); invalid.focus(); return false;
   }
-  form.addEventListener('change', e => { e.target.closest('.invalid')?.classList.remove('invalid'); updateRole(); });
+  form.addEventListener('change', e => { e.target.closest('.invalid')?.classList.remove('invalid'); error.hidden = true; updateRole(); updateTasks(); });
   next.addEventListener('click', () => { if (validate()) { step++; showStep(); } });
   back.addEventListener('click', () => { if (!sending) { step--; showStep(); } });
   form.addEventListener('submit', async e => {
     e.preventDefault(); if (sending || sent) return;
-    if (step < 2) { next.click(); return; }
+    if (step < labels.length-1) { next.click(); return; }
     if (!validate()) return;
     const data = new FormData(form);
-    const payload = {id, survey_version:1, real_role:data.get('real_role'), prior_problem:data.get('prior_problem'), task_success:data.get('task_success'), feedback:data.get('feedback').trim(), consent:true};
+    const payload = {id, survey_version:2, real_role:data.get('real_role'), payment_practicality:Number(data.get('payment_practicality')), payment_preference:data.get('payment_preference'), feedback:data.get('feedback').trim(), consent:true};
+    for (const [name] of tasks) { payload[name] = data.get(name); payload[`${name}_note`] = data.has(`${name}_note`) ? data.get(`${name}_note`).trim() : ''; }
     for (const [name] of [...experience,...value]) payload[name] = data.has(name) ? Number(data.get(name)) : null;
     // Retry the exact same payload after an ambiguous network failure.
     pendingPayload ||= payload;
@@ -86,3 +114,4 @@
     } finally { clearTimeout(timeout); sending = false; submit.disabled = false; back.disabled = false; submit.textContent = 'Feedback absenden'; }
   });
 })();
+
