@@ -26,7 +26,7 @@
   const value = [['usefulness','Festpay bietet die Funktionen, die ich auf einem Fest brauche.']];
   const perspectives = [
     ['guest_usefulness','Stell dir vor, du bist Gast auf einem Fest, auf dem Festpay als Bezahlweg angeboten wird. Wie nützlich wäre Festpay für dich?'],
-    ['organizer_usefulness','Stell dir vor, du veranstaltest ein Fest. Wie nützlich wäre es für dich, Festpay als Bezahlweg anzubieten?']
+    ['organizer_usefulness','Für wie sinnvoll hältst du es, als Veranstalter Festpay auf einem Fest als Bezahlmöglichkeit anzubieten?']
   ];
   function question(name, title, options, rating = false, ratingLabels = ['','stimme gar nicht zu','stimme eher nicht zu','neutral','stimme eher zu','stimme voll zu']) {
     const field = document.createElement('fieldset'); field.dataset.name = name;
@@ -73,7 +73,15 @@
   experience.forEach(([name,title]) => document.getElementById('experience-questions').append(question(name,title,scale,true)));
   value.forEach(([name,title]) => document.getElementById('value-ratings').append(question(name,title,scale,true)));
   const usefulnessLabels = ['', 'überhaupt nicht nützlich', 'eher nicht nützlich', 'mäßig nützlich', 'eher nützlich', 'sehr nützlich'];
-  perspectives.forEach(([name,title]) => document.getElementById('perspective-ratings').append(question(name,title,scale,true,usefulnessLabels)));
+  const perspectiveRatings = document.getElementById('perspective-ratings');
+  const [guest, organizer] = perspectives;
+  perspectiveRatings.append(question(...guest, scale, true, usefulnessLabels));
+
+  const meaningfulnessLabels = ['', 'überhaupt nicht sinnvoll', 'eher nicht sinnvoll', 'mäßig sinnvoll', 'eher sinnvoll', 'sehr sinnvoll'];
+  const organizerScale = document.createElement('p');
+  organizerScale.className = 'scale-key';
+  organizerScale.textContent = meaningfulnessLabels.slice(1).map((label, index) => `${index + 1} = ${label}`).join(' · ');
+  perspectiveRatings.append(organizerScale, question(...organizer, scale, true, meaningfulnessLabels));
   function updateRole() {
     const hide = form.elements.real_role.value === 'none';
     document.getElementById('value-questions').hidden = hide;
