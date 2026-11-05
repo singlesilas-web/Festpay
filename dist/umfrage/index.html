@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow">
 <title>Dein Feedback · Festpay</title>
-<link rel="stylesheet" href="survey.css?v=2">
-<script src="survey.js?v=2" defer></script>
+<link rel="stylesheet" href="survey.css?v=3">
+<script src="survey.js?v=3" defer></script>
 </head>
 <body>
 <header><span class="brand">festpay<span class="dot">.</span></span><span class="badge">FEEDBACK ZUM APP-TEST</span></header>
@@ -15,9 +15,9 @@
 <form id="survey" novalidate>
 <section data-step="0" aria-labelledby="heading-0"><h2 id="heading-0" tabindex="-1">Kurz zu deinem Hintergrund</h2><p class="hint">Bitte wähle jeweils eine Antwort.</p>
 <div id="context-questions"></div></section>
-<section data-step="1" aria-labelledby="heading-1" hidden><h2 id="heading-1" tabindex="-1">Welche Aufgaben hast du geschafft?</h2><p class="hint">Wähle pro Aufgabe dein Ergebnis. Aufgaben, die du nicht getestet hast, markierst du mit „Nicht ausprobiert“.</p><button type="button" id="all-done" class="all-done">✓ Alle ohne Hilfe geschafft</button><div id="task-questions"></div></section>
+<section data-step="1" aria-labelledby="heading-1" hidden><h2 id="heading-1" tabindex="-1">Welche Aufgaben hast du geschafft?</h2><p class="hint">Wähle pro Aufgabe dein Ergebnis. Aufgaben, die du nicht getestet hast, markierst du mit „Nicht ausprobiert“.</p><button type="button" id="all-done" class="all-done" aria-pressed="false">✓ Alle ohne Hilfe geschafft</button><div id="task-questions"></div></section>
 <section data-step="2" aria-labelledby="heading-2" hidden><h2 id="heading-2" tabindex="-1">Dein Eindruck von Festpay</h2><p class="hint">Wie sehr stimmst du den Aussagen zu?</p><p class="scale-key">1 = stimme gar nicht zu · 2 = stimme eher nicht zu<br>3 = neutral · 4 = stimme eher zu · 5 = stimme voll zu</p><div id="experience-questions"></div></section>
-<section data-step="3" aria-labelledby="heading-3" hidden><h2 id="heading-3" tabindex="-1">Zum Schluss: dein Fazit</h2><div id="value-questions"><p class="hint">Antworte aus deiner Rolle im echten Leben.</p><p class="scale-key">1 = stimme gar nicht zu · 2 = stimme eher nicht zu<br>3 = neutral · 4 = stimme eher zu · 5 = stimme voll zu</p><div id="value-ratings"></div></div>
+<section data-step="3" aria-labelledby="heading-3" hidden><h2 id="heading-3" tabindex="-1">Zum Schluss: dein Fazit</h2><p class="scale-key">1 = überhaupt nicht nützlich · 2 = eher nicht nützlich<br>3 = mäßig nützlich · 4 = eher nützlich · 5 = sehr nützlich</p><div id="perspective-ratings"></div><div id="value-questions"><p class="hint" style="margin-top:24px">Und wie ist es für dich in deiner Rolle im echten Leben?</p><p class="scale-key">1 = stimme gar nicht zu · 2 = stimme eher nicht zu<br>3 = neutral · 4 = stimme eher zu · 5 = stimme voll zu</p><div id="value-ratings"></div></div>
 <label class="feedback-label" for="feedback">Was sollten wir als Erstes verbessern? <span class="optional">Optional</span></label><p class="hint" id="feedback-hint">Ein kurzer Satz genügt. Bitte keine Namen oder persönlichen Daten eintragen.</p><textarea id="feedback" name="feedback" maxlength="500" rows="3" aria-describedby="feedback-hint" placeholder="Mir hat gefehlt, dass …"></textarea>
 <details><summary>Was passiert mit deinen Antworten?</summary><p>Deine Antworten werden zur Auswertung und Verbesserung des Festpay-Studienprojekts in Supabase (Region Frankfurt) gespeichert. Wir fragen weder Namen noch E-Mail-Adresse ab und verknüpfen diese Umfrage nicht mit App-Konten oder Testprotokollen. Die Umfrage zeichnet keine Klicks auf. Zugriff auf die Antworten hat das Projektteam über Supabase; andere Teilnehmende können sie nicht lesen. Die Löschung erfolgt manuell durch das Projektteam. Hosting-Anbieter können technische Zugriffsprotokolle führen. Die Teilnahme ist freiwillig.</p></details>
 <label class="consent"><input type="checkbox" id="consent" name="consent" required><span>Ich möchte freiwillig teilnehmen und bin mit der beschriebenen Speicherung und Auswertung meiner Antworten einverstanden.</span></label>

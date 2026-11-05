@@ -12,8 +12,8 @@
   const id = crypto.randomUUID(); // One independent submission ID, retained for retries only.
   const context = [
     ['real_role','Welche Rolle passt im echten Leben am ehesten zu dir?', [['guest','Gast auf Festen'],['helper','Helfer/in am Verkaufsstand'],['organizer','Veranstalter/in oder Vereinsorganisation'],['none','Keine dieser Rollen']]],
-    ['payment_practicality','Wie praktisch findest du das Bezahlen mit Bargeld oder Wertmarken auf Festen?', [['1','Sehr unpraktisch'],['2','Eher unpraktisch'],['3','Weder praktisch noch unpraktisch'],['4','Eher praktisch'],['5','Sehr praktisch'],['0','Keine Erfahrung']]],
-    ['payment_preference','Wie würdest du auf einem Fest am liebsten bezahlen?', [['cash','Bargeld'],['tokens','Wertmarken'],['digital','Digital mit einer Lösung wie Festpay'],['no_preference','Keine Präferenz'],['cannot_judge','Kann ich nicht beurteilen']]]
+    ['coupon_practicality','Wie praktisch findest du es, auf einem Fest an einem Stand mit Bargeld Wertmarken oder Essens- und Getränkecoupons zu kaufen und damit zu bezahlen?', [['1','Sehr unpraktisch'],['2','Eher unpraktisch'],['3','Weder praktisch noch unpraktisch'],['4','Eher praktisch'],['5','Sehr praktisch'],['0','Keine Erfahrung']]],
+    ['payment_preference','Wie würdest du auf einem Fest am liebsten bezahlen?', [['cash','Bargeld'],['tokens','Wertmarken'],['digital','Digital und bargeldlos'],['no_preference','Keine Präferenz'],['cannot_judge','Kann ich nicht beurteilen']]]
   ];
   const experience = [
     ['ease','Die App ist einfach zu bedienen.'],
@@ -23,15 +23,19 @@
     ['payment_clarity','Der Ablauf beim Bezahlen war für mich verständlich.'],
     ['balance_clarity','Ich konnte erkennen, wie viel Guthaben bzw. welche Marken ich noch hatte.']
   ];
-  const value = [['usefulness','Festpay bietet die Funktionen, die ich auf einem Fest brauche.'],['intent','Ich würde Festpay auf einem Fest nutzen.']];
-  function question(name, title, options, rating = false) {
+  const value = [['usefulness','Festpay bietet die Funktionen, die ich auf einem Fest brauche.']];
+  const perspectives = [
+    ['guest_usefulness','Stell dir vor, du bist Gast auf einem Fest, auf dem Festpay als Bezahlweg angeboten wird. Wie nützlich wäre Festpay für dich?'],
+    ['organizer_usefulness','Stell dir vor, du veranstaltest ein Fest. Wie nützlich wäre es für dich, Festpay als Bezahlweg anzubieten?']
+  ];
+  function question(name, title, options, rating = false, ratingLabels = ['','stimme gar nicht zu','stimme eher nicht zu','neutral','stimme eher zu','stimme voll zu']) {
     const field = document.createElement('fieldset'); field.dataset.name = name;
     const legend = document.createElement('legend'); legend.textContent = title; field.append(legend);
     const list = document.createElement('div'); list.className = rating ? 'ratings' : 'options';
     for (const [val, text] of options) {
       const label = document.createElement('label'); label.className = rating ? `rating${val === '0' ? ' na' : ''}` : 'option';
       const input = document.createElement('input'); input.type = 'radio'; input.name = name; input.value = val; input.required = true;
-      if (rating) input.setAttribute('aria-label', val === '0' ? text : `${val} – ${['','stimme gar nicht zu','stimme eher nicht zu','neutral','stimme eher zu','stimme voll zu'][Number(val)]}`);
+      if (rating) input.setAttribute('aria-label', val === '0' ? text : `${val} – ${ratingLabels[Number(val)]}`);
       const span = document.createElement('span'); span.textContent = text;
       label.append(input, span); list.append(label);
     }
@@ -46,8 +50,8 @@
   ];
   const statuses = [['done','Geschafft'],['with_help','Mit Hilfe geschafft'],['failed','Nicht geschafft'],['not_tried','Nicht ausprobiert']];
   for (const [index, [name, title]] of tasks.entries()) {
-    const card = document.createElement('details'); card.className = 'task-card'; card.dataset.task = name; card.open = index === 0;
-    card.innerHTML = `<summary><span class="task-number">${index+1}</span><span class="task-title">${title}<span class="task-state">Bitte auswählen</span></span></summary><fieldset><legend>Wie ist dir diese Aufgabe gelungen?</legend><select name="${name}" id="${name}" required aria-label="${title}: Ergebnis"><option value="" disabled selected>Ergebnis auswählen</option>${statuses.map(([value,label]) => `<option value="${value}">${label}</option>`).join('')}</select><label class="task-note" hidden for="${name}_note">Wo bist du hängen geblieben? <span class="optional">Optional</span><textarea id="${name}_note" name="${name}_note" maxlength="300" rows="2" disabled placeholder="Zum Beispiel: Ich habe den nächsten Schritt nicht gefunden."></textarea><span class="hint">Ein kurzer Satz reicht. Bitte keine persönlichen Daten.</span></label></fieldset>`;
+    const card = document.createElement('div'); card.className = 'task-card'; card.dataset.task = name;
+    card.innerHTML = `<fieldset><legend><span class="task-heading"><span class="task-number">${index+1}</span><span>${title}</span></span></legend><select name="${name}" id="${name}" required aria-label="${title}: Ergebnis"><option value="" disabled selected>Ergebnis auswählen</option>${statuses.map(([value,label]) => `<option value="${value}">${label}</option>`).join('')}</select><label class="task-note" hidden for="${name}_note">Wo bist du hängen geblieben? <span class="optional">Optional</span><textarea id="${name}_note" name="${name}_note" maxlength="300" rows="2" disabled placeholder="Zum Beispiel: Ich habe den nächsten Schritt nicht gefunden."></textarea><span class="hint">Ein kurzer Satz reicht. Bitte keine persönlichen Daten.</span></label></fieldset>`;
     document.getElementById('task-questions').append(card);
   }
   function updateTasks() {
@@ -56,18 +60,20 @@
       const needsNote = ['with_help','failed'].includes(select.value);
       card.querySelector('.task-note').hidden = !needsNote;
       form.elements[`${name}_note`].disabled = !needsNote;
-      card.querySelector('.task-state').textContent = statuses.find(([value]) => value === select.value)?.[1] || 'Bitte auswählen';
-      card.classList.toggle('answered', !!select.value);
+      card.dataset.status = select.value;
     }
+    document.getElementById('all-done').setAttribute('aria-pressed', String(tasks.every(([name]) => form.elements[name].value === 'done')));
   }
   document.getElementById('all-done').addEventListener('click', () => {
-    for (const [name] of tasks) { form.elements[name].value = 'done'; document.querySelector(`[data-task="${name}"]`).open = false; }
+    for (const [name] of tasks) form.elements[name].value = 'done';
     document.querySelectorAll('.task-card .invalid').forEach(el => el.classList.remove('invalid'));
     error.hidden = true; updateTasks();
   });
   const scale = [['1','1'],['2','2'],['3','3'],['4','4'],['5','5'],['0','Nicht beurteilbar']];
   experience.forEach(([name,title]) => document.getElementById('experience-questions').append(question(name,title,scale,true)));
   value.forEach(([name,title]) => document.getElementById('value-ratings').append(question(name,title,scale,true)));
+  const usefulnessLabels = ['', 'überhaupt nicht nützlich', 'eher nicht nützlich', 'mäßig nützlich', 'eher nützlich', 'sehr nützlich'];
+  perspectives.forEach(([name,title]) => document.getElementById('perspective-ratings').append(question(name,title,scale,true,usefulnessLabels)));
   function updateRole() {
     const hide = form.elements.real_role.value === 'none';
     document.getElementById('value-questions').hidden = hide;
@@ -85,7 +91,7 @@
     const invalid = [...sections[step].querySelectorAll('input,select,textarea')].find(el => !el.disabled && !el.checkValidity());
     if (!invalid) return true;
     error.textContent = invalid.name === 'consent' ? 'Bitte stimme der Speicherung und Auswertung zu, wenn du teilnehmen möchtest.' : 'Bitte beantworte die markierte Frage. Du kannst bei Skalen auch „Nicht beurteilbar“ wählen.';
-    error.hidden = false; const card = invalid.closest('.task-card'); if (card) card.open = true; (invalid.closest('fieldset') || invalid.closest('label')).classList.add('invalid'); invalid.focus(); return false;
+    error.hidden = false; (invalid.closest('fieldset') || invalid.closest('label')).classList.add('invalid'); invalid.focus(); return false;
   }
   form.addEventListener('change', e => { e.target.closest('.invalid')?.classList.remove('invalid'); error.hidden = true; updateRole(); updateTasks(); });
   next.addEventListener('click', () => { if (validate()) { step++; showStep(); } });
@@ -95,9 +101,9 @@
     if (step < labels.length-1) { next.click(); return; }
     if (!validate()) return;
     const data = new FormData(form);
-    const payload = {id, survey_version:2, real_role:data.get('real_role'), payment_practicality:Number(data.get('payment_practicality')), payment_preference:data.get('payment_preference'), feedback:data.get('feedback').trim(), consent:true};
+    const payload = {id, survey_version:3, real_role:data.get('real_role'), coupon_practicality:Number(data.get('coupon_practicality')), payment_preference:data.get('payment_preference'), feedback:data.get('feedback').trim(), consent:true};
     for (const [name] of tasks) { payload[name] = data.get(name); payload[`${name}_note`] = data.has(`${name}_note`) ? data.get(`${name}_note`).trim() : ''; }
-    for (const [name] of [...experience,...value]) payload[name] = data.has(name) ? Number(data.get(name)) : null;
+    for (const [name] of [...experience,...value,...perspectives]) payload[name] = data.has(name) ? Number(data.get(name)) : null;
     // Retry the exact same payload after an ambiguous network failure.
     pendingPayload ||= payload;
     sending = true; submit.disabled = true; back.disabled = true; submit.textContent = 'Wird gespeichert …'; error.hidden = true;

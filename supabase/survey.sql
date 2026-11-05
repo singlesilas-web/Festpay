@@ -57,3 +57,30 @@ alter table public.festpay_survey_responses add constraint survey_version_answer
 grant insert (payment_practicality, payment_preference, task_topup, task_topup_note, task_qr, task_qr_note, task_buy_tokens, task_buy_tokens_note, task_redeem_token, task_redeem_token_note) on public.festpay_survey_responses to anon;
 alter policy survey_submission on public.festpay_survey_responses to anon with check (consent = true and survey_version in (1,2));
 comment on table public.festpay_survey_responses is 'Standalone Festpay survey v1/v2. V2: practicality 0=no experience, 1..5=very impractical to very practical; separate payment preference and four task outcomes/optional notes. No analytics linkage.';
+
+-- Applied as standalone_festpay_survey_v3.
+-- V3 adds separately interpretable coupon and perspective answers.
+alter table public.festpay_survey_responses
+ add column coupon_practicality smallint check (coupon_practicality between 0 and 5),
+ add column guest_usefulness smallint check (guest_usefulness between 0 and 5),
+ add column organizer_usefulness smallint check (organizer_usefulness between 0 and 5),
+ drop constraint festpay_survey_responses_survey_version_check,
+ add constraint festpay_survey_responses_survey_version_check check (survey_version in (1,2,3)),
+ drop constraint survey_version_answers,
+ add constraint survey_version_answers check (
+ (survey_version = 1 and prior_problem is not null and task_success is not null and payment_practicality is null and payment_preference is null and task_topup is null and task_topup_note = '' and task_qr is null and task_qr_note = '' and task_buy_tokens is null and task_buy_tokens_note = '' and task_redeem_token is null and task_redeem_token_note = '') or
+ (survey_version = 2 and prior_problem is null and task_success is null and payment_practicality is not null and payment_preference is not null and task_topup is not null and task_qr is not null and task_buy_tokens is not null and task_redeem_token is not null) or
+ (survey_version = 3 and prior_problem is null and task_success is null and payment_practicality is null and payment_preference is not null and task_topup is not null and task_qr is not null and task_buy_tokens is not null and task_redeem_token is not null)
+ ),
+ add constraint survey_v3_questions check (
+ (survey_version = 3 and coupon_practicality is not null and guest_usefulness is not null and organizer_usefulness is not null) or
+ (survey_version < 3 and coupon_practicality is null and guest_usefulness is null and organizer_usefulness is null)
+ ),
+ drop constraint role_answers,
+ add constraint role_answers check (
+ (real_role = 'none') = (usefulness is null) and
+ ((survey_version = 3 and intent is null) or (survey_version < 3 and (real_role = 'none') = (intent is null)))
+ );
+grant insert (coupon_practicality, guest_usefulness, organizer_usefulness) on public.festpay_survey_responses to anon;
+alter policy survey_submission on public.festpay_survey_responses to anon with check (consent = true and survey_version in (1,2,3));
+comment on table public.festpay_survey_responses is 'Standalone Festpay survey v1/v2/v3. V3 asks about cash-purchased coupons and guest/organizer usefulness separately. 0 means no experience or cannot judge. No analytics linkage.';
