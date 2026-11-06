@@ -37,19 +37,35 @@
         : `<div class="empty"><i data-lucide="coins"></i><p>Der Betreiber hat noch keine Aufladebeträge hinterlegt.</p></div>`}
     </div>
     <div class="cta-bar"><button class="btn" id="go" disabled><i data-lucide="plus-circle"></i>Betrag wählen</button></div>`;
+  UI.icons();
+  new QRCode(document.getElementById("qr"), { text: `FESTPAY|${fest.id}|${user?.id}`, width: 210, height: 210 });
   if (sessionStorage.getItem("topupSuccess") === fest.id) {
     sessionStorage.removeItem("topupSuccess");
-    const dialog = document.createElement("dialog");
-    dialog.className = "topup-dialog";
-    dialog.setAttribute("aria-labelledby", "topupTitle");
-    dialog.setAttribute("aria-describedby", "topupHint");
-    dialog.innerHTML = `<div class="topup-success-icon"><i data-lucide="check"></i></div><h2 id="topupTitle">Guthaben aufgeladen</h2><p class="topup-label">Dein neues Guthaben</p><p class="topup-balance">${UI.euro(saldo)}</p><p id="topupHint">Zeige deinen QR-Code am Stand.<br>Der Helfer scannt und bucht ab.</p><button class="btn">QR-Code zeigen</button>`;
-    dialog.addEventListener("close", () => dialog.remove(), {once:true});
-    document.body.appendChild(dialog); dialog.querySelector("button").onclick = () => dialog.close(); dialog.showModal();
+    const wallet = root.querySelector(".wallet");
+    const shade = document.createElement("div");
+    shade.className = "topup-shade";
+    const hint = document.createElement("button");
+    hint.type = "button";
+    hint.className = "topup-spotlight";
+    hint.innerHTML = '<span aria-hidden="true">↑</span><strong>Guthaben erfolgreich aufgeladen</strong>Zeige diesen QR-Code am Stand vor.';
+    wallet.after(hint);
+    document.body.append(shade);
+    wallet.classList.add("wallet-highlight");
+    wallet.scrollIntoView({ block: "start" });
+    hint.focus({ preventScroll: true });
+    function dismiss(event) {
+      if (event.type === "keydown" && !["Escape", "Enter", " "].includes(event.key)) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      document.removeEventListener("click", dismiss, true);
+      document.removeEventListener("keydown", dismiss, true);
+      wallet.classList.remove("wallet-highlight");
+      shade.remove();
+      hint.remove();
+    }
+    document.addEventListener("click", dismiss, true);
+    document.addEventListener("keydown", dismiss, true);
   }
-  UI.icons();
-
-  new QRCode(document.getElementById("qr"), { text: `FESTPAY|${fest.id}|${user?.id}`, width: 210, height: 210 });
   const clock = document.getElementById("clock");
   setInterval(() => (clock.textContent = "Live · " + new Date().toLocaleTimeString("de-DE")), 1000);
 

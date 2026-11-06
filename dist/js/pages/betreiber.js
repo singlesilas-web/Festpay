@@ -14,12 +14,13 @@
   const ICONS = ["cup-soda", "beer", "wine", "coffee", "sandwich", "pizza", "ice-cream-cone", "utensils"];
   const editId = UI.param("id");
   if (editId && !(await API.istBetreiberFuer(editId))) { root.textContent = "Kein Betreiberzugang zu diesem Fest."; return; }
-  const f = editId ? structuredClone(await API.getFest(editId)) : { name: "", ort: "", zone: [], w1_aktiv: true, w2_aktiv: true, aufladeoptionen: [10, 20, 30], speisekarte: [], helfer: [] };
+  const f = editId ? structuredClone(await API.getFest(editId)) : { name: "", ort: "", zone: [], w1_aktiv: true, w2_aktiv: false, aufladeoptionen: [10, 20, 30], speisekarte: [], helfer: [] };
 
   f.helfer ??= []; f.speisekarte ??= [];
   root.innerHTML = `
     <div class="page-head"><h1>${editId ? "Fest bearbeiten" : "Fest anlegen"}</h1><p>Steck deinen Bereich digital ab und leg fest, wie Gäste zahlen.</p></div>
     <div class="page stack festival-form">
+      ${editId && f.w1_aktiv ? `<a class="btn btn-dark" href="helfer.html?fest=${encodeURIComponent(editId)}">Kasse &amp; Scanner öffnen</a>` : ""}
       <div class="segment"><button class="active" data-tab="fest">Fest</button><button data-tab="helfer">Helfer</button></div>
 
       <div id="tabHelfer" class="stack hidden">
@@ -35,17 +36,22 @@
       <div id="tabFest" class="stack">
       <label class="field"><span>Name des Fests</span><input class="input" id="name" placeholder="Name eingeben"></label>
 
-      <div class="festival-dates"><label class="field"><span>Anfang</span><input class="input" id="start" type="datetime-local"></label>
-      <label class="field"><span>Ende</span><input class="input" id="ende" type="datetime-local"></label></div>
+      <div class="festival-dates">
+        ${[["start", "Anfang"], ["ende", "Ende"]].map(([id, label]) => `
+          <fieldset><legend>${label}</legend>
+            <label class="field"><span>Datum (TT.MM.YY)</span><input class="input" id="${id}Date" inputmode="numeric" placeholder="TT.MM.YY" maxlength="8"></label>
+            <label class="field"><span>Uhrzeit</span><input class="input" id="${id}Time" type="time"></label>
+          </fieldset>`).join("")}
+      </div>
       <h3 style="margin-top:12px">Fest-Zone</h3>
       <p class="small muted">Tippe Eckpunkte auf die Karte (mind. 3).</p>
       <div class="mini-map" id="mm" tabindex="-1"></div>
       <button class="btn btn-ghost btn-sm" id="resetZone"><i data-lucide="rotate-ccw"></i>Zone zurücksetzen</button>
 
-      <h3 style="margin-top:12px">Bezahlwege</h3>
+      <h3 style="margin-top:12px">Bezahlweg</h3>
       <div class="card">
-        <label class="switch"><span><b>W1 Festguthaben</b><br><span class="small muted">QR-Guthaben, Helfer bucht ab</span></span><input type="checkbox" id="w1" checked></label>
-        <label class="switch"><span><b>W2 Festmarken</b><br><span class="small muted">Speisekarte, Gast entwertet</span></span><input type="checkbox" id="w2" checked></label>
+        <label class="switch"><span><b>W1 Festguthaben</b><br><span class="small muted">QR-Guthaben, Helfer bucht ab</span></span><input type="radio" name="payment" id="w1" checked></label>
+        <label class="switch"><span><b>W2 Festmarken</b><br><span class="small muted">Speisekarte, Gast entwertet</span></span><input type="radio" name="payment" id="w2"></label>
       </div>
 
       <div id="w1box"><h3 style="margin-top:12px">Aufladebeträge (W1)</h3>
@@ -67,7 +73,22 @@
       </div>
       </div>
     <button class="btn" id="save"><i data-lucide="save"></i>${editId ? "Änderungen speichern" : "Fest veröffentlichen"}</button></div>`;
-  ["name", "start", "ende"].forEach(id => { document.getElementById(id).value = f[id] || ""; });
+  document.getElementById("name").value = f.name || "";
+  for (const id of ["start", "ende"]) {
+    const match = (f[id] || "").match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}:\d{2})/);
+    if (!match) continue;
+    const [, year, month, day, time] = match;
+    document.getElementById(id + "Date").value = `${day}.${month}.${year.slice(2)}`;
+    document.getElementById(id + "Time").value = time;
+  }
+  function dateValue(id) {
+    const match = document.getElementById(id + "Date").value.trim().match(/^(\d{2})\.(\d{2})\.(\d{2})$/);
+    if (!match) return null;
+    const [, day, month, year] = match;
+    const date = `20${year}-${month}-${day}`;
+    const parsed = new Date(date + "T00:00:00Z");
+    return Number.isFinite(+parsed) && parsed.toISOString().startsWith(date) ? date : null;
+  }
   UI.icons();
 
   function showIcon() {
@@ -100,7 +121,7 @@
   const w1 = document.getElementById("w1"), w2 = document.getElementById("w2");
   const sync = () => { f.w1_aktiv = w1.checked; f.w2_aktiv = w2.checked;
     document.getElementById("w1box").classList.toggle("hidden", !w1.checked); document.getElementById("w2box").classList.toggle("hidden", !w1.checked && !w2.checked); };
-  w1.checked = f.w1_aktiv; w2.checked = f.w2_aktiv;
+  w1.checked = f.w1_aktiv; w2.checked = !f.w1_aktiv && f.w2_aktiv;
   w1.disabled = w2.disabled = !!editId;
   w1.onchange = w2.onchange = sync; sync();
 
@@ -136,7 +157,8 @@
   }
   document.getElementById("addItem").onclick = () => {
     const name = document.getElementById("iName").value.trim(), preis = Number(document.getElementById("iPreis").value);
-    if (!name || !(preis > 0)) return UI.toast("Name und Preis angeben", "info");
+    if (!name) return invalid("iName", "Artikelname fehlt");
+    if (!(preis > 0) || !Number.isFinite(preis)) return invalid("iPreis", "Gültigen Preis eingeben");
     const item = { id: editingItem || Math.random().toString(36).slice(2), name, preis, kategorie: document.getElementById("iKat").value.trim() || "Sonstiges", icon: document.getElementById("iIcon").value || "utensils" };
     if (editingItem) f.speisekarte[f.speisekarte.findIndex(i => i.id === editingItem)] = item;
     else f.speisekarte.push(item);
@@ -169,19 +191,30 @@
     ["hName", "hMail"].forEach((id) => (document.getElementById(id).value = "")); drawHelfer();
   };
 
-  document.getElementById("save").onclick = async () => {
-    f.name = document.getElementById("name").value.trim();
     function invalid(id, message) {
       document.querySelector('[data-tab="fest"]').click();
       const el = document.getElementById(id); el.classList.add("field-error"); el.setAttribute("aria-invalid", "true");
       el.scrollIntoView({ behavior: "smooth", block: "center" }); el.focus({preventScroll:true}); UI.toast(message, "info");
     }
+  document.getElementById("save").onclick = async () => {
+    f.name = document.getElementById("name").value.trim();
     root.querySelectorAll('[aria-invalid]').forEach(el => { el.removeAttribute('aria-invalid'); el.classList.remove("field-error"); });
-    f.start = document.getElementById("start").value; f.ende = document.getElementById("ende").value;
-    if (editingItem || document.getElementById("iName").value.trim()) return invalid("iName", "Artikel zuerst mit Artikel hinzufügen übernehmen");
+    const itemName = document.getElementById("iName").value.trim();
+    const itemPrice = document.getElementById("iPreis").value;
+    if (editingItem || itemName || itemPrice) {
+      if (!itemName) return invalid("iName", "Artikelname fehlt");
+      if (!(Number(itemPrice) > 0) || !Number.isFinite(Number(itemPrice))) return invalid("iPreis", "Gültigen Preis eingeben");
+      document.getElementById("addItem").click();
+    }
     if (!f.name) return invalid("name", "Name fehlt");
-    if (!f.start) return invalid("start", "Anfang fehlt");
-    if (!f.ende || Date.parse(f.ende) <= Date.parse(f.start)) return invalid("ende", "Ende muss nach dem Anfang liegen");
+    for (const id of ["start", "ende"]) {
+      const date = dateValue(id);
+      const time = document.getElementById(id + "Time").value;
+      if (!date) return invalid(id + "Date", "Gültiges Datum im Format TT.MM.YY eingeben");
+      if (!time) return invalid(id + "Time", "Uhrzeit eingeben");
+      f[id] = `${date}T${time}`;
+    }
+    if (Date.parse(f.ende) <= Date.parse(f.start)) return invalid("endeTime", "Ende muss nach dem Anfang liegen");
     if (f.zone.length < 3) return invalid("mm", "Zone braucht mind. 3 Punkte");
     if (!f.w1_aktiv && !f.w2_aktiv) return invalid("w1", "Mindestens einen Bezahlweg wählen");
     if (f.w1_aktiv && !f.aufladeoptionen.length) return invalid("newTop", "Aufladebetrag hinzufügen");

@@ -120,17 +120,66 @@
   function updateOrder() {
     document.getElementById('orderAmount').value = amount ? (Number(amount) / 100).toFixed(2) : '';
     const count = [...quantities.values()].reduce((a,b) => a+b,0);
-    document.getElementById('orderSummary').textContent = count ? `${count} Artikel ausgewählt` : 'Artikel antippen oder Betrag eingeben';
+    document.getElementById('orderSummary').textContent = count ? `${count} Artikel ausgewählt` : 'Antippen zum Hinzufügen, halten zum Entfernen';
     drawProducts();
   }
   function drawProducts() {
     document.getElementById('products').innerHTML = items.filter(i => !hidden.includes(i.id)).map(i => `<button class="product-tile ${quantities.has(i.id) ? 'selected' : ''}" data-product="${UI.escape(i.id)}" aria-label="${UI.escape(i.name)} hinzufügen" aria-pressed="${quantities.has(i.id)}"><span class="product-icon"><i data-lucide="${UI.escape(i.icon || 'utensils')}"></i></span><span class="product-copy"><b>${UI.escape(i.name)}</b><span>${UI.euro(i.preis)}</span></span><span class="product-count">${quantities.get(i.id) || '+'}</span></button>`).join('') || '<p class="small muted">Keine Artikel sichtbar. Passe die Auswahl oben rechts an oder gib den Betrag ein.</p>';
     document.getElementById('visibility').innerHTML = items.map(i => `<label><input type="checkbox" data-visible="${UI.escape(i.id)}" ${hidden.includes(i.id) ? '' : 'checked'}> ${UI.escape(i.name)}</label>`).join('');
-    root.querySelectorAll('[data-product]').forEach(b => b.onclick = () => {
-      if (scanned) return;
-      const item = items.find(i => i.id === b.dataset.product);
-      quantities.set(item.id, (quantities.get(item.id) || 0) + 1);
-      amount = String(Number(amount || 0) + Math.round(Number(item.preis) * 100)); updateOrder();
+    root.querySelectorAll('[data-product]').forEach(button => {
+      const item = items.find(i => i.id === button.dataset.product);
+      const cents = Math.round(Number(item.preis) * 100);
+      let timer, origin, consumed = false;
+      function cancelHold() {
+        clearTimeout(timer);
+        origin = null;
+        button.classList.remove('holding');
+      }
+      function removeOne() {
+        const quantity = quantities.get(item.id);
+        if (scanned || processing || !quantity) return;
+        if (quantity === 1) quantities.delete(item.id);
+        else quantities.set(item.id, quantity - 1);
+        amount = String(Math.max(0, Number(amount) - cents) || '');
+        button.classList.add('removed-one');
+        // Update the total immediately and leave the tile in place until the animation ends.
+        document.getElementById('orderAmount').value = amount ? (Number(amount) / 100).toFixed(2) : '';
+        const count = [...quantities.values()].reduce((sum, value) => sum + value, 0);
+        document.getElementById('orderSummary').textContent = count ? `${count} Artikel ausgewählt` : 'Antippen zum Hinzufügen, halten zum Entfernen';
+        button.querySelector('.product-count').textContent = quantities.get(item.id) || '+';
+        button.classList.toggle('selected', quantities.has(item.id));
+        button.setAttribute('aria-pressed', String(quantities.has(item.id)));
+        setTimeout(() => button.classList.remove('removed-one'), 260);
+      }
+      button.onpointerdown = event => {
+        if (!event.isPrimary || event.button !== 0) return;
+        consumed = false;
+        if (scanned || processing || !quantities.has(item.id)) return;
+        origin = { x: event.clientX, y: event.clientY };
+        button.classList.add('holding');
+        timer = setTimeout(() => {
+          consumed = true;
+          cancelHold();
+          removeOne();
+        }, 650);
+      };
+      button.onpointermove = event => {
+        if (origin && Math.hypot(event.clientX - origin.x, event.clientY - origin.y) > 10) cancelHold();
+      };
+      button.onpointerup = button.onpointercancel = button.onpointerleave = cancelHold;
+      button.oncontextmenu = event => event.preventDefault();
+      button.onkeydown = event => {
+        if (event.key !== 'Delete' && event.key !== 'Backspace') return;
+        event.preventDefault();
+        removeOne();
+      };
+      button.onclick = () => {
+        if (consumed) { consumed = false; return; }
+        if (scanned || processing) return;
+        quantities.set(item.id, (quantities.get(item.id) || 0) + 1);
+        amount = String(Number(amount || 0) + cents);
+        updateOrder();
+      };
     });
     root.querySelectorAll('[data-visible]').forEach(b => b.onchange = () => {
       hidden = hidden.filter(id => id !== b.dataset.visible); if (!b.checked) hidden.push(b.dataset.visible);
