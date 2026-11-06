@@ -29,6 +29,11 @@
 @keyframes scan { 0%,100% { top: 14px; } 50% { top: calc(100% - 16px); } }
 .live-time { font-variant-numeric: tabular-nums; font-size: 13px; opacity: .7; margin-top: 12px; display: flex; gap: 6px; justify-content: center; align-items: center; }
 .live-time i { width: 14px; height: 14px; color: var(--ok); }
+.topup-success { display:flex; align-items:center; gap:12px; padding:14px 16px; border:1px solid var(--line); border-radius:18px; background:var(--surface); }
+.topup-success .badge-icon { flex:0 0 40px; }
+.topup-success strong { display:block; font-size:14px; }
+.topup-success p { margin-top:2px; font-size:13px; color:var(--ink-2); }
+.qr-help { max-width:360px; margin-inline:auto; line-height:1.5; }
 
 /* ---------- speisekarte.html ---------- */
 .menu-item { display: flex; align-items: center; gap: 14px; padding: 14px 0; }
@@ -158,7 +163,12 @@ dialog::backdrop { background:#0009; }
 .confirm-label { display:flex; align-items:center; gap:6px; font-size:13px; font-weight:700; }
 .confirm-label svg { width:18px; }
 .confirm-amount { font-size:32px; line-height:1.1; }
-.scan-confirm p { font-size:12px; color:var(--ink-2); }
+.confirm-balance { display:grid; gap:4px; width:min(100%,280px); font-size:12px; color:var(--ink-2); }
+.confirm-balance span { display:flex; justify-content:space-between; gap:12px; }
+.confirm-balance b { color:var(--ink); }
+.confirm-balance .balance-after { margin-top:2px; padding-top:6px; border-top:1px solid var(--line); }
+.confirm-balance .balance-after b { color:var(--ok); }
+.confirm-balance .balance-after.insufficient b { color:#c52222; }
 .confirm-actions { display:flex; gap:8px; width:100%; margin-top:4px; }
 .confirm-actions .btn { height:42px; font-size:14px; }
 @media(max-height:740px) {
@@ -214,28 +224,16 @@ dialog::backdrop { background:#0009; }
 .festival-dates legend { font-weight: 700; padding: 0 4px; }
 .festival-dates .field + .field { margin-top: 8px; }
 .festival-dates .input { font-size: 16px; padding: 0 8px; }
-
-.topup-shade {
-  position: fixed;
-  inset: 0;
-  z-index: 1100;
-  background: rgb(0 0 0 / 48%);
-  backdrop-filter: blur(3px);
-}
-.wallet-highlight, .topup-spotlight { position: relative; z-index: 1101; }
-.topup-spotlight {
-  display: grid;
-  justify-items: center;
-  gap: 6px;
-  width: 100%;
-  padding: 14px;
-  border-radius: 18px;
-  background: white;
-  color: #111;
-  text-align: center;
-}
-.topup-spotlight span { color: var(--accent); font-size: 32px; line-height: 1; }
-.wallet-highlight .qr-scanline { visibility: hidden; }
+.festival-dates .date-input { color-scheme:light; cursor:pointer; }
+.time-picker { position:relative; }
+.time-trigger { display:flex !important; align-items:center; justify-content:space-between; gap:8px; text-align:left; cursor:pointer; }
+.time-trigger > span { margin:0; color:var(--ink); font-size:16px; font-weight:400; }
+.time-trigger svg { width:18px; flex:0 0 18px; transition:transform .2s var(--ease); }
+.time-trigger[aria-expanded="true"] svg { transform:rotate(180deg); }
+.time-options { position:absolute; top:calc(100% + 6px); left:0; right:0; z-index:30; display:grid; grid-template-columns:repeat(2,1fr); gap:4px; max-height:220px; overflow:auto; padding:8px; border:1px solid var(--line); border-radius:16px; background:var(--bg); box-shadow:var(--shadow); }
+.time-options[hidden] { display:none; }
+.time-options button { min-height:40px; border-radius:10px; font-variant-numeric:tabular-nums; font-weight:700; }
+.time-options button:hover, .time-options button:focus-visible, .time-options button[aria-selected="true"] { background:var(--ink); color:var(--bg); outline:none; }
 
 .product-tile { position: relative; overflow: hidden; user-select: none; touch-action: manipulation; }
 .product-tile::before {

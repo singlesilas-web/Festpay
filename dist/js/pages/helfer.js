@@ -88,11 +88,13 @@
   }
   function renderResult() {
     const result = document.getElementById('result');
+    const bookingAmount = Number(amount || 0) / 100;
+    const balanceAfter = scanned.balance - bookingAmount;
     result.hidden = false;
     result.innerHTML = `<div class="scan-confirm" role="dialog" aria-labelledby="confirmTitle">
       <div class="confirm-label" id="confirmTitle"><i data-lucide="circle-check"></i>Code erkannt</div>
-      <strong class="confirm-amount">${UI.euro(Number(amount || 0) / 100)}</strong>
-      <p>Guthaben: ${UI.euro(scanned.balance)}</p>
+      <strong class="confirm-amount">${UI.euro(bookingAmount)}</strong>
+      <div class="confirm-balance"><span>Aktuelles Guthaben <b>${UI.euro(scanned.balance)}</b></span><span class="balance-after ${balanceAfter < 0 ? 'insufficient' : ''}">Guthaben danach <b>${balanceAfter < 0 ? 'Nicht ausreichend' : UI.euro(balanceAfter)}</b></span></div>
       <div class="confirm-actions"><button class="btn btn-ghost" id="cancelScan">Abbrechen</button><button class="btn" id="book">Abbuchen</button></div></div>`;
     UI.icons();
     document.getElementById('book').focus({preventScroll:true});

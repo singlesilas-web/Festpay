@@ -12,6 +12,10 @@
     return UI.icons();
   }
   const ICONS = ["cup-soda", "beer", "wine", "coffee", "sandwich", "pizza", "ice-cream-cone", "utensils"];
+  const TIME_OPTIONS = Array.from({ length: 96 }, (_, index) => {
+    const minutes = index * 15;
+    return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+  });
   const editId = UI.param("id");
   if (editId && !(await API.istBetreiberFuer(editId))) { root.textContent = "Kein Betreiberzugang zu diesem Fest."; return; }
   const f = editId ? structuredClone(await API.getFest(editId)) : { name: "", ort: "", zone: [], w1_aktiv: true, w2_aktiv: false, aufladeoptionen: [10, 20, 30], speisekarte: [], helfer: [] };
@@ -39,8 +43,12 @@
       <div class="festival-dates">
         ${[["start", "Anfang"], ["ende", "Ende"]].map(([id, label]) => `
           <fieldset><legend>${label}</legend>
-            <label class="field"><span>Datum (TT.MM.YY)</span><input class="input" id="${id}Date" inputmode="numeric" placeholder="TT.MM.YY" maxlength="8"></label>
-            <label class="field"><span>Uhrzeit</span><input class="input" id="${id}Time" type="time"></label>
+            <label class="field"><span>Datum</span><input class="input date-input" id="${id}Date" type="date"></label>
+            <div class="field"><span>Uhrzeit</span><div class="time-picker" id="${id}TimePicker">
+              <button class="input time-trigger" id="${id}TimeTrigger" type="button" aria-haspopup="listbox" aria-expanded="false"><span id="${id}TimeLabel">Uhrzeit wählen</span><i data-lucide="chevron-down"></i></button>
+              <input id="${id}Time" type="hidden">
+              <div class="time-options" role="listbox" aria-label="${label} Uhrzeit" hidden>${TIME_OPTIONS.map(time => `<button type="button" role="option" data-time="${time}">${time}</button>`).join("")}</div>
+            </div></div>
           </fieldset>`).join("")}
       </div>
       <h3 style="margin-top:12px">Fest-Zone</h3>
@@ -78,18 +86,46 @@
     const match = (f[id] || "").match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}:\d{2})/);
     if (!match) continue;
     const [, year, month, day, time] = match;
-    document.getElementById(id + "Date").value = `${day}.${month}.${year.slice(2)}`;
+    document.getElementById(id + "Date").value = `${year}-${month}-${day}`;
     document.getElementById(id + "Time").value = time;
+    document.getElementById(id + "TimeLabel").textContent = time;
   }
   function dateValue(id) {
-    const match = document.getElementById(id + "Date").value.trim().match(/^(\d{2})\.(\d{2})\.(\d{2})$/);
-    if (!match) return null;
-    const [, day, month, year] = match;
-    const date = `20${year}-${month}-${day}`;
+    const date = document.getElementById(id + "Date").value;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
     const parsed = new Date(date + "T00:00:00Z");
     return Number.isFinite(+parsed) && parsed.toISOString().startsWith(date) ? date : null;
   }
   UI.icons();
+
+  root.querySelectorAll('.time-picker').forEach(picker => {
+    const trigger = picker.querySelector('.time-trigger');
+    const options = picker.querySelector('.time-options');
+    const input = picker.querySelector('input[type="hidden"]');
+    const label = trigger.querySelector('span');
+    function close() { options.hidden = true; trigger.setAttribute('aria-expanded', 'false'); }
+    trigger.onclick = () => {
+      const opening = options.hidden;
+      root.querySelectorAll('.time-options').forEach(menu => { menu.hidden = true; menu.closest('.time-picker').querySelector('.time-trigger').setAttribute('aria-expanded', 'false'); });
+      options.hidden = !opening;
+      trigger.setAttribute('aria-expanded', String(opening));
+      if (opening) options.querySelector(`[data-time="${input.value}"]`)?.scrollIntoView({ block: 'center' });
+    };
+    options.querySelectorAll('[data-time]').forEach(option => option.onclick = () => {
+      input.value = option.dataset.time;
+      label.textContent = option.dataset.time;
+      trigger.removeAttribute('aria-invalid');
+      trigger.classList.remove('field-error');
+      options.querySelectorAll('[role="option"]').forEach(item => item.setAttribute('aria-selected', String(item === option)));
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      close(); trigger.focus();
+    });
+    picker.addEventListener('keydown', event => { if (event.key === 'Escape') { close(); trigger.focus(); } });
+  });
+  document.addEventListener('click', event => {
+    if (event.target.closest('.time-picker')) return;
+    root.querySelectorAll('.time-options').forEach(menu => { menu.hidden = true; menu.closest('.time-picker').querySelector('.time-trigger').setAttribute('aria-expanded', 'false'); });
+  });
 
   function showIcon() {
     const value = document.getElementById("iIcon").value;
@@ -210,11 +246,11 @@
     for (const id of ["start", "ende"]) {
       const date = dateValue(id);
       const time = document.getElementById(id + "Time").value;
-      if (!date) return invalid(id + "Date", "Gültiges Datum im Format TT.MM.YY eingeben");
-      if (!time) return invalid(id + "Time", "Uhrzeit eingeben");
+      if (!date) return invalid(id + "Date", "Datum auswählen");
+      if (!time) return invalid(id + "TimeTrigger", "Uhrzeit auswählen");
       f[id] = `${date}T${time}`;
     }
-    if (Date.parse(f.ende) <= Date.parse(f.start)) return invalid("endeTime", "Ende muss nach dem Anfang liegen");
+    if (Date.parse(f.ende) <= Date.parse(f.start)) return invalid("endeTimeTrigger", "Ende muss nach dem Anfang liegen");
     if (f.zone.length < 3) return invalid("mm", "Zone braucht mind. 3 Punkte");
     if (!f.w1_aktiv && !f.w2_aktiv) return invalid("w1", "Mindestens einen Bezahlweg wählen");
     if (f.w1_aktiv && !f.aufladeoptionen.length) return invalid("newTop", "Aufladebetrag hinzufügen");
