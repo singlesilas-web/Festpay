@@ -7,19 +7,23 @@ function source(relativePath) {
   return fs.readFileSync(path.join(__dirname, '..', relativePath), 'utf8');
 }
 
-test('top-up success stays integrated in the wallet page', () => {
+test('top-up success spotlights the wallet without changing page layout', () => {
   const wallet = source('dist/js/pages/guthaben.js');
-  assert.match(wallet, /class="topup-success"/);
-  assert.match(wallet, /jederzeit wieder/);
-  assert.doesNotMatch(wallet, /topup-shade|topup-spotlight|scrollIntoView/);
+  assert.match(wallet, /className = "topup-shade"/);
+  assert.match(wallet, /wallet-spotlight/);
+  assert.match(wallet, /jederzeit in der App bereit/);
+  assert.doesNotMatch(wallet, /scrollIntoView/);
 });
 
-test('festival scheduling uses a calendar and a custom rounded time picker', () => {
+test('festival scheduling uses custom rounded date and time pickers', () => {
   const operator = source('dist/js/pages/betreiber.js');
   const styles = source('dist/css/seiten.css');
-  assert.match(operator, /class="input date-input"[^>]+type="date"/);
+  assert.match(operator, /class="date-calendar"[^>]+role="dialog"/);
+  assert.match(operator, /class="calendar-days"[^>]+role="grid"/);
   assert.match(operator, /class="time-options"[^>]+role="listbox"/);
+  assert.doesNotMatch(operator, /type="date"/);
   assert.doesNotMatch(operator, /type="time"/);
+  assert.match(styles, /\.date-calendar[^\n]+border-radius:16px/);
   assert.match(styles, /\.time-options[^\n]+border-radius:16px/);
 });
 
