@@ -77,6 +77,23 @@
     document.addEventListener("click", dismiss, true);
     document.addEventListener("keydown", dismiss, true);
   }
+  const qr = document.getElementById("qr");
+  let qrVisible = false, qrReported = false;
+  function reportQr() {
+    if (!qrReported && qrVisible && saldo > 0 && !document.hidden && !document.querySelector("dialog[open]")) {
+      qrReported = true;
+      window.TestLog?.event("activity", {activity: "wallet_qr_shown"});
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", reportQr);
+    }
+  }
+  const observer = new IntersectionObserver(([entry]) => {
+    qrVisible = entry.intersectionRatio >= 0.5;
+    reportQr();
+  }, {threshold: 0.5});
+  observer.observe(qr);
+  document.querySelector("dialog[open]")?.addEventListener("close", reportQr);
+  document.addEventListener("visibilitychange", reportQr);
   const clock = document.getElementById("clock");
   setInterval(() => (clock.textContent = "Live · " + new Date().toLocaleTimeString("de-DE")), 1000);
 
@@ -94,6 +111,6 @@
   // Guthaben live aktualisieren (Helfer bucht auf anderem Gerät ab)
   setInterval(async () => {
     const neu = await API.getGuthaben(fest.id);
-    if (neu !== saldo) { saldo = neu; document.getElementById("saldo").textContent = UI.euro(saldo); UI.toast("Guthaben aktualisiert", "wallet"); }
+    if (neu !== saldo) { saldo = neu; reportQr(); document.getElementById("saldo").textContent = UI.euro(saldo); UI.toast("Guthaben aktualisiert", "wallet"); }
   }, 3000);
 })();

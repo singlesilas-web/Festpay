@@ -5,7 +5,7 @@ create table public.analytics_admins (
 create table public.analytics_sessions (
   id uuid primary key default gen_random_uuid(),
   token_hash text not null,
-  task text not null check(task in ('w1','w2','explore')),
+  task text not null check(task in ('w1', 'w2', 'explore', 'wallet_topped_up', 'wallet_qr_shown', 'tokens_purchased', 'token_redeemed', 'festival_created', 'festival_updated', 'festival_helper_saved', 'wallet_charged')),
   version text not null,
   consent_version text not null,
   started_at timestamptz not null default now(),

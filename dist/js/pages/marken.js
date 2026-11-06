@@ -50,7 +50,8 @@
   }
 
   async function entwerten(id, name) {
-    await API.markeEntwerten(id);
+    const result = await API.markeEntwerten(id);
+    if (result?.error) return UI.toast(result.error.message, "alert-triangle");
     if (navigator.vibrate) navigator.vibrate([40, 60, 40]);
     const ov = document.createElement("div"); ov.className = "validate-overlay";
     ov.innerHTML = `<div class="pulse"></div><div>

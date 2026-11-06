@@ -80,6 +80,7 @@
       if (qrFestId !== festId) return UI.toast('QR-Code gehört zu einem anderen Fest', 'x-circle');
       if (!(await API.istHelferFuer(festId))) return UI.toast('Kein Helferzugang für dieses Fest', 'shield-alert');
       scanned = { userId, balance: await API.getGuthaben(festId, userId) };
+      window.TestLog?.event('activity', {activity: 'helper_qr_recognized'});
       document.getElementById('orderAmount').disabled = true;
       await stopCamera();
       status.textContent = 'Gast-Code erkannt. Bestellung prüfen und abbuchen.';

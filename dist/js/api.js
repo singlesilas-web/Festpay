@@ -182,7 +182,8 @@ window.API = (function () {
   async function markeEntwerten(id) {
     if (window.sb) return sb.rpc("marke_entwerten", { _marke_id: id });
     const s = state(); const m = s.marken.find((x) => x.id === id);
-    if (m) { m.status = "entwertet"; m.entwertet_am = Date.now(); }
+    if (!m || m.status !== "offen") return { error: { message: "Diese Marke ist nicht mehr verfügbar" } };
+    m.status = "entwertet"; m.entwertet_am = Date.now();
     save(s); return { error: null };
   }
 

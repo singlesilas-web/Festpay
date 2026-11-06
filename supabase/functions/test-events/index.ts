@@ -6,8 +6,9 @@ const headers={apikey:service,Authorization:`Bearer ${service}`,'Content-Type':'
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const screens=new Set(['index.html','fest.html','guthaben.html','speisekarte.html','bezahlen.html','marken.html','profil.html','login.html','helfer.html','betreiber.html']);
 const types=new Set(['page_view','click','repeated_click','field_focus','scroll','browser_zoom','map_zoom','map_pan','activity','session_end','page_hidden','page_visible','page_leave','heartbeat']);
-const numeric=new Set(['vw','vh','aw','dh','scroll','browser_scale','map_scale','x','y','scale','depth']);
-const strings=new Set(['ui_state','target','source','activity','reason']);
+const tasks = new Set(["w1","w2","explore","wallet_topped_up","wallet_qr_shown","tokens_purchased","token_redeemed","festival_created","festival_updated","festival_helper_saved","wallet_charged"]);
+const numeric=new Set(['vw','vh','aw','dh','scroll','browser_scale','map_scale','x','y','scale','depth','viewport_width','viewport_height']);
+const strings=new Set(['ui_state','target','source','activity','reason','coordinate_space']);
 async function hash(s:string){return [...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)))].map(x=>x.toString(16).padStart(2,'0')).join('');}
 async function db(path:string,init:RequestInit={}){
  const r=await fetch(base+'/rest/v1/'+path,{...init,headers:{...headers,...init.headers}});
@@ -27,7 +28,7 @@ Deno.serve(async req=>{
   const raw=await req.text();if(raw.length>60000)return reply(413,{error:'size'});
   const b=JSON.parse(raw);
   if(b.action==='start'){
-   if(!['w1','w2','explore'].includes(b.task)||b.consent_version!=='2026-11-02-v2'||!['festpay-2026-11-02-v3','festpay-2026-11-02-v4-helper'].includes(b.version))return reply(400,{error:'start'});
+   if(!tasks.has(b.task)||b.consent_version!=='2026-11-02-v2'||!['festpay-2026-11-02-v3','festpay-2026-11-02-v4-helper','festpay-2026-11-06-v5-process'].includes(b.version))return reply(400,{error:'start'});
    const id=crypto.randomUUID(),token=crypto.randomUUID()+crypto.randomUUID();
    await db('analytics_sessions',{method:'POST',body:JSON.stringify({id,token_hash:await hash(token),task:b.task,version:b.version,consent_version:b.consent_version})});
    return reply(200,{id,token});
@@ -43,6 +44,11 @@ Deno.serve(async req=>{
     if(strings.has(k)&&typeof v==='string'&&v.length<=180&&/^[\w#.:>() -]+$/.test(v))props[k]=v;
     if(k==='interactive'&&typeof v==='boolean')props[k]=v;
    }
+   if (props.coordinate_space === 'viewport_v1' && (
+     typeof props.x !== 'number' || props.x > 1 || typeof props.y !== 'number' || props.y > 1 ||
+     typeof props.viewport_width !== 'number' || props.viewport_width < 1 ||
+     typeof props.viewport_height !== 'number' || props.viewport_height < 1
+   )) throw Error('viewport');
    return {id:e.id,session_id:b.session_id,seq:e.seq,type:e.type,screen:e.screen,at:e.at,elapsed:e.elapsed,props};
   });
   await db('analytics_events?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=ignore-duplicates'},body:JSON.stringify(rows)});
