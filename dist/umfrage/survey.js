@@ -119,7 +119,16 @@
     error.textContent = invalid.name === 'consent' ? 'Bitte stimme der Speicherung und Auswertung zu, wenn du teilnehmen möchtest.' : 'Bitte beantworte die markierte Frage. Du kannst bei Skalen auch „Nicht beurteilbar“ wählen.';
     error.hidden = false; (invalid.closest('fieldset') || invalid.closest('label')).classList.add('invalid'); invalid.focus(); return false;
   }
-  form.addEventListener('change', e => { e.target.closest('.invalid')?.classList.remove('invalid'); error.hidden = true; updateRole(); updateTasks(); });
+  form.addEventListener('change', e => {
+    if (e.target.name === 'real_roles' && e.target.checked) {
+      const choices = [...form.querySelectorAll('input[name="real_roles"]')];
+      if (e.target.value === 'none') choices.filter(el => el.value !== 'none').forEach(el => { el.checked = false; });
+      else choices.find(el => el.value === 'none').checked = false;
+    }
+    e.target.closest('.invalid')?.classList.remove('invalid');
+    error.hidden = true;
+    updateRole(); updateTasks();
+  });
   next.addEventListener('click', () => { if (validate()) { step++; showStep(); } });
   back.addEventListener('click', () => { if (!sending) { step--; showStep(); } });
   form.addEventListener('submit', async e => {
@@ -127,7 +136,9 @@
     if (step < labels.length-1) { next.click(); return; }
     if (!validate()) return;
     const data = new FormData(form);
-    const payload = {id, survey_version:3, real_role:data.get('real_role'), coupon_practicality:Number(data.get('coupon_practicality')), payment_preference:data.get('payment_preference'), feedback:data.get('feedback').trim(), consent:true};
+    const roles = selectedRoles();
+    const fee = data.get('organizer_transaction_fee_percent');
+    const payload = {id, survey_version:4, real_role:roles[0], real_roles:roles, organizer_transaction_fee_percent:roles.includes('organizer') ? Number(fee) : null, coupon_practicality:Number(data.get('coupon_practicality')), payment_preference:data.get('payment_preference'), feedback:data.get('feedback').trim(), consent:true};
     for (const [name] of tasks) { payload[name] = data.get(name); payload[`${name}_note`] = data.has(`${name}_note`) ? data.get(`${name}_note`).trim() : ''; }
     for (const [name] of [...experience,...value,...perspectives]) payload[name] = data.has(name) ? Number(data.get(name)) : null;
     // Retry the exact same payload after an ambiguous network failure.
