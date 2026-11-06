@@ -11,9 +11,9 @@
   let step = 0, sending = false, sent = false, pendingPayload = null;
   const id = crypto.randomUUID(); // One independent submission ID, retained for retries only.
   const context = [
-    ['real_role','Welche Rolle passt im echten Leben am ehesten zu dir?', [['guest','Gast auf Festen'],['helper','Helfer/in am Verkaufsstand'],['organizer','Veranstalter/in oder Vereinsorganisation'],['none','Keine dieser Rollen']]],
+    ['real_roles','Welche Rolle passt im echten Leben am ehesten zu dir? (Mehrfachauswahl möglich)', [['guest','Gast auf Festen'],['helper','Helfer/in am Verkaufsstand'],['organizer','Veranstalter'],['none','Keine dieser Rollen']]],
     ['coupon_practicality','Wie praktisch findest du es, auf einem Fest an einem Stand mit Bargeld Wertmarken oder Essens- und Getränkecoupons zu kaufen und damit zu bezahlen?', [['1','Sehr unpraktisch'],['2','Eher unpraktisch'],['3','Weder praktisch noch unpraktisch'],['4','Eher praktisch'],['5','Sehr praktisch'],['0','Keine Erfahrung']]],
-    ['payment_preference','Wie würdest du auf einem Fest am liebsten bezahlen?', [['cash','Bargeld'],['tokens','Wertmarken'],['digital','Digital und bargeldlos'],['no_preference','Keine Präferenz'],['cannot_judge','Kann ich nicht beurteilen']]]
+    ['payment_preference','Wie würdest du auf einem Fest am liebsten bezahlen?', [['cash','Bargeld'],['tokens','Wertmarken'],['cards','Verzehrkarten'],['digital','digital / bargeldlos'],['no_preference','keine Präferenz']]]
   ];
   const experience = [
     ['ease','Die App ist einfach zu bedienen.'],
@@ -34,7 +34,7 @@
     const list = document.createElement('div'); list.className = rating ? 'ratings' : 'options';
     for (const [val, text] of options) {
       const label = document.createElement('label'); label.className = rating ? `rating${val === '0' ? ' na' : ''}` : 'option';
-      const input = document.createElement('input'); input.type = 'radio'; input.name = name; input.value = val; input.required = true;
+      const input = document.createElement('input'); input.type = name === 'real_roles' ? 'checkbox' : 'radio'; input.name = name; input.value = val; input.required = name !== 'real_roles';
       if (rating) input.setAttribute('aria-label', val === '0' ? text : `${val} – ${ratingLabels[Number(val)]}`);
       const span = document.createElement('span'); span.textContent = text;
       label.append(input, span); list.append(label);
