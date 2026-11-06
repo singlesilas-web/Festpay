@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow">
 <title>Dein Feedback · Festpay</title>
-<link rel="stylesheet" href="survey.css?v=4">
-<script src="survey.js?v=4" defer></script>
+<link rel="stylesheet" href="survey.css?v=5">
+<script src="survey.js?v=5" defer></script>
 </head>
 <body>
 <header><span class="brand">festpay<span class="dot">.</span></span><span class="badge">FEEDBACK ZUM APP-TEST</span></header>
@@ -20,15 +20,20 @@
 <section data-step="3" aria-labelledby="heading-3" hidden><h2 id="heading-3" tabindex="-1">Zum Schluss: dein Fazit</h2><p class="scale-key">1 = überhaupt nicht nützlich · 2 = eher nicht nützlich<br>3 = mäßig nützlich · 4 = eher nützlich · 5 = sehr nützlich</p><div id="perspective-ratings"></div><div id="value-questions"><p class="hint" style="margin-top:24px">Und wie ist es für dich in deiner Rolle im echten Leben?</p><p class="scale-key">1 = stimme gar nicht zu · 2 = stimme eher nicht zu<br>3 = neutral · 4 = stimme eher zu · 5 = stimme voll zu</p><div id="value-ratings"></div></div>
 <label class="feedback-label" for="feedback">Was sollten wir als Erstes verbessern? <span class="optional">Optional</span></label><p class="hint" id="feedback-hint">Ein kurzer Satz genügt. Bitte keine Namen oder persönlichen Daten eintragen.</p><textarea id="feedback" name="feedback" maxlength="500" rows="3" aria-describedby="feedback-hint" placeholder="Mir hat gefehlt, dass …"></textarea>
 <fieldset id="organizer-fee-field" hidden><legend>Was würdest du aus Sicht eines Veranstalters an Transaktionsgebühren für diese App bezahlen? (in %)</legend><label class="fee-input" for="organizer_transaction_fee_percent"><input type="number" id="organizer_transaction_fee_percent" name="organizer_transaction_fee_percent" min="0" max="100" step="0.01" inputmode="decimal" placeholder="z. B. 2.5" disabled><span>%</span></label><p class="hint">Bitte gib einen Wert zwischen 0 und 100 Prozent an (z. B. 2,5).</p></fieldset>
+<fieldset id="guest-abuse-field" hidden>
+<legend>Optionale Zusatzfrage aus Gastsicht</legend>
+<p class="hint" id="guest-abuse-example">Ein denkbares Beispiel wäre, die Entwertung einer Wertmarke zu filmen und später mit der Aufnahme eine gültige Wertmarke vorzutäuschen.</p>
+<label for="guest_abuse_feedback">Fallen dir theoretisch noch andere Möglichkeiten ein, beim Bezahlen zu täuschen?</label>
+<textarea id="guest_abuse_feedback" name="guest_abuse_feedback" maxlength="1000" rows="3" aria-describedby="guest-abuse-example" disabled></textarea>
+</fieldset>
 <details><summary>Was passiert mit deinen Antworten?</summary><p>Deine Antworten werden zur Auswertung und Verbesserung des Festpay-Studienprojekts in Supabase (Region Frankfurt) gespeichert. Wir fragen weder Namen noch E-Mail-Adresse ab und verknüpfen diese Umfrage nicht mit App-Konten oder Testprotokollen. Die Umfrage zeichnet keine Klicks auf. Zugriff auf die Antworten hat das Projektteam über Supabase; andere Teilnehmende können sie nicht lesen. Die Löschung erfolgt manuell durch das Projektteam. Hosting-Anbieter können technische Zugriffsprotokolle führen. Die Teilnahme ist freiwillig.</p></details>
 <label class="consent"><input type="checkbox" id="consent" name="consent" required><span>Ich möchte freiwillig teilnehmen und bin mit der beschriebenen Speicherung und Auswertung meiner Antworten einverstanden.</span></label>
 </section>
 <p id="error" role="alert" hidden></p>
 <div class="actions"><button type="button" id="back" class="secondary" hidden>Zurück</button><button type="button" id="next" class="primary">Weiter <span aria-hidden="true">→</span></button><button type="submit" id="submit" class="primary" hidden>Feedback absenden</button></div>
-<p class="footnote">Alle Auswahlfragen sind erforderlich. Begründungen und Freitext sind freiwillig. Bei Skalen kannst du „Nicht beurteilbar“ wählen.</p>
+<p class="footnote">Alle Auswahlfragen sind erforderlich. Freitext ist freiwillig. Bei Skalen kannst du „Nicht beurteilbar“ wählen.</p>
 </form></div>
 <section id="success" hidden aria-live="polite"><div class="success-icon" aria-hidden="true">✓</div><h2 tabindex="-1">Danke für dein Feedback!</h2><p>Deine Antworten wurden gespeichert und helfen uns, Festpay zu verbessern.</p><p class="hint">Du kannst dieses Fenster jetzt schließen.</p></section>
 <noscript>Bitte aktiviere JavaScript, um den Fragebogen auszufüllen.</noscript>
 </main><footer>Festpay · Studierendenprojekt · Eigenständige Testumfrage</footer>
 </body></html>
-

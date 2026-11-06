@@ -12,7 +12,7 @@
   const id = crypto.randomUUID(); // One independent submission ID, retained for retries only.
   const context = [
     ['real_roles','Welche Rolle passt im echten Leben am ehesten zu dir? (Mehrfachauswahl möglich)', [['guest','Gast auf Festen'],['helper','Helfer/in am Verkaufsstand'],['organizer','Veranstalter'],['none','Keine dieser Rollen']]],
-    ['coupon_practicality','Wie praktisch findest du es, auf einem Fest an einem Stand mit Bargeld Wertmarken oder Essens- und Getränkecoupons zu kaufen und damit zu bezahlen?', [['1','Sehr unpraktisch'],['2','Eher unpraktisch'],['3','Weder praktisch noch unpraktisch'],['4','Eher praktisch'],['5','Sehr praktisch'],['0','Keine Erfahrung']]],
+    ['legacy_payment_satisfaction','Wie zufrieden bist du mit dem aktuell auf kleinen Festen verbreiteten Bezahlprozess mit physischen Bons oder Verzehrkarten zum Abstreichen?', [['1','Sehr unzufrieden'],['2','Eher unzufrieden'],['3','Weder zufrieden noch unzufrieden'],['4','Eher zufrieden'],['5','Sehr zufrieden']]],
     ['payment_preference','Wie würdest du auf einem Fest am liebsten bezahlen?', [['cash','Bargeld'],['tokens','Wertmarken'],['cards','Verzehrkarten'],['digital','digital / bargeldlos'],['no_preference','keine Präferenz']]]
   ];
   const experience = [
@@ -43,31 +43,63 @@
   }
   context.forEach(q => document.getElementById('context-questions').append(question(...q)));
   const tasks = [
-    ['task_topup', 'Festguthaben aufladen'],
-    ['task_qr', 'Den eigenen QR-Code zum Bezahlen finden und anzeigen'],
-    ['task_buy_tokens', 'Festmarken kaufen'],
-    ['task_redeem_token', 'Eine Festmarke entwerten']
-  ];
+  [
+    "task_guest_balance",
+    "Gast",
+    "Demo-Fest B: 20 € aufladen und Getränk A bezahlen"
+  ],
+  [
+    "task_guest_tokens",
+    "Gast",
+    "Demo-Fest A: Wertmarken für Getränk A und Speise B auswählen und entwerten"
+  ],
+  [
+    "task_helper_checkout",
+    "Helfer",
+    "Demo-Fest B: 2× Getränk A und Speise B erfassen, auf 1× Getränk A ändern und abbuchen"
+  ],
+  [
+    "task_organizer_tokens",
+    "Betreiber",
+    "Fest mit Festmarken anlegen: Spezi und Currywurst mit Pommes eintragen"
+  ],
+  [
+    "task_organizer_balance",
+    "Betreiber",
+    "Fest mit Festguthaben anlegen: 10, 20 und 50 € sowie Spezi, Fanta, Bier, Rote Wurst und Currywurst mit Pommes eintragen"
+  ],
+  [
+    "task_organizer_helper",
+    "Betreiber",
+    "Max Mustermann als Helfer zum Fest mit Festguthaben hinzufügen"
+  ]
+];
   const statuses = [['done','Geschafft'],['with_help','Mit Hilfe geschafft'],['failed','Nicht geschafft'],['not_tried','Nicht ausprobiert']];
-  for (const [index, [name, title]] of tasks.entries()) {
-    const card = document.createElement('div'); card.className = 'task-card'; card.dataset.task = name;
-    card.innerHTML = `<fieldset><legend><span class="task-heading"><span class="task-number">${index+1}</span><span>${title}</span></span></legend><select name="${name}" id="${name}" required aria-label="${title}: Ergebnis"><option value="" disabled selected>Ergebnis auswählen</option>${statuses.map(([value,label]) => `<option value="${value}">${label}</option>`).join('')}</select><label class="task-note" hidden for="${name}_note">Wo bist du hängen geblieben? <span class="optional">Optional</span><textarea id="${name}_note" name="${name}_note" maxlength="300" rows="2" disabled placeholder="Zum Beispiel: Ich habe den nächsten Schritt nicht gefunden."></textarea><span class="hint">Ein kurzer Satz reicht. Bitte keine persönlichen Daten.</span></label></fieldset>`;
-    document.getElementById('task-questions').append(card);
+  const taskQuestions = document.getElementById('task-questions');
+  let previousRole;
+  for (const [index, [name, role, title]] of tasks.entries()) {
+    if (role !== previousRole) {
+      const heading = document.createElement('h3');
+      heading.className = 'task-role';
+      heading.textContent = 'Rolle ' + role;
+      taskQuestions.append(heading);
+      previousRole = role;
+    }
+    const card = document.createElement('div');
+    card.className = 'task-card';
+    const field = question(name, (index + 1) + '. ' + title, statuses);
+    card.append(field);
+    taskQuestions.append(card);
   }
   function updateTasks() {
-    for (const [name] of tasks) {
-      const card = document.querySelector(`[data-task="${name}"]`), select = form.elements[name];
-      const needsNote = ['with_help','failed'].includes(select.value);
-      card.querySelector('.task-note').hidden = !needsNote;
-      form.elements[`${name}_note`].disabled = !needsNote;
-      card.dataset.status = select.value;
-    }
-    document.getElementById('all-done').setAttribute('aria-pressed', String(tasks.every(([name]) => form.elements[name].value === 'done')));
+    const allDone = tasks.every(([name]) => form.elements[name].value === 'done');
+    document.getElementById('all-done').setAttribute('aria-pressed', String(allDone));
   }
   document.getElementById('all-done').addEventListener('click', () => {
     for (const [name] of tasks) form.elements[name].value = 'done';
     document.querySelectorAll('.task-card .invalid').forEach(el => el.classList.remove('invalid'));
-    error.hidden = true; updateTasks();
+    error.hidden = true;
+    updateTasks();
   });
   const scale = [['1','1'],['2','2'],['3','3'],['4','4'],['5','5'],['0','Nicht beurteilbar']];
   experience.forEach(([name,title]) => document.getElementById('experience-questions').append(question(name,title,scale,true)));
@@ -85,6 +117,9 @@
   const selectedRoles = () => [...form.querySelectorAll('input[name="real_roles"]:checked')].map(el => el.value);
   function updateRole() {
     const roles = selectedRoles();
+    const guestFeedback = document.getElementById('guest-abuse-field');
+    guestFeedback.hidden = !roles.includes('guest');
+    form.elements.guest_abuse_feedback.disabled = guestFeedback.hidden;
     const hide = roles.includes('none');
     document.getElementById('value-questions').hidden = hide;
     document.querySelectorAll('#value-ratings input').forEach(el => { el.disabled = hide; el.required = !hide; });
@@ -138,8 +173,8 @@
     const data = new FormData(form);
     const roles = selectedRoles();
     const fee = data.get('organizer_transaction_fee_percent');
-    const payload = {id, survey_version:4, real_role:roles[0], real_roles:roles, organizer_transaction_fee_percent:roles.includes('organizer') ? Number(fee) : null, coupon_practicality:Number(data.get('coupon_practicality')), payment_preference:data.get('payment_preference'), feedback:data.get('feedback').trim(), consent:true};
-    for (const [name] of tasks) { payload[name] = data.get(name); payload[`${name}_note`] = data.has(`${name}_note`) ? data.get(`${name}_note`).trim() : ''; }
+    const payload = {id, survey_version:5, real_role:roles[0], real_roles:roles, organizer_transaction_fee_percent:roles.includes('organizer') ? Number(fee) : null, legacy_payment_satisfaction:Number(data.get('legacy_payment_satisfaction')), guest_abuse_feedback:data.get('guest_abuse_feedback')?.trim() || null, payment_preference:data.get('payment_preference'), feedback:data.get('feedback').trim(), consent:true};
+    for (const [name] of tasks) payload[name] = data.get(name);
     for (const [name] of [...experience,...value,...perspectives]) payload[name] = data.has(name) ? Number(data.get(name)) : null;
     // Retry the exact same payload after an ambiguous network failure.
     pendingPayload ||= payload;
@@ -157,4 +192,3 @@
     } finally { clearTimeout(timeout); sending = false; submit.disabled = false; back.disabled = false; submit.textContent = 'Feedback absenden'; }
   });
 })();
-
