@@ -14,3 +14,5 @@
 .all-done{width:100%;background:#f2f8ef;border:1px solid #a9cbaa;color:#286136;font-size:13px;padding:12px}
 .all-done[aria-pressed="true"]{background:#286136;color:#fff;border-color:#286136}
 select:focus-visible{outline:3px solid #20211f;outline-offset:3px}
+
+.fee-input{display:flex;align-items:center;gap:12px;max-width:230px}.fee-input input{min-width:0;width:100%;font:inherit;font-size:16px;padding:13px;border:1px solid #dedfd7;border-radius:11px}.fee-input span{font-size:17px;font-weight:700;color:#54584e}
