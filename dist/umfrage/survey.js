@@ -82,11 +82,21 @@
   organizerScale.className = 'scale-key';
   organizerScale.textContent = meaningfulnessLabels.slice(1).map((label, index) => `${index + 1} = ${label}`).join(' · ');
   perspectiveRatings.append(organizerScale, question(...organizer, scale, true, meaningfulnessLabels));
+  const selectedRoles = () => [...form.querySelectorAll('input[name="real_roles"]:checked')].map(el => el.value);
   function updateRole() {
-    const hide = form.elements.real_role.value === 'none';
+    const roles = selectedRoles();
+    const hide = roles.includes('none');
     document.getElementById('value-questions').hidden = hide;
     document.querySelectorAll('#value-ratings input').forEach(el => { el.disabled = hide; el.required = !hide; });
+    const field = document.getElementById('organizer-fee-field');
+    const input = document.getElementById('organizer_transaction_fee_percent');
+    const showFee = roles.includes('organizer');
+    field.hidden = !showFee;
+    input.disabled = !showFee;
+    input.required = showFee;
+    if (!showFee) input.value = '';
   }
+  updateRole();
   function showStep() {
     sections.forEach((s,i) => { s.hidden = i !== step; });
     back.hidden = step === 0; next.hidden = step === labels.length-1; submit.hidden = step !== labels.length-1;
@@ -96,6 +106,14 @@
     error.hidden = true; document.getElementById(`heading-${step}`).focus();
   }
   function validate() {
+    if (step === 0 && selectedRoles().length === 0) {
+      error.textContent = 'Bitte wähle mindestens eine Rolle aus.';
+      error.hidden = false;
+      const field = form.querySelector('[data-name="real_roles"]');
+      field.classList.add('invalid');
+      field.querySelector('input').focus();
+      return false;
+    }
     const invalid = [...sections[step].querySelectorAll('input,select,textarea')].find(el => !el.disabled && !el.checkValidity());
     if (!invalid) return true;
     error.textContent = invalid.name === 'consent' ? 'Bitte stimme der Speicherung und Auswertung zu, wenn du teilnehmen möchtest.' : 'Bitte beantworte die markierte Frage. Du kannst bei Skalen auch „Nicht beurteilbar“ wählen.';
