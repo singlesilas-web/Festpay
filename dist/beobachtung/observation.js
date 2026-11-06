@@ -119,7 +119,7 @@
   }
   const day = new Date();
   form.elements.test_date.value = new Date(day.getTime() - day.getTimezoneOffset()*60000).toISOString().slice(0,10);
-  for (const field of ['participant_code','age','gender','app','test_date','moderator','observer','other']) {
+  for (const field of ['participant_code','age','gender','app','test_date','observer','other']) {
     const input = form.elements[field];
     if (state.fields[field] != null) input.value = state.fields[field];
     input.addEventListener('input', () => {state.fields[field]=input.value;store();});
@@ -151,7 +151,7 @@
     }
     state.pending ||= {
       id:state.id,form_version:1,
-      ...Object.fromEntries(['participant_code','app','test_date','moderator','observer','other'].map(key=>[key,String(values.get(key)||'').trim()])),
+      ...Object.fromEntries(['participant_code','app','test_date','observer','other'].map(key=>[key,String(values.get(key)||'').trim()])),
       age: values.get('age') === '' ? null : Number(values.get('age')),
       gender: values.get('gender') || null,
       observations
