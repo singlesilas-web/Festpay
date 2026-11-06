@@ -29,11 +29,17 @@
 @keyframes scan { 0%,100% { top: 14px; } 50% { top: calc(100% - 16px); } }
 .live-time { font-variant-numeric: tabular-nums; font-size: 13px; opacity: .7; margin-top: 12px; display: flex; gap: 6px; justify-content: center; align-items: center; }
 .live-time i { width: 14px; height: 14px; color: var(--ok); }
-.topup-success { display:flex; align-items:center; gap:12px; padding:14px 16px; border:1px solid var(--line); border-radius:18px; background:var(--surface); }
-.topup-success .badge-icon { flex:0 0 40px; }
-.topup-success strong { display:block; font-size:14px; }
-.topup-success p { margin-top:2px; font-size:13px; color:var(--ink-2); }
 .qr-help { max-width:360px; margin-inline:auto; line-height:1.5; }
+.topup-guide-open { overflow:hidden; }
+.topup-shade { position:fixed; inset:0; z-index:1200; background:rgb(0 0 0 / 55%); backdrop-filter:blur(2px); }
+.wallet-spotlight { z-index:1201; overflow:visible; box-shadow:0 0 0 4px var(--bg), 0 0 0 7px var(--ink), 0 18px 44px rgb(0 0 0 / 35%); }
+.wallet-spotlight > * { position:relative; z-index:1; }
+.wallet-spotlight::after { content:""; position:absolute; inset:0; z-index:0; border-radius:inherit; background:var(--ink); }
+.topup-guide { position:fixed; left:max(16px,calc(50% - 220px)); right:max(16px,calc(50% - 220px)); z-index:1202; padding:18px 20px; border:2px solid var(--ink); border-radius:20px; background:var(--bg); color:var(--ink); text-align:center; box-shadow:0 16px 38px rgb(0 0 0 / 28%); }
+.topup-guide strong { display:block; font-size:16px; }
+.topup-guide p { margin-top:5px; font-size:14px; line-height:1.45; color:var(--ink-2); }
+.topup-guide-arrow { position:absolute; left:50%; top:-48px; display:grid; place-items:center; width:42px; height:48px; color:var(--accent); transform:translateX(-50%); }
+.topup-guide-arrow svg { width:36px; height:36px; stroke-width:2.5; }
 
 /* ---------- speisekarte.html ---------- */
 .menu-item { display: flex; align-items: center; gap: 14px; padding: 14px 0; }
@@ -197,8 +203,6 @@ dialog::backdrop { background:#0009; }
 
 
 .festival-dates .input { display:block; inline-size:100%; min-inline-size:0; }
-.festival-dates .input::-webkit-date-and-time-value { min-width:0; text-align:left; }
-.festival-dates .input::-webkit-datetime-edit { padding:0; }
 #w2box > h3 { margin-bottom:16px; }
 #w2box > .card { margin-top:16px !important; }
 .festival-dates .input:focus-visible { outline:2px solid var(--ink); outline-offset:-2px; }
@@ -224,12 +228,26 @@ dialog::backdrop { background:#0009; }
 .festival-dates legend { font-weight: 700; padding: 0 4px; }
 .festival-dates .field + .field { margin-top: 8px; }
 .festival-dates .input { font-size: 16px; padding: 0 8px; }
-.festival-dates .date-input { color-scheme:light; cursor:pointer; }
-.time-picker { position:relative; }
-.time-trigger { display:flex !important; align-items:center; justify-content:space-between; gap:8px; text-align:left; cursor:pointer; }
-.time-trigger > span { margin:0; color:var(--ink); font-size:16px; font-weight:400; }
-.time-trigger svg { width:18px; flex:0 0 18px; transition:transform .2s var(--ease); }
+.date-picker, .time-picker { position:relative; }
+.date-trigger, .time-trigger { display:flex !important; align-items:center; justify-content:space-between; gap:8px; text-align:left; cursor:pointer; }
+.date-trigger > span, .time-trigger > span { margin:0; color:var(--ink); font-size:16px; font-weight:400; }
+.date-trigger svg, .time-trigger svg { width:18px; flex:0 0 18px; transition:transform .2s var(--ease); }
 .time-trigger[aria-expanded="true"] svg { transform:rotate(180deg); }
+.date-calendar { position:absolute; top:calc(100% + 6px); left:0; z-index:31; width:min(292px,calc(100vw - 40px)); padding:12px; border:1px solid var(--line); border-radius:16px; background:var(--bg); box-shadow:var(--shadow); }
+.festival-dates fieldset:last-child .date-calendar { left:auto; right:0; }
+.date-calendar[hidden] { display:none; }
+.calendar-head { display:grid; grid-template-columns:36px 1fr 36px; align-items:center; gap:4px; }
+.calendar-head strong { text-align:center; font-size:14px; text-transform:capitalize; }
+.calendar-head button { display:grid; place-items:center; width:36px; height:36px; border-radius:10px; }
+.calendar-head button:hover, .calendar-head button:focus-visible { background:var(--surface); outline:none; }
+.calendar-head svg { width:18px; }
+.calendar-weekdays, .calendar-days { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
+.calendar-weekdays { margin:8px 0 4px; color:var(--ink-3); font-size:11px; font-weight:800; text-align:center; }
+.calendar-days button { aspect-ratio:1; min-width:0; border-radius:9px; font-size:12px; font-variant-numeric:tabular-nums; }
+.calendar-days button.outside { color:var(--ink-3); opacity:.55; }
+.calendar-days button.today { box-shadow:inset 0 0 0 1px var(--accent); }
+.calendar-days button:hover, .calendar-days button:focus-visible { background:var(--surface); outline:none; }
+.calendar-days button[aria-selected="true"] { background:var(--ink); color:var(--bg); box-shadow:none; }
 .time-options { position:absolute; top:calc(100% + 6px); left:0; right:0; z-index:30; display:grid; grid-template-columns:repeat(2,1fr); gap:4px; max-height:220px; overflow:auto; padding:8px; border:1px solid var(--line); border-radius:16px; background:var(--bg); box-shadow:var(--shadow); }
 .time-options[hidden] { display:none; }
 .time-options button { min-height:40px; border-radius:10px; font-variant-numeric:tabular-nums; font-weight:700; }
