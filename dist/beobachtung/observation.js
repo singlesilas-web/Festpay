@@ -42,7 +42,7 @@
   const elapsed = task => task.elapsed_ms + (task.started ? Math.max(0, Date.now() - task.started) : 0);
   const format = ms => {
     const seconds = Math.floor(ms / 1000);
-    return String(Math.floor(seconds / 60)).padStart(2,'0') + ':' + String(seconds % 60).padStart(2,'0');
+    return String(Math.floor(seconds / 60)) + ':' + String(seconds % 60).padStart(2,'0');
   };
   const cards = new Map();
   const textFields = ['blockage','quote','frustration','liked'];
@@ -54,20 +54,24 @@
     card.open = state.active === key || (key === tasks[0][0] && !draft);
     card.innerHTML = '<summary><b>'+role+' · '+title+'</b><span data-summary></span></summary>'+
       '<p class="readout"><b>Aufgabe (vorlesen)</b><br>'+instruction+'</p>'+
-      '<div class="timer-row"><output aria-label="Stoppuhr">00:00</output><button class="secondary" type="button" data-timer>Zeit starten</button>'+
-      '<label class="duration">Dauer (min)<input type="number" min="0" max="1440" step="any" inputmode="decimal" aria-label="Dauer (min)"></label></div>'+
+      '<div class="timer-row"><output aria-label="Stoppuhr">0:00 min</output><button class="secondary" type="button" data-timer>Zeit starten</button>'+
+      '<label class="duration">Dauer (min)<input type="text" placeholder="1:15" maxlength="7" pattern="[0-9]{1,4}:[0-5][0-9]" aria-label="Dauer in Minuten und Sekunden"></label></div>'+
       '<div class="outcomes" role="group" aria-label="Geschafft?">'+Object.entries(statuses).map(([value,label])=>'<button class="secondary" type="button" data-result="'+value+'" aria-pressed="false">'+label+'</button>').join('')+'</div>'+
       '<div class="observation-fields">'+textFields.slice(0,2).map((field,i)=>'<label>'+fieldLabels[i]+'<textarea data-field="'+field+'" rows="2" maxlength="4000"></textarea></label>').join('')+'</div>'+
       '<details class="followup"><summary>Nachfragen nach Abschluss einer Aufgabe</summary><div class="observation-fields">'+textFields.slice(2).map((field,i)=>'<label>'+fieldLabels[i+2]+'<textarea data-field="'+field+'" rows="2" maxlength="4000"></textarea></label>').join('')+'</div></details>';
     cards.set(key,card);
     document.getElementById('tasks').append(card);
     const duration = card.querySelector('.duration input');
-    duration.value = task.elapsed_ms ? String(Math.round(task.elapsed_ms / 600) / 100) : '';
+    duration.value = task.elapsed_ms ? format(task.elapsed_ms) : '';
     duration.oninput = () => {
-      const minutes = Number(duration.value) || 0;
+      const value = duration.value;
       stop(key);
-      duration.value = minutes ? String(minutes) : '';
-      task.elapsed_ms = Math.round(minutes * 60000);
+      duration.value = value;
+      const match = /^(\d{1,4}):([0-5]\d)$/.exec(value);
+      const ms = match ? (Number(match[1]) * 60 + Number(match[2])) * 1000 : 0;
+      const valid = !value || (match && ms <= 86400000);
+      duration.setCustomValidity(valid ? '' : 'Bitte Minuten und Sekunden eingeben, zum Beispiel 1:15.');
+      if (valid) task.elapsed_ms = ms;
       update();
     };
     for (const field of card.querySelectorAll('textarea')) {
@@ -92,7 +96,9 @@
     task.elapsed_ms = elapsed(task);
     task.started = null;
     state.active = null;
-    cards.get(key).querySelector('.duration input').value = String(Math.round(task.elapsed_ms / 600) / 100);
+    const input = cards.get(key).querySelector('.duration input');
+    input.value = format(task.elapsed_ms);
+    input.setCustomValidity('');
   }
   function update() {
     for (const [key,card] of cards) {
@@ -107,13 +113,13 @@
     for (const [key,card] of cards) {
       const task = state.tasks[key];
       const time = format(elapsed(task));
-      card.querySelector('output').textContent = time;
-      card.querySelector('[data-summary]').textContent = [task.result && statuses[task.result], (task.started || task.elapsed_ms) && time].filter(Boolean).join(' · ');
+      card.querySelector('output').textContent = time + ' min';
+      card.querySelector('[data-summary]').textContent = [task.result && statuses[task.result], (task.started || task.elapsed_ms) && (time + ' min')].filter(Boolean).join(' · ');
     }
   }
   const day = new Date();
   form.elements.test_date.value = new Date(day.getTime() - day.getTimezoneOffset()*60000).toISOString().slice(0,10);
-  for (const field of ['participant_code','app','test_date','moderator','observer','other']) {
+  for (const field of ['participant_code','age','gender','app','test_date','moderator','observer','other']) {
     const input = form.elements[field];
     if (state.fields[field] != null) input.value = state.fields[field];
     input.addEventListener('input', () => {state.fields[field]=input.value;store();});
@@ -123,6 +129,10 @@
   const error = document.getElementById('error');
   const submit = form.querySelector('[type=submit]');
   let sending = false;
+  form.addEventListener('invalid', event => {
+    const card = event.target.closest('.observation-task');
+    if (card) card.open = true;
+  }, true);
   form.onsubmit = async event => {
     event.preventDefault();
     if (sending) return;
@@ -142,6 +152,8 @@
     state.pending ||= {
       id:state.id,form_version:1,
       ...Object.fromEntries(['participant_code','app','test_date','moderator','observer','other'].map(key=>[key,String(values.get(key)||'').trim()])),
+      age: values.get('age') === '' ? null : Number(values.get('age')),
+      gender: values.get('gender') || null,
       observations
     };
     store();

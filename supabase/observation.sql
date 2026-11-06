@@ -32,3 +32,19 @@ select o.id as observation_id, o.created_at, o.participant_code, o.app, o.test_d
 from public.festpay_observations o cross join lateral jsonb_each(o.observations) t;
 revoke all on public.festpay_observation_tasks from public, anon, authenticated;
 grant select on public.festpay_observation_tasks to service_role;
+
+-- Demographic fields and formatted duration.
+alter table public.festpay_observations
+  add column age smallint check (age between 0 and 120),
+  add column gender text check (gender in ('female','male','diverse','not_specified'));
+grant insert (age,gender) on public.festpay_observations to anon;
+create or replace view public.festpay_observation_tasks with (security_invoker = true) as
+select o.id as observation_id, o.created_at, o.participant_code, o.app, o.test_date, o.moderator, o.observer,
+       t.key as task, t.value->>'result' as result,
+       round((t.value->>'duration_ms')::numeric / 60000, 3) as duration_minutes,
+       t.value->>'blockage' as blockage, t.value->>'quote' as quote,
+       t.value->>'frustration' as frustration, t.value->>'liked' as liked, o.other,
+       o.age, o.gender,
+       (floor((t.value->>'duration_ms')::numeric / 60000)::int)::text || ':' ||
+       lpad((floor((t.value->>'duration_ms')::numeric / 1000)::int % 60)::text, 2, '0') || ' min' as duration
+from public.festpay_observations o cross join lateral jsonb_each(o.observations) t;
