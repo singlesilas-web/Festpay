@@ -107,7 +107,7 @@ Eigene Feste haben Anfang und Ende (lokale Uhrzeit des Browsers). Die Karte und 
 
 Die Speise- und Getränkekarte gilt auch für W1. Helfer tippen Artikel mehrfach an; die App summiert die Preise. Alternativ ist eine manuelle Betragseingabe möglich. Erst danach wird gescannt und die Abbuchung bestätigt. Nach erfolgreicher Abbuchung beginnt eine neue Bestellung. Artikel lassen sich über **Artikel ein- und ausblenden** pro lokalem Nutzer und Fest dauerhaft konfigurieren.
 
-Nach dem Aufladen bleibt der neue Saldo mit QR-Code stabil in der Guthaben-Seite stehen; eine integrierte Erfolgsmeldung erklärt, dass der Code jederzeit über das Fest erneut erreichbar ist. Bei vorhandenem Guthaben führt die Karte innerhalb der Festzone direkt zum eigenen QR-Code. Alle diese Funktionen bleiben lokale Simulationen; es gibt keine Synchronisierung zwischen Geräten oder echte Zahlungen.
+Nach dem Aufladen wird der QR-Bereich hervorgehoben, während der restliche Bildschirm abgedunkelt bleibt. Ein Hinweis mit Pfeil erklärt, dass der Code jederzeit über das Fest erneut erreichbar ist; ein beliebiger Klick schließt die Führung, ohne die Seite zu verschieben. Datum und Uhrzeit werden in eigenen FestPay-Auswahlfeldern gewählt. Bei vorhandenem Guthaben führt die Karte innerhalb der Festzone direkt zum eigenen QR-Code. Alle diese Funktionen bleiben lokale Simulationen; es gibt keine Synchronisierung zwischen Geräten oder echte Zahlungen.
 
 ### Rollenführung und QR-Schnellzugriff
 
