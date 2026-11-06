@@ -43,7 +43,15 @@
       <div class="festival-dates">
         ${[["start", "Anfang"], ["ende", "Ende"]].map(([id, label]) => `
           <fieldset><legend>${label}</legend>
-            <label class="field"><span>Datum</span><input class="input date-input" id="${id}Date" type="date"></label>
+            <div class="field"><span>Datum</span><div class="date-picker" id="${id}DatePicker">
+              <button class="input date-trigger" id="${id}DateTrigger" type="button" aria-haspopup="dialog" aria-expanded="false"><span id="${id}DateLabel">Datum wählen</span><i data-lucide="calendar-days"></i></button>
+              <input id="${id}Date" type="hidden">
+              <div class="date-calendar" role="dialog" aria-label="${label} Datum auswählen" hidden>
+                <div class="calendar-head"><button type="button" data-month="-1" aria-label="Vorheriger Monat"><i data-lucide="chevron-left"></i></button><strong></strong><button type="button" data-month="1" aria-label="Nächster Monat"><i data-lucide="chevron-right"></i></button></div>
+                <div class="calendar-weekdays" aria-hidden="true"><span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span>Sa</span><span>So</span></div>
+                <div class="calendar-days" role="grid"></div>
+              </div>
+            </div></div>
             <div class="field"><span>Uhrzeit</span><div class="time-picker" id="${id}TimePicker">
               <button class="input time-trigger" id="${id}TimeTrigger" type="button" aria-haspopup="listbox" aria-expanded="false"><span id="${id}TimeLabel">Uhrzeit wählen</span><i data-lucide="chevron-down"></i></button>
               <input id="${id}Time" type="hidden">
@@ -87,6 +95,7 @@
     if (!match) continue;
     const [, year, month, day, time] = match;
     document.getElementById(id + "Date").value = `${year}-${month}-${day}`;
+    document.getElementById(id + "DateLabel").textContent = `${day}.${month}.${year}`;
     document.getElementById(id + "Time").value = time;
     document.getElementById(id + "TimeLabel").textContent = time;
   }
@@ -98,6 +107,61 @@
   }
   UI.icons();
 
+  function closePickers() {
+    root.querySelectorAll('.date-calendar, .time-options').forEach(menu => {
+      menu.hidden = true;
+      menu.closest('.date-picker, .time-picker').querySelector('[aria-expanded]').setAttribute('aria-expanded', 'false');
+    });
+  }
+
+  root.querySelectorAll('.date-picker').forEach(picker => {
+    const trigger = picker.querySelector('.date-trigger');
+    const calendar = picker.querySelector('.date-calendar');
+    const input = picker.querySelector('input[type="hidden"]');
+    const label = trigger.querySelector('span');
+    const monthLabel = picker.querySelector('.calendar-head strong');
+    const days = picker.querySelector('.calendar-days');
+    const selected = input.value ? input.value.split('-').map(Number) : null;
+    let visibleMonth = selected ? new Date(selected[0], selected[1] - 1, 1) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+
+    function iso(date) {
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    }
+    function renderCalendar() {
+      const year = visibleMonth.getFullYear(), month = visibleMonth.getMonth();
+      monthLabel.textContent = visibleMonth.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
+      const offset = (new Date(year, month, 1).getDay() + 6) % 7;
+      const today = iso(new Date());
+      days.innerHTML = Array.from({ length: 42 }, (_, index) => {
+        const date = new Date(year, month, index - offset + 1);
+        const value = iso(date);
+        return `<button type="button" role="gridcell" data-date="${value}" class="${date.getMonth() === month ? '' : 'outside'} ${value === today ? 'today' : ''}" aria-selected="${value === input.value}">${date.getDate()}</button>`;
+      }).join('');
+      days.querySelectorAll('[data-date]').forEach(day => day.onclick = () => {
+        input.value = day.dataset.date;
+        const [year, month, date] = day.dataset.date.split('-');
+        label.textContent = `${date}.${month}.${year}`;
+        trigger.removeAttribute('aria-invalid');
+        trigger.classList.remove('field-error');
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        closePickers(); trigger.focus();
+      });
+    }
+    trigger.onclick = () => {
+      const opening = calendar.hidden;
+      closePickers();
+      if (input.value) { const [year, month] = input.value.split('-').map(Number); visibleMonth = new Date(year, month - 1, 1); }
+      if (opening) renderCalendar();
+      calendar.hidden = !opening;
+      trigger.setAttribute('aria-expanded', String(opening));
+    };
+    picker.querySelectorAll('[data-month]').forEach(button => button.onclick = () => {
+      visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + Number(button.dataset.month), 1);
+      renderCalendar();
+    });
+    picker.addEventListener('keydown', event => { if (event.key === 'Escape') { closePickers(); trigger.focus(); } });
+  });
+
   root.querySelectorAll('.time-picker').forEach(picker => {
     const trigger = picker.querySelector('.time-trigger');
     const options = picker.querySelector('.time-options');
@@ -106,7 +170,7 @@
     function close() { options.hidden = true; trigger.setAttribute('aria-expanded', 'false'); }
     trigger.onclick = () => {
       const opening = options.hidden;
-      root.querySelectorAll('.time-options').forEach(menu => { menu.hidden = true; menu.closest('.time-picker').querySelector('.time-trigger').setAttribute('aria-expanded', 'false'); });
+      closePickers();
       options.hidden = !opening;
       trigger.setAttribute('aria-expanded', String(opening));
       if (opening) options.querySelector(`[data-time="${input.value}"]`)?.scrollIntoView({ block: 'center' });
@@ -123,8 +187,8 @@
     picker.addEventListener('keydown', event => { if (event.key === 'Escape') { close(); trigger.focus(); } });
   });
   document.addEventListener('click', event => {
-    if (event.target.closest('.time-picker')) return;
-    root.querySelectorAll('.time-options').forEach(menu => { menu.hidden = true; menu.closest('.time-picker').querySelector('.time-trigger').setAttribute('aria-expanded', 'false'); });
+    if (event.target.closest('.date-picker, .time-picker')) return;
+    closePickers();
   });
 
   function showIcon() {
@@ -246,7 +310,7 @@
     for (const id of ["start", "ende"]) {
       const date = dateValue(id);
       const time = document.getElementById(id + "Time").value;
-      if (!date) return invalid(id + "Date", "Datum auswählen");
+      if (!date) return invalid(id + "DateTrigger", "Datum auswählen");
       if (!time) return invalid(id + "TimeTrigger", "Uhrzeit auswählen");
       f[id] = `${date}T${time}`;
     }

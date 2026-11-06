@@ -32,7 +32,6 @@
         <div class="qr-box"><div id="qr"></div><div class="qr-scanline"></div></div>
         <div class="live-time"><i data-lucide="radio"></i><span id="clock"></span></div>
       </div>
-      ${aufladenErfolgreich ? `<div class="topup-success" role="status"><span class="badge-icon accent"><i data-lucide="check"></i></span><div><strong>Guthaben erfolgreich aufgeladen</strong><p>Dein QR-Code ist direkt einsatzbereit.</p></div></div>` : ""}
       <p class="small muted center qr-help">Zeig diesen Code am Stand. Du findest ihn jederzeit wieder, wenn du in der App auf dieses Fest tippst.</p>
       <h3 style="margin-top:24px">Aufladen</h3>
       ${optionen.length
@@ -42,6 +41,42 @@
     <div class="cta-bar"><button class="btn" id="go" disabled><i data-lucide="plus-circle"></i>Betrag wählen</button></div>`;
   UI.icons();
   new QRCode(document.getElementById("qr"), { text: `FESTPAY|${fest.id}|${user?.id}`, width: 210, height: 210 });
+  if (aufladenErfolgreich) {
+    const wallet = root.querySelector(".wallet");
+    const shade = document.createElement("div");
+    shade.className = "topup-shade";
+    const guide = document.createElement("div");
+    guide.className = "topup-guide";
+    guide.setAttribute("role", "status");
+    guide.innerHTML = `<span class="topup-guide-arrow" aria-hidden="true"><i data-lucide="arrow-up"></i></span>
+      <strong>Guthaben erfolgreich aufgeladen</strong>
+      <p>Dein QR-Code steht dir jederzeit in der App bereit. Zeige diesen QR-Code am Stand.</p>`;
+    document.body.append(shade, guide);
+    document.body.classList.add("topup-guide-open");
+    wallet.classList.add("wallet-spotlight");
+    UI.icons();
+
+    function placeGuide() {
+      const walletRect = wallet.getBoundingClientRect();
+      const guideHeight = guide.offsetHeight;
+      const top = Math.min(walletRect.bottom + 18, window.innerHeight - guideHeight - 14);
+      guide.style.top = `${Math.max(walletRect.top + walletRect.height * .72, top)}px`;
+    }
+    function dismiss(event) {
+      if (event.type === "keydown" && !["Escape", "Enter", " "].includes(event.key)) return;
+      document.removeEventListener("click", dismiss, true);
+      document.removeEventListener("keydown", dismiss, true);
+      window.removeEventListener("resize", placeGuide);
+      document.body.classList.remove("topup-guide-open");
+      wallet.classList.remove("wallet-spotlight");
+      shade.remove();
+      guide.remove();
+    }
+    requestAnimationFrame(placeGuide);
+    window.addEventListener("resize", placeGuide);
+    document.addEventListener("click", dismiss, true);
+    document.addEventListener("keydown", dismiss, true);
+  }
   const clock = document.getElementById("clock");
   setInterval(() => (clock.textContent = "Live · " + new Date().toLocaleTimeString("de-DE")), 1000);
 
