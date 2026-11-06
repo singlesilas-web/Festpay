@@ -20,6 +20,8 @@
   const optionen = await API.getAufladeoptionen(fest.id);
   let saldo = await API.getGuthaben(fest.id);
   let wahl = null;
+  const aufladenErfolgreich = sessionStorage.getItem("topupSuccess") === fest.id;
+  if (aufladenErfolgreich) sessionStorage.removeItem("topupSuccess");
 
   root.innerHTML = `
     <div class="page-head"><div class="small muted"><b>W1</b> · ${fest.name}</div><h1>Festguthaben</h1></div>
@@ -30,7 +32,8 @@
         <div class="qr-box"><div id="qr"></div><div class="qr-scanline"></div></div>
         <div class="live-time"><i data-lucide="radio"></i><span id="clock"></span></div>
       </div>
-      <p class="small muted center">Zeig diesen Code am Stand. Der Helfer scannt und bucht ab.</p>
+      ${aufladenErfolgreich ? `<div class="topup-success" role="status"><span class="badge-icon accent"><i data-lucide="check"></i></span><div><strong>Guthaben erfolgreich aufgeladen</strong><p>Dein QR-Code ist direkt einsatzbereit.</p></div></div>` : ""}
+      <p class="small muted center qr-help">Zeig diesen Code am Stand. Du findest ihn jederzeit wieder, wenn du in der App auf dieses Fest tippst.</p>
       <h3 style="margin-top:24px">Aufladen</h3>
       ${optionen.length
         ? `<div class="chips">${optionen.map((b) => `<button class="chip" data-b="${b}">${b} €</button>`).join("")}</div>`
@@ -39,33 +42,6 @@
     <div class="cta-bar"><button class="btn" id="go" disabled><i data-lucide="plus-circle"></i>Betrag wählen</button></div>`;
   UI.icons();
   new QRCode(document.getElementById("qr"), { text: `FESTPAY|${fest.id}|${user?.id}`, width: 210, height: 210 });
-  if (sessionStorage.getItem("topupSuccess") === fest.id) {
-    sessionStorage.removeItem("topupSuccess");
-    const wallet = root.querySelector(".wallet");
-    const shade = document.createElement("div");
-    shade.className = "topup-shade";
-    const hint = document.createElement("button");
-    hint.type = "button";
-    hint.className = "topup-spotlight";
-    hint.innerHTML = '<span aria-hidden="true">↑</span><strong>Guthaben erfolgreich aufgeladen</strong>Zeige diesen QR-Code am Stand vor.';
-    wallet.after(hint);
-    document.body.append(shade);
-    wallet.classList.add("wallet-highlight");
-    wallet.scrollIntoView({ block: "start" });
-    hint.focus({ preventScroll: true });
-    function dismiss(event) {
-      if (event.type === "keydown" && !["Escape", "Enter", " "].includes(event.key)) return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      document.removeEventListener("click", dismiss, true);
-      document.removeEventListener("keydown", dismiss, true);
-      wallet.classList.remove("wallet-highlight");
-      shade.remove();
-      hint.remove();
-    }
-    document.addEventListener("click", dismiss, true);
-    document.addEventListener("keydown", dismiss, true);
-  }
   const clock = document.getElementById("clock");
   setInterval(() => (clock.textContent = "Live · " + new Date().toLocaleTimeString("de-DE")), 1000);
 
