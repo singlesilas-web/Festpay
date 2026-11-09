@@ -47,10 +47,12 @@ window.UI = (function () {
         ${rolle !== "helfer" ? `<a href="marken.html"><i data-lucide="ticket"></i>Meine Festmarken</a><a href="guthaben.html"><i data-lucide="qr-code"></i>Mein Guthaben / QR-Code</a>` : ""}
         <a href="profil.html"><i data-lucide="user-round"></i>Profil &amp; Rolle</a>
         ${eigene.map(f => `<a href="fest.html?id=${encodeURIComponent(f.id)}">${escape(f.name)}</a>`).join("")}
+        <a href="index.html?mode=choose" data-test-home data-no-track="1" style="border-top:1px solid #ddd;margin-top:12px"><i data-lucide="house"></i>Zur Testauswahl</a>
         <a href="login.html"><i data-lucide="log-in"></i>Anmelden</a>
       </div>`;
     document.body.append(bg, d);
     const close = () => { bg.classList.remove("open"); d.classList.remove("open"); };
+    d.querySelector('[data-test-home]').onclick = e => { e.preventDefault(); window.TestLog.returnToSelection(); };
     bg.onclick = close; d.querySelector("[data-close]").onclick = close;
     document.querySelectorAll("[data-menu]").forEach((b) => (b.onclick = () => { bg.classList.add("open"); d.classList.add("open"); }));
     icons();

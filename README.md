@@ -122,3 +122,10 @@ Der QR-Button auf der Startkarte öffnet bei genau einem Fest mit Guthaben direk
 Das manuelle Ortsfeld entfällt. Die aktuelle SVG-Karte besitzt keine geografischen Koordinaten; eine automatische Ortsermittlung ist deshalb erst mit einer echten Kartenanbindung möglich. Bestehende Ortsangaben bleiben in gespeicherten Festen erhalten. Der Zonen-Reset steht unter der Karte. Kategorien werden aus einer festen Liste gewählt; vorhandene individuelle Kategorien bleiben beim Bearbeiten erhalten. Die Icon-Palette ist standardmäßig geöffnet.
 
 Die Helferkasse zeigt Artikelkacheln mit Symbol, Preis und Anzahl sowie ein bearbeitbares Gesamtfeld. Bei umfangreichen Karten scrollt die Artikelliste innerhalb ihres Bereichs. Nach dem Scan erscheint die Bestätigung direkt über der Kamerafläche; Abbrechen behält die Bestellung, Abbuchen setzt sie nach erfolgreicher Buchung zurück.
+
+
+### Ergänzungen zur Testdurchführung (09.11.2026, v7)
+
+Im Menü führt „Zur Testauswahl“ über dieselbe übertragungssichere Abschlussfunktion wie der feste Rücksprungbutton zum ersten Bildschirm. Ein Rücksprung ist ein Versuchsende und kein Erfolgsnachweis. Vor dem nächsten Versuch werden auch ausgeblendete Helferartikel zurückgesetzt. Demo-Fest B bietet 10/20/50 € an, damit die 20-€-Aufladung aus dem finalen Aufgabenblatt durchführbar ist.
+
+Vorhandene Rohdaten bleiben unverändert. Über den Versionsfilter sind ältere Versuche weiterhin verfügbar; standardmäßig zeigt die Auswertung die aktuelle Version. Die Endziele im Dashboard sind beobachtete Zwischen- bzw. Endaktivitäten (z. B. QR sichtbar, Marke entwertet), kein automatischer Nachweis sämtlicher Details einer mehrteiligen Aufgabe. Den vollständigen Aufgabenerfolg mit dem Beobachtungsbogen abgleichen. Eine geräteübergreifende Standzahlung ist im lokalen Klickdummy weiterhin nur als getrennte Helferhandlung testbar.

@@ -127,7 +127,9 @@
       try{
         const task=g.querySelector('select').value;
         const data=await send({action:'start',task,version:C.BUILD_VERSION,consent_version:'2026-11-02-v2'});
-        localStorage.removeItem('festpay_demo_v1');localStorage.removeItem('festpay_zahlart');sessionStorage.removeItem('checkout');sessionStorage.removeItem('topupSuccess');
+        localStorage.removeItem('festpay_demo_v1');localStorage.removeItem('festpay_zahlart');
+        for(const key of Object.keys(localStorage))if(key.startsWith('festpay_hidden_'))localStorage.removeItem(key);
+        sessionStorage.removeItem('checkout');sessionStorage.removeItem('topupSuccess');
         if (task === 'helfer' && API.istDemo()) {
           API.setDemoRolle('helfer');
           // Starting condition, prepared before this attempt starts logging.
@@ -141,7 +143,7 @@
     };
     g.querySelector('select').focus();
   }
-  window.TestLog={event};
+  window.TestLog={event,returnToSelection:()=>active()?finish('return_to_task_selection'):(location.href='index.html?mode=choose')};
   // Semantic outcomes are emitted only after successful business actions.
   const saveFestival = API.festSpeichern;
   API.festSpeichern = async function(festival) {

@@ -28,7 +28,7 @@ Deno.serve(async req=>{
   const raw=await req.text();if(raw.length>60000)return reply(413,{error:'size'});
   const b=JSON.parse(raw);
   if(b.action==='start'){
-   if(!tasks.has(b.task)||b.consent_version!=='2026-11-02-v2'||!['festpay-2026-11-02-v3','festpay-2026-11-02-v4-helper','festpay-2026-11-06-v5-process','festpay-2026-11-09-v6-tasks'].includes(b.version))return reply(400,{error:'start'});
+   if(!tasks.has(b.task)||b.consent_version!=='2026-11-02-v2'||!['festpay-2026-11-02-v3','festpay-2026-11-02-v4-helper','festpay-2026-11-06-v5-process','festpay-2026-11-09-v6-tasks','festpay-2026-11-09-v7-tests'].includes(b.version))return reply(400,{error:'start'});
    const id=crypto.randomUUID(),token=crypto.randomUUID()+crypto.randomUUID();
    await db('analytics_sessions',{method:'POST',body:JSON.stringify({id,token_hash:await hash(token),task:b.task,version:b.version,consent_version:b.consent_version})});
    return reply(200,{id,token});

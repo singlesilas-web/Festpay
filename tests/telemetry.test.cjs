@@ -78,3 +78,12 @@ test('failed return retains the attempt and retry sends the same end event', asy
  await button.onclick();
  assert.equal(r.context.location.href,'index.html?mode=choose');
 });
+
+test('menu return uses the same acknowledged case closure as the persistent button', async () => {
+ const r=runtime({guest:true});let ended=false;
+ r.context.fetch=async(_,request)=>{ended=JSON.parse(request.body).events.some(e=>e.type==='session_end');return {ok:true,json:async()=>({})};};
+ await r.context.TestLog.returnToSelection();
+ assert.equal(ended,true);
+ assert.equal(r.session.has('festpay_test_session_v2'),false);
+ assert.equal(r.context.location.href,'index.html?mode=choose');
+});
