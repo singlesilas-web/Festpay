@@ -2,7 +2,7 @@
 (() => {
   const C=window.APP_CONFIG, KEY='festpay_test_session_v2', OFF='festpay_exclude_device';
   const screen=location.pathname.split('/').pop()||'index.html';
-  let session, currentRequest=null, stopped=false, pill, scrollTimer, finishing=false, lastZoom=1, clicks=[];
+  let session, currentRequest=null, stopped=false, pill, scrollTimer, finishing=false, lastZoom=1, clicks=[], returnButton;
   function readSession() {
     try { return JSON.parse(sessionStorage.getItem(KEY)); } catch { return null; }
   }
@@ -71,6 +71,7 @@
     finishing = true;
     const button = pill.querySelector('button');
     button.disabled = true;
+    if (returnButton) returnButton.disabled = true;
     if (!readSession()?.ending) {
       event('session_end', {reason});
       session = readSession();
@@ -87,19 +88,35 @@
     if (remaining) {
       finishing = false;
       button.disabled = false;
+      if (returnButton) returnButton.disabled = false;
       alert('Noch nicht alle Daten übertragen. Bitte erneut versuchen, sobald du online bist.');
       return;
     }
-    sessionStorage.setItem('festpay_ended','1');resetPreview();location.href='index.html?mode=choose';
+    sessionStorage.setItem('festpay_ended','1');resetPreview();location.replace('index.html?mode=choose');
   }
   function showPill(){
     pill=document.createElement('div');pill.className='test-pill';pill.dataset.noTrack='1';
-    pill.innerHTML=active()?'<span>Test läuft</span><button>Test beenden</button>':'<span>Vorschau · keine Aufzeichnung</span><button>Testauswahl</button><a href="admin.html">Auswertung</a>';
-    pill.querySelector('button').onclick=()=>active()?finish('participant_finished'):(location.href='index.html?mode=choose');document.body.append(pill);
+    pill.innerHTML=active()?'<span>Test läuft</span><button>Zur Testauswahl</button>':'<span>Vorschau · keine Aufzeichnung</span><button>Testauswahl</button><a href="admin.html">Auswertung</a>';
+    pill.querySelector('button').onclick=()=>active()?finish('return_to_task_selection'):(location.href='index.html?mode=choose');document.body.append(pill);
+    if (active()) {
+      returnButton = document.createElement('button');
+      returnButton.className = 'test-return';
+      returnButton.dataset.noTrack = '1';
+      returnButton.textContent = '← Zur Testauswahl';
+      returnButton.setAttribute('aria-label', 'Testversuch beenden und zur Testauswahl zurückkehren');
+      returnButton.onclick = () => finish('return_to_task_selection');
+      document.body.append(returnButton);
+      document.body.classList.add('test-running');
+    }
   }
   function gate(){
     const g=document.createElement('section');g.className='test-gate';g.dataset.noTrack='1';g.setAttribute('role','dialog');g.setAttribute('aria-modal','true');g.setAttribute('aria-label','FestPay Nutzertest');
-    g.innerHTML='<div class="test-card"><div class="eyebrow">FESTPAY / NUTZERTEST</div><h1>Ein Fest. Zwei Wege zu bezahlen.</h1><p>Teste unseren Klickdummy. Alle Beträge und Zahlungen sind simuliert.</p><select aria-label="Testaufgabe"><option value="explore">Frei erkunden</option><option value="wallet_topped_up">Guthaben aufladen</option><option value="wallet_qr_shown">Guthaben-QR anzeigen</option><option value="tokens_purchased">Festmarken kaufen</option><option value="token_redeemed">Festmarke entwerten</option><option value="festival_created">Fest anlegen</option><option value="festival_updated">Fest bearbeiten</option><option value="festival_helper_saved">Helfer hinzufügen und speichern</option><option value="wallet_charged">Guthaben am Stand abbuchen</option></select><p>Mit deiner Zustimmung erfassen wir Klickpositionen, Seitenwechsel, Scrollen, Zoom, Zeitpunkte und erfolgreiche Schritte unter einer zufälligen Sitzungs-ID. Keine Eingabetexte, Passwörter oder echten Zahlungsdaten. Aktuell erfolgt keine automatische Löschung. Die Projektverantwortlichen verwalten die Aufbewahrung und Löschung der Testdaten.</p><label><input type="checkbox">Ich möchte am aufgezeichneten Nutzertest teilnehmen.</label><p class="test-alert" id="testStatus"></p><button id="startTest" disabled>Als Testgast starten</button><button class="secondary" id="previewTest">Admin / Vorschau ohne Aufzeichnung</button><a href="admin.html">Zur geschützten Auswertung</a></div>';
+    g.innerHTML='<div class="test-card"><div class="eyebrow">FESTPAY / NUTZERTEST</div><h1>Welche Aufgabe testest du?</h1><p>Teste unseren Klickdummy. Alle Beträge und Zahlungen sind simuliert.</p><select aria-label="Testaufgabe"></select><p id="taskInstructions" class="task-instructions"></p><p>Mit deiner Zustimmung erfassen wir Klickpositionen, Seitenwechsel, Scrollen, Zoom, Zeitpunkte und erfolgreiche Schritte unter einer zufälligen Sitzungs-ID. Keine Eingabetexte, Passwörter oder echten Zahlungsdaten. Aktuell erfolgt keine automatische Löschung. Die Projektverantwortlichen verwalten die Aufbewahrung und Löschung der Testdaten.</p><label><input type="checkbox">Ich möchte am aufgezeichneten Nutzertest teilnehmen.</label><p class="test-alert" id="testStatus"></p><button id="startTest" disabled>Aufgabe starten</button><button class="secondary" id="previewTest">Admin / Vorschau ohne Aufzeichnung</button><a href="admin.html">Zur geschützten Auswertung</a></div>';
+    const taskSelect = g.querySelector('select');
+    taskSelect.replaceChildren(...window.FestPayTasks.map(([id,role,title], index) => new Option((index+1)+'. '+role+' · '+title, id)));
+    const instructions = () => { g.querySelector('#taskInstructions').textContent = window.FestPayTasks.find(task => task[0] === taskSelect.value)[3]; };
+    taskSelect.onchange = instructions;
+    instructions();
     document.body.append(g);g.addEventListener('keydown',e=>{if(e.key!=='Tab')return;const els=[...g.querySelectorAll('select,input,button:not(:disabled),a')],first=els[0],last=els.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}});const btn=g.querySelector('#startTest'),status=g.querySelector('#testStatus');
     status.textContent=ready()?'Die Aufzeichnung beginnt erst nach dem Start.':'Testaufzeichnung noch nicht freigeschaltet. Die Supabase-Anbindung wird vorbereitet. Nutze bis dahin die Vorschau.';
     g.querySelector('input').onchange=e=>btn.disabled=!e.target.checked||!ready();
@@ -110,8 +127,14 @@
       try{
         const task=g.querySelector('select').value;
         const data=await send({action:'start',task,version:C.BUILD_VERSION,consent_version:'2026-11-02-v2'});
-        localStorage.removeItem(OFF);session={id:data.id,token:data.token,started:Date.now(),seq:0,task};stopped=false;persist();
-        localStorage.removeItem('festpay_demo_v1');localStorage.removeItem('festpay_zahlart');sessionStorage.removeItem('checkout');g.remove();
+        localStorage.removeItem('festpay_demo_v1');localStorage.removeItem('festpay_zahlart');sessionStorage.removeItem('checkout');sessionStorage.removeItem('topupSuccess');
+        if (task === 'helfer' && API.istDemo()) {
+          API.setDemoRolle('helfer');
+          // Starting condition, prepared before this attempt starts logging.
+          await API.aufladen('demo-sommerfest', 20);
+        }
+        sessionStorage.removeItem('festpay_ended');
+        localStorage.removeItem(OFF);session={id:data.id,token:data.token,started:Date.now(),seq:0,task};stopped=false;persist();g.remove();
         // Restart to render a clean demo state for every participant.
         location.replace('index.html');
       }catch{status.textContent='Testsitzung konnte nicht gestartet werden. Bitte erneut versuchen.';btn.disabled=false;}
@@ -142,7 +165,8 @@
   }
   const mode=new URLSearchParams(location.search).get('mode');
   if(mode==='preview'){resetPreview();history.replaceState(null,'',location.pathname+location.search.replace(/[?&]mode=preview/,'').replace(/^&/,'?'));}
-  if(mode==='choose'){resetPreview();gate();}
+  if(mode==='choose' && active()){showPill();finish('return_to_task_selection');}
+  else if(mode==='choose'){resetPreview();gate();}
   else if(!session&&localStorage.getItem(OFF)!=='1')gate();else showPill();
   if(active())event('page_view');
   document.addEventListener('click',e=>{
@@ -166,7 +190,7 @@
   window.visualViewport?.addEventListener('resize',()=>{const scale=visualViewport.scale;if(Math.abs(scale-lastZoom)>.04){lastZoom=scale;event('browser_zoom',{scale});}});
   document.addEventListener('visibilitychange',()=>{event(document.hidden?'page_hidden':'page_visible');if(document.hidden)flush(true);});
   window.addEventListener('pagehide',()=>{event('page_leave');flush(true);});
-  window.addEventListener('pageshow',e=>{if(e.persisted){session=readSession();if(active())event('page_view');}});
+  window.addEventListener('pageshow',e=>{if(e.persisted){session=readSession();if(active())event('page_view');else if(returnButton)location.replace('index.html?mode=choose');}});
   window.addEventListener('storage',e=>{if((e.key===OFF&&e.newValue==='1')||(e.key==='festpay_analyst_auth'&&analystSignedIn())){resetPreview();pill?.remove();showPill();}});
   setInterval(()=>flush(),1500);
   setInterval(()=>{if(active()&&!document.hidden)event('heartbeat');},20000);

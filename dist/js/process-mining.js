@@ -10,12 +10,12 @@ window.FestPayMining = (() => {
   "festival_helper_saved": "Helfer hinzufügen und speichern",
   "wallet_charged": "Guthaben am Stand abbuchen"
 };
-  const assignedGoal = task => ({w1: 'wallet_topped_up', w2: 'token_redeemed'}[task] || task);
+  const assignedGoal = task => ({w1: 'wallet_topped_up', w2: 'token_redeemed', gast_guthaben: 'wallet_qr_shown', gast_marken: 'token_redeemed', helfer: 'wallet_charged', betreiber_marken: 'festival_created', betreiber_guthaben: 'festival_helper_saved'}[task] || task);
   const names = {
     ...goals, 'index.html': 'Karte', 'fest.html': 'Fest', 'guthaben.html': 'Guthaben',
     'speisekarte.html': 'Speisekarte', 'bezahlen.html': 'Bezahlen', 'marken.html': 'Meine Festmarken',
     'betreiber.html': 'Festverwaltung', 'helfer.html': 'Kasse & Scanner', 'profil.html': 'Profil',
-    helper_scanner_opened: 'Scanner geöffnet', helper_qr_recognized: 'Gast-QR erkannt',
+    session_end: 'Testversuch beendet', helper_scanner_opened: 'Scanner geöffnet', helper_qr_recognized: 'Gast-QR erkannt',
     festival_save_failed: 'Fest konnte nicht gespeichert werden', wallet_topped_up_failed: 'Aufladen fehlgeschlagen',
     tokens_purchased_failed: 'Markenkauf fehlgeschlagen', token_redeemed_failed: 'Entwertung fehlgeschlagen',
     wallet_charged_failed: 'Abbuchung fehlgeschlagen',
@@ -27,6 +27,7 @@ window.FestPayMining = (() => {
   };
   const actions = new Set(['#btnSearch','#btnLocate','#go','#pay','#save','#mm','#addTop','#addItem','#addHelfer','#sim','#cam','#book','#clearOrder']);
   function step(event) {
+    if (event.type === 'session_end') return 'session_end';
     if (event.type === 'activity') return event.props?.activity;
     if (event.type === 'page_view') return event.screen;
     if (event.type === 'map_pan' || event.type === 'map_zoom') return event.type;
@@ -79,7 +80,7 @@ window.FestPayMining = (() => {
       const path = trace.map(step).filter(Boolean);
       const route = completed ? (happyPath(goal, trace) ? 'happy' : 'other') : 'open';
       cases.push({
-        session, trace, completed, assigned, status, route, path,
+        session, trace, fullTrace: ordered, endReason: ordered.find(e => e.type === 'session_end')?.props?.reason, completed, assigned, status, route, path,
         variant: JSON.stringify([route, path]),
         clicks: trace.filter(event => event.type === 'click').length,
         duration: last?.elapsed ?? null

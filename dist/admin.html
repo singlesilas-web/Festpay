@@ -4,6 +4,7 @@
 <section id="login" class="panel"><h2>Geschützte Auswertung</h2><p id="status">Supabase-Verbindung wird geprüft …</p><form><label>E-Mail<input type="email" id="email" autocomplete="username" required></label><label>Passwort<input type="password" id="password" autocomplete="current-password" required></label><button class="primary" type="submit">Anmelden</button> <button id="register" type="button">Admin-Account registrieren</button></form><p class="note">Nur freigegebene, per E-Mail bestätigte Analyse-Accounts erhalten Lesezugriff. Registrierung allein gewährt keine Berechtigung. Die Vorschau-Auswahl gewährt keine Adminrechte.</p></section>
 <div id="dashboard" hidden><div id="notice" class="notice"></div>
 <div class="filters">
+<label>Testaufgabe<select id="task"></select></label>
 <label>Endziel<select id="goal"></select></label>
 <label>Version<select id="version"></select></label>
 <label>Wege<select id="route"><option value="all">Alle Wege</option><option value="happy">Happy Paths</option><option value="other">Andere erfolgreiche Wege</option><option value="open">Ohne Zielerfolg</option></select></label>
@@ -11,7 +12,7 @@
 <button id="csv">Prozess-CSV</button><button id="raw">Ereignisse (JSON)</button>
 </div>
 <div id="metrics" class="metrics"></div>
-<p class="note">Zeit und Klicks zählen ab Teststart bis zum ersten Erreichen des gewählten Endziels. Die Zeit enthält auch Pausen. Unvollständige Fälle stammen aus Tests, denen dieses Ziel zugewiesen war.</p>
+<p class="note">Die aktuelle Testversion ist vorausgewählt. Frühere Versuche bleiben über den Versionsfilter verfügbar. Aufgabenfilter und Endziel sind getrennt wählbar. Ein erreichtes Endziel belegt den jeweiligen Schritt, nicht automatisch alle Anforderungen der Aufgabe. Beim Gast-Guthabentest belegt „Guthaben-QR anzeigen“ das Vorzeigen des Codes, nicht die Zahlung am Stand. Prozess-CSV und JSON enthalten den ganzen Versuch einschließlich Rückkehr zur Testauswahl. Zeit und Klicks zählen ab Teststart bis zum ersten Erreichen des gewählten Endziels. Die Zeit enthält auch Pausen. Unvollständige Fälle stammen aus Tests, denen dieses Ziel zugewiesen war.</p>
 <section class="panel">
 <h2>Process Discovery</h2>
 <p class="note">Grün zeigt erfolgreiche direkte Routen ohne zusätzliche Seitenwechsel, Orange andere erfolgreiche Wege, Grau Wege ohne Zielerfolg. Die Pfeildicke und Zahl zeigen, wie viele Fälle denselben Übergang genommen haben.</p>
@@ -26,4 +27,4 @@
 <p class="note">„Vermuteter Abbruch“ bedeutet mindestens 30 Minuten ohne neues Ereignis. Ein ausdrücklich beendeter Test wird separat markiert.</p>
 <div class="table-wrap"><table><thead><tr><th>Sitzung</th><th>Gewählte Aufgabe</th><th>Ergebnis</th><th>Klicks</th><th>Dauer</th><th>Weg</th></tr></thead><tbody id="sessions"></tbody></table></div></section>
 </div></main>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.99.2/dist/umd/supabase.min.js"></script><script src="js/config.js?v=5"></script><script src="js/process-mining.js?v=5"></script><script src="js/admin.js?v=5"></script></body></html>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.99.2/dist/umd/supabase.min.js"></script><script src="js/config.js?v=6"></script><script src="js/test-tasks.js?v=6"></script><script src="js/process-mining.js?v=6"></script><script src="js/admin.js?v=6"></script></body></html>

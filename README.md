@@ -60,11 +60,12 @@ Für echte gemeinsame Helfer-Accounts und geräteübergreifende Zuordnungen wär
 
 ## Testaufzeichnung
 
-- Tests beginnen ausschließlich nach Zustimmung und Auswahl von W1, W2 oder freier Erkundung.
+- Tests beginnen nach Zustimmung und Auswahl einer der fünf Aufgaben aus „Happy Paths Aufgaben final“. `dist/js/test-tasks.js` liefert die gemeinsame Liste für Testauswahl, Beobachtungsbogen und Aufgabenfilter.
 - **Admin / Vorschau** zeichnet nichts auf. Der Ausschluss gilt browserbezogen für diesen Ursprung und wird über Tabs synchronisiert. Angemeldete Analysten werden ebenfalls ausgeschlossen.
 - Erfasst werden Klickziele und normierte Positionen, Seitenwechsel, Scrolltiefe, Kartenbewegung und Zoom, Browserzoom soweit gemeldet, Sichtbarkeit und erfolgreiche fachliche Schritte.
 - Keine Eingabetexte, Passwörter, Namen, rohen URL-Parameter oder IP-Adressen im eigenen Ereignisschema. Infrastruktur-Anbieter können technische Zugriffslogs führen. Zufällige Sitzungs-IDs sind Pseudonymisierung, keine garantierte Anonymisierung.
 - Versand in Batches, Queue über Seitenwechsel, Keepalive und idempotente Event-IDs reduzieren Datenverlust. Browserabsturz, fehlende Verbindung und sofortiges Schließen können dennoch Ereignisse verlieren. Laufzeit maximal vier Stunden, maximal 5.000 Ereignisse pro Sitzung.
+- **Zur Testauswahl** beendet den aktuellen Versuch mit `session_end` und `return_to_task_selection`, überträgt ausstehende Ereignisse und öffnet die Aufgabenwahl. Bei Übertragungsfehlern bleiben die Daten für einen erneuten Versuch erhalten. Jede gestartete Aufgabe erhält eine eigene Sitzungs-ID und einen frischen Demo-Zustand. Im Helfertest sind Helferrolle und 20 € Gastguthaben als Startbedingung vorbereitet.
 - Eigene technische Prüfsitzungen können serverseitig als `excluded=true` markiert werden und fehlen dann in der Auswertung.
 
 ## Supabase und Adminzugriff
@@ -81,17 +82,18 @@ Für ein neues eigenes Supabase-Projekt zuerst `supabase/analytics.sql`, dann `s
 
 ## Auswertung
 
-Ein Fall ist eine ausdrücklich gestartete Testsitzung. `seq` bestimmt die Reihenfolge bei verspätetem Versand; `at` ist Clientzeit und `received_at` Serverzeit.
+Ein Fall ist eine ausdrücklich gestartete Aufgabe. Das Dashboard wählt `festpay-2026-11-09-v6-tasks` standardmäßig voraus. Ältere Daten bleiben über den Versionsfilter erreichbar und behalten ihre ursprüngliche Aufgabenbezeichnung. Die Erweiterung bestehender Datenbanken steht in `supabase/analytics-tasks-v6.sql`. `seq` bestimmt die Reihenfolge bei verspätetem Versand; `at` ist Clientzeit und `received_at` Serverzeit.
 
-- **W1-Erfolg:** `wallet_topped_up`.
-- **W2-Erfolg:** `token_redeemed`; der Kauf allein genügt nicht.
+- **Gast-Guthabenaufgabe:** `wallet_qr_shown` als beobachtetes Teilziel. Dies belegt keine erfolgte Zahlung am Stand. Alte W1-Tests behalten `wallet_topped_up` als Ziel.
+- **Gast-Markenaufgabe / W2:** `token_redeemed`; der Kauf allein genügt nicht.
+- **Helferaufgabe:** `wallet_charged`. Betreiber-Festmarken: `festival_created`. Betreiber-Guthaben: `festival_helper_saved`. Das jeweilige Ereignis belegt den Schritt, nicht automatisch die korrekte Erfüllung sämtlicher Aufgabenanforderungen.
 - **Vermuteter Abbruch:** Ziel nicht erreicht und seit mindestens 30 Minuten kein Ereignis.
 - Explizites Testende ohne Ziel wird separat markiert; freie Erkundung hat keine Erfolgsquote.
 - Dauer reicht bis zum letzten Ereignis und kann Hintergrundzeit enthalten. Offene Sitzungen sind vorläufig.
 
 Das Dashboard zeigt Prozessübergänge, Varianten, Sitzungen, Klickzahlen und eine normierte Klickdichte nach Seite, Ansicht, Seitengröße und Kartenzoom. Die Klickdichte ist kein Screenshot-Overlay und erlaubt keine geographische Interpretation.
 
-Der **Prozess-CSV-Export** enthält `case_id, activity, timestamp, sequence, task, version` für PM4Py, Disco oder Celonis. Der JSON-Export enthält zusätzlich die übrigen Bedienereignisse. Die eingebauten Übergänge und Varianten sind erste Process-Mining-Auswertungen, kein vollständiges Conformance-Checking.
+Der **Prozess-CSV-Export** enthält `case_id, activity, timestamp, sequence, task, version` für PM4Py, Disco oder Celonis. Beide Exporte umfassen den ganzen ausgewählten Versuch bis zum Testende, auch wenn das gewählte Ziel vorher erreicht wurde. `end_reason` zeigt den Grund des Testendes. Der JSON-Export enthält zusätzlich die übrigen Bedienereignisse. Die eingebauten Übergänge und Varianten sind erste Process-Mining-Auswertungen, kein vollständiges Conformance-Checking.
 
 ## Prüfen
 

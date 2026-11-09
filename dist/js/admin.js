@@ -14,7 +14,7 @@
   async function all(table,columns){let rows=[];for(let offset=0;;offset+=1000){let query=client.from(table).select(columns);if(table==='analytics_sessions')query=query.eq('excluded',false);const {data,error}=await query.order(table==='analytics_sessions'?'started_at':'received_at',{ascending:true}).order('id',{ascending:true}).range(offset,offset+999);if(error)throw error;rows.push(...data);if(data.length<1000)return rows;}}
   async function load(){try{const {data,error}=await client.from('analytics_admins').select('user_id');if(error||!data.length){$('status').textContent='Dieser Account hat keine Analysefreigabe.';$('logout').hidden=false;return;}sessions=await all('analytics_sessions','id,task,version,started_at');events=await all('analytics_events','id,session_id,seq,type,screen,at,received_at,elapsed,props');sample=false;show();$('logout').hidden=false;}catch{$('status').textContent='Daten konnten nicht geladen werden. Verbindung und Zugriffsrechte prüfen.';}}
   const routeNames = {happy:'Happy Path', other:'Anderer erfolgreicher Weg', open:'Ohne Zielerfolg'};
-  const taskNames = {...goals, w1:'W1 · Guthaben', w2:'W2 · Entwertung', explore:'Frei erkunden'};
+  const taskNames = {...Object.fromEntries(window.FestPayTasks.map(([id,role,title]) => [id,role+' · '+title])), ...goals, w1:'W1 · Guthaben', w2:'W2 · Entwertung', explore:'Frei erkunden'};
   const duration = ms => ms == null ? '—' : (ms < 60000 ? Math.round(ms / 1000) + ' s' : Math.floor(ms / 60000) + ' min ' + Math.floor(ms % 60000 / 1000) + ' s');
   function options(id, values, empty = '') {
     const select = $(id);
@@ -29,7 +29,9 @@
     $('reload').hidden = sample;
     $('notice').textContent = sample ? 'BEISPIELDATEN · Erfunden und nicht gespeichert.' : 'Live-Daten · Nur freigegebene Testsitzungen.';
     options('goal', Object.entries(goals));
-    options('version', [['all','Alle Versionen'], ...[...new Set(sessions.map(s => s.version))].map(v => [v,v])]);
+    options('task', [['all','Alle Aufgaben'], ...window.FestPayTasks.map(([id,role,title]) => [id,role+' · '+title]), ...Object.entries(taskNames).filter(([id]) => !window.FestPayTasks.some(task => task[0] === id)).map(([id,title]) => [id,'Früher · '+title])]);
+    options('version', [['current','Aktuelle Testversion'], ['all','Alle Versionen'], ...[...new Set(sessions.map(s => s.version))].map(v => [v,v])]);
+    if (!sample) $('version').value = [...$('version').options].some(o => o.value === C.BUILD_VERSION) ? C.BUILD_VERSION : 'current';
     render();
   }
   function variants(cases) {
@@ -44,7 +46,7 @@
   const metric = (value, name) => '<div class="metric"><b>' + esc(value) + '</b><span>' + esc(name) + '</span></div>';
   function render() {
     const goal = $('goal').value, version = $('version').value, route = $('route').value;
-    const cases = casesForGoal(sessions.filter(s => version === 'all' || s.version === version), events, goal);
+    const cases = casesForGoal(sessions.filter(s => (version === 'all' || s.version === (version === 'current' ? C.BUILD_VERSION : version)) && ($('task').value === 'all' || s.task === $('task').value)), events, goal);
     const filtered = cases.filter(c => route === 'all' || route === c.route);
     const groups = variants(filtered);
     options('variant', [['all','Alle Varianten'], ...groups.map(([key,v],i) => [key, 'Weg ' + (i+1) + ' · ' + v.cases.length + ' Fälle · ' + routeNames[v.route]])]);
@@ -60,7 +62,7 @@
       + metric(median(completed.map(c => c.clicks)) ?? '—','Median Klicks bis Ziel');
     $('sessions').innerHTML = selected.map(c =>
       '<tr><td>' + esc(c.session.id.slice(0,12)) + '</td><td>' + esc(taskNames[c.session.task] || c.session.task) +
-      '</td><td>' + esc(c.status) + '</td><td>' + c.clicks + '</td><td>' + duration(c.duration) +
+      '</td><td>' + esc(c.status) + (c.endReason ? ' · Versuch beendet' : '') + '</td><td>' + c.clicks + '</td><td>' + duration(c.duration) +
       '</td><td><details><summary>' + routeNames[c.route] + '</summary><p>' + esc(pathText(c.path)) + '</p></details></td></tr>'
     ).join('') || '<tr><td colspan="6">Für dieses Endziel und diese Filter liegen noch keine Fälle vor.</td></tr>';
     const visibleGroups = variants(selected);
@@ -184,17 +186,22 @@
   }
   $('csv').onclick = () => {
     const quote = value => '"'+String(value??'').replace(/"/g,'""')+'"';
-    const rows = [['case_id','activity','timestamp','sequence','task','version','goal','outcome','route','elapsed_ms']];
-    for (const c of selected) for (const e of c.trace) {
+    const rows = [['case_id','activity','timestamp','sequence','task','version','goal','outcome','route','elapsed_ms','end_reason']];
+    for (const c of selected) for (const e of c.fullTrace) {
       const key = step(e);
-      if (key) rows.push([c.session.id,label(key),e.at,e.seq,c.session.task,c.session.version,$('goal').value,c.status,c.route,e.elapsed]);
+      if (key) rows.push([c.session.id,label(key),e.at,e.seq,c.session.task,c.session.version,$('goal').value,c.status,c.route,e.elapsed,c.endReason]);
     }
     download('festpay-process-log.csv','\uFEFF'+rows.map(row => row.map(quote).join(',')).join('\r\n'),'text/csv;charset=utf-8');
   };
   $('raw').onclick = () => download('festpay-events.json',JSON.stringify({
-    example:sample, goal:$('goal').value, sessions:selected.map(c => c.session), events:selected.flatMap(c => c.trace)
+    example:sample, goal:$('goal').value, sessions:selected.map(c => c.session), events:selected.flatMap(c => c.fullTrace)
   },null,2),'application/json');
-  for (const id of ['goal','version','route','variant']) $(id).onchange=render;
+  for (const id of ['goal','task','version','route','variant']) $(id).onchange=render;
+  $('task').onchange = () => {
+    const goal = {gast_guthaben:'wallet_qr_shown',gast_marken:'token_redeemed',helfer:'wallet_charged',betreiber_marken:'festival_created',betreiber_guthaben:'festival_helper_saved'}[$('task').value];
+    if (goal) $('goal').value = goal;
+    render();
+  };
   $('screen').onchange=contexts;
   $('context').onchange=heat;
   $('reload').onclick=load;
