@@ -22,12 +22,12 @@ window.FestPayTasks = [
     "betreiber_marken",
     "Betreiber",
     "Fest mit Festmarken anlegen",
-    "Wechsel in der Menüansicht die Rolle auf Betreiber und lege ein neues Fest an. Befülle die Kopfdaten des Festes und wähle als Bezahlweg Festmarken. Dein Speise- und Getränkeangebot: Spezi – 3,50 €. Currywurst mit Pommes – 5,00 €. Alle Artikel benötigen passende Kategorie und Icon."
+    "Du startest als Betreiber. Lege ein neues Fest an. Befülle die Kopfdaten des Festes und wähle als Bezahlweg Festmarken. Dein Speise- und Getränkeangebot: Spezi – 3,50 €. Currywurst mit Pommes – 5,00 €. Alle Artikel benötigen passende Kategorie und Icon."
   ],
   [
     "betreiber_guthaben",
     "Betreiber",
     "Fest mit Festguthaben und Helfer anlegen",
-    "Wechsel in der Menüansicht die Rolle auf Betreiber und lege ein neues Fest an. Befülle die Kopfdaten des Festes und wähle als Bezahlweg Festguthaben. Die Gäste sollen 10 €, 20 € und 50 € aufladen können. Getränke: Spezi – 3,50 €; Fanta – 3,50 €; Bier – 4,00 €. Speisen: Rote Wurst – 3,50 €; Currywurst mit Pommes – 5,00 €. Alle Artikel benötigen passende Kategorie und Icon. Füge den Helfer hinzu: Max.Mustermann@web.de."
+    "Du startest als Betreiber. Lege ein neues Fest an. Befülle die Kopfdaten des Festes und wähle als Bezahlweg Festguthaben. Die Gäste sollen 10 €, 20 € und 50 € aufladen können. Getränke: Spezi – 3,50 €; Fanta – 3,50 €; Bier – 4,00 €. Speisen: Rote Wurst – 3,50 €; Currywurst mit Pommes – 5,00 €. Alle Artikel benötigen passende Kategorie und Icon. Füge den Helfer hinzu: Max.Mustermann@web.de."
   ]
 ];

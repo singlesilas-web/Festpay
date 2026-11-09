@@ -87,3 +87,19 @@ test('menu return uses the same acknowledged case closure as the persistent butt
  assert.equal(r.session.has('festpay_test_session_v2'),false);
  assert.equal(r.context.location.href,'index.html?mode=choose');
 });
+
+test('all five tasks initialize their catalogue role before recording the attempt', async () => {
+ for (const [task,expected] of [['gast_guthaben','gast'],['gast_marken','gast'],['helfer','helfer'],['betreiber_marken','betreiber'],['betreiber_guthaben','betreiber']]) {
+  const r=runtime();let role='previous-role',funded=0;
+  r.context.API.istDemo=()=>true;
+  r.context.API.setDemoRolle=value=>{role=value;assert.equal(r.session.has('festpay_test_session_v2'),false);};
+  r.context.API.aufladen=async(fest,amount)=>{assert.equal(role,'helfer');assert.equal(fest,'demo-sommerfest');funded+=amount;assert.equal(r.session.has('festpay_test_session_v2'),false);return {error:null};};
+  r.context.fetch=async()=>({ok:true,json:async()=>({id:'new-attempt',token:'test-token'})});
+  const gate=r.appended.find(el=>el.className==='test-gate');gate.querySelector('select').value=task;
+  await gate.querySelector('#startTest').onclick();
+  assert.equal(role,expected,task);
+  assert.equal(funded,expected==='helfer'?20:0);
+  const saved=JSON.parse(r.session.get('festpay_test_session_v2'));assert.equal(saved.task,task);assert.equal(saved.seq,0);
+  assert.equal(r.context.location.href,'index.html');
+ }
+});

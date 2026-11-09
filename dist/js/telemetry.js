@@ -130,10 +130,13 @@
         localStorage.removeItem('festpay_demo_v1');localStorage.removeItem('festpay_zahlart');
         for(const key of Object.keys(localStorage))if(key.startsWith('festpay_hidden_'))localStorage.removeItem(key);
         sessionStorage.removeItem('checkout');sessionStorage.removeItem('topupSuccess');
-        if (task === 'helfer' && API.istDemo()) {
-          API.setDemoRolle('helfer');
-          // Starting condition, prepared before this attempt starts logging.
-          await API.aufladen('demo-sommerfest', 20);
+        if (API.istDemo()) {
+          const role = window.FestPayTasks.find(entry => entry[0] === task)?.[1].toLowerCase();
+          API.setDemoRolle(role || 'gast');
+          if (role === 'helfer') {
+            // Starting condition, prepared before this attempt starts logging.
+            await API.aufladen('demo-sommerfest', 20);
+          }
         }
         sessionStorage.removeItem('festpay_ended');
         localStorage.removeItem(OFF);session={id:data.id,token:data.token,started:Date.now(),seq:0,task};stopped=false;persist();g.remove();
