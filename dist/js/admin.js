@@ -31,7 +31,8 @@
     options('goal', Object.entries(goals));
     options('task', [['all','Alle Aufgaben'], ...window.FestPayTasks.map(([id,role,title]) => [id,role+' · '+title]), ...Object.entries(taskNames).filter(([id]) => !window.FestPayTasks.some(task => task[0] === id)).map(([id,title]) => [id,'Früher · '+title])]);
     options('version', [['current','Aktuelle Testversion'], ['all','Alle Versionen'], ...[...new Set(sessions.map(s => s.version))].map(v => [v,v])]);
-    if (!sample) $('version').value = [...$('version').options].some(o => o.value === C.BUILD_VERSION) ? C.BUILD_VERSION : 'current';
+    if (sample) $('version').value = 'all';
+    else $('version').value = [...$('version').options].some(o => o.value === C.BUILD_VERSION) ? C.BUILD_VERSION : 'current';
     render();
   }
   function variants(cases) {
