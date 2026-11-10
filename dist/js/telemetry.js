@@ -1,5 +1,6 @@
 /* Versioned, consent-gated event log. No input contents, DOM text or raw URLs. */
 (() => {
+  const identity=window.FestPayIdentity;
   const C=window.APP_CONFIG, KEY='festpay_test_session_v2', OFF='festpay_exclude_device';
   const screen=location.pathname.split('/').pop()||'index.html';
   let session, currentRequest=null, stopped=false, pill, scrollTimer, finishing=false, lastZoom=1, clicks=[], returnButton;
@@ -97,6 +98,14 @@
   function showPill(){
     pill=document.createElement('div');pill.className='test-pill';pill.dataset.noTrack='1';
     pill.innerHTML=active()?'<span>Test läuft</span><button>Zur Testauswahl</button>':'<span>Vorschau · keine Aufzeichnung</span><button>Testauswahl</button><a href="admin.html">Auswertung</a>';
+    if (active() && session.trial_id) {
+      const info = document.createElement('details');
+      const summary = document.createElement('summary'); summary.textContent = 'Testkennungen & Fragebogen';
+      const codes = document.createElement('p'); codes.textContent = 'Versuchs-ID: '+session.trial_id+' · Aufgabenversuchs-ID: '+session.id;
+      const survey = document.createElement('a'); survey.href=identity.link('umfrage/',session.trial_id); survey.target='_blank'; survey.rel='noopener'; survey.textContent='Fragebogen für diesen Test';
+      const observation = document.createElement('a'); observation.href=identity.link('beobachtung/',session.trial_id)+'&attempt='+encodeURIComponent(session.id)+'&task='+encodeURIComponent(session.task); observation.target='_blank'; observation.rel='noopener'; observation.textContent='Beobachtungsbogen für diese Aufgabe';
+      const divider=document.createElement('br');info.append(summary,codes,survey,divider,observation); pill.append(info);
+    }
     pill.querySelector('button').onclick=()=>active()?finish('return_to_task_selection'):(location.href='index.html?mode=choose');document.body.append(pill);
     if (active()) {
       returnButton = document.createElement('button');
@@ -111,22 +120,31 @@
   }
   function gate(){
     const g=document.createElement('section');g.className='test-gate';g.dataset.noTrack='1';g.setAttribute('role','dialog');g.setAttribute('aria-modal','true');g.setAttribute('aria-label','FestPay Nutzertest');
-    g.innerHTML='<div class="test-card"><div class="eyebrow">FESTPAY / NUTZERTEST</div><h1>Welche Aufgabe testest du?</h1><p>Teste unseren Klickdummy. Alle Beträge und Zahlungen sind simuliert.</p><select aria-label="Testaufgabe"></select><p id="taskInstructions" class="task-instructions"></p><p>Mit deiner Zustimmung erfassen wir Klickpositionen, Seitenwechsel, Scrollen, Zoom, Zeitpunkte und erfolgreiche Schritte unter einer zufälligen Sitzungs-ID. Keine Eingabetexte, Passwörter oder echten Zahlungsdaten. Aktuell erfolgt keine automatische Löschung. Die Projektverantwortlichen verwalten die Aufbewahrung und Löschung der Testdaten.</p><label><input type="checkbox">Ich möchte am aufgezeichneten Nutzertest teilnehmen.</label><p class="test-alert" id="testStatus"></p><button id="startTest" disabled>Aufgabe starten</button><button class="secondary" id="previewTest">Admin / Vorschau ohne Aufzeichnung</button><a href="admin.html">Zur geschützten Auswertung</a></div>';
+    g.innerHTML='<div class="test-card"><div class="eyebrow">FESTPAY / NUTZERTEST</div><h1>Welche Aufgabe testest du?</h1><p>Teste unseren Klickdummy. Alle Beträge und Zahlungen sind simuliert.</p><label>Versuchs-ID<input id="trialId" autocomplete="off" placeholder="Versuchs-ID aus dem Beobachtungsbogen"></label><button type="button" class="secondary" id="newTrial">Neue Testperson / neue Versuchs-ID</button><p>Für alle Aufgaben derselben Person dieselbe Versuchs-ID verwenden. Bei einer neuen Testperson eine neue ID anlegen.</p><select aria-label="Testaufgabe"></select><p id="taskInstructions" class="task-instructions"></p><p>Mit deiner Zustimmung erfassen wir Klickpositionen, Seitenwechsel, Scrollen, Zoom, Zeitpunkte und erfolgreiche Schritte unter einer zufälligen Aufgabenversuchs-ID. Über die gemeinsame Versuchs-ID verknüpft das Projektteam diese Daten mit Fragebogen, Alter und Beobachtungsbogen. Keine Eingabetexte, Passwörter oder echten Zahlungsdaten. Aktuell erfolgt keine automatische Löschung. Die Projektverantwortlichen verwalten die Aufbewahrung und Löschung der Testdaten.</p><label><input type="checkbox">Ich möchte am aufgezeichneten Nutzertest teilnehmen.</label><p class="test-alert" id="testStatus"></p><button id="startTest" disabled>Aufgabe starten</button><button class="secondary" id="previewTest">Admin / Vorschau ohne Aufzeichnung</button><a href="admin.html">Zur geschützten Auswertung</a></div>';
+    const trialInput = g.querySelector('#trialId');
+    trialInput.value = identity.read() || '';
+    g.querySelector('#newTrial').onclick = () => { trialInput.value = identity.create(); };
     const taskSelect = g.querySelector('select');
     taskSelect.replaceChildren(...window.FestPayTasks.map(([id,role,title], index) => new Option((index+1)+'. '+role+' · '+title, id)));
     const instructions = () => { g.querySelector('#taskInstructions').textContent = window.FestPayTasks.find(task => task[0] === taskSelect.value)[3]; };
     taskSelect.onchange = instructions;
     instructions();
+    const surveyLink = document.createElement('a'); surveyLink.textContent='Fragebogen für diese Versuchs-ID';
+    surveyLink.onclick = event => { const id=identity.normalize(trialInput.value); if(!id){event.preventDefault();status.textContent='Zuerst eine gültige Versuchs-ID wählen.';return;} identity.save(id); surveyLink.href=identity.link('umfrage/',id); };
+    surveyLink.href='umfrage/';g.querySelector('.test-card').append(surveyLink);
     document.body.append(g);g.addEventListener('keydown',e=>{if(e.key!=='Tab')return;const els=[...g.querySelectorAll('select,input,button:not(:disabled),a')],first=els[0],last=els.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}});const btn=g.querySelector('#startTest'),status=g.querySelector('#testStatus');
     status.textContent=ready()?'Die Aufzeichnung beginnt erst nach dem Start.':'Testaufzeichnung noch nicht freigeschaltet. Die Supabase-Anbindung wird vorbereitet. Nutze bis dahin die Vorschau.';
-    g.querySelector('input').onchange=e=>btn.disabled=!e.target.checked||!ready();
+    g.querySelector('input[type=checkbox]').onchange=e=>btn.disabled=!e.target.checked||!ready();
     g.querySelector('#previewTest').onclick=()=>{resetPreview();g.remove();showPill();};
     btn.onclick=async()=>{
       if(analystSignedIn()){status.textContent='Auf diesem Gerät ist ein Analyse-Account angemeldet. Bitte zuerst in der Auswertung abmelden oder die Vorschau nutzen.';return;}
+      const trialId = identity.normalize(trialInput.value);
+      if (!trialId) { status.textContent='Bitte eine gültige Versuchs-ID übernehmen oder eine neue Testperson anlegen.'; trialInput.focus(); return; }
+      identity.save(trialId);
       btn.disabled=true;status.textContent='Testsitzung wird angelegt …';
       try{
         const task=g.querySelector('select').value;
-        const data=await send({action:'start',task,version:C.BUILD_VERSION,consent_version:'2026-11-02-v2'});
+        const data=await send({action:'start',task,version:C.BUILD_VERSION,consent_version:'2026-11-10-v3-linked',trial_id:trialId});
         localStorage.removeItem('festpay_demo_v1');localStorage.removeItem('festpay_zahlart');sessionStorage.removeItem('checkout');sessionStorage.removeItem('topupSuccess');
         if (task === 'helfer' && API.istDemo()) {
           API.setDemoRolle('helfer');
@@ -134,7 +152,7 @@
           await API.aufladen('demo-sommerfest', 20);
         }
         sessionStorage.removeItem('festpay_ended');
-        localStorage.removeItem(OFF);session={id:data.id,token:data.token,started:Date.now(),seq:0,task};stopped=false;persist();g.remove();
+        localStorage.removeItem(OFF);session={id:data.id,trial_id:trialId,token:data.token,started:Date.now(),seq:0,task};stopped=false;persist();g.remove();
         // Restart to render a clean demo state for every participant.
         location.replace('index.html');
       }catch{status.textContent='Testsitzung konnte nicht gestartet werden. Bitte erneut versuchen.';btn.disabled=false;}

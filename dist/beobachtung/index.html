@@ -1,10 +1,11 @@
 <!doctype html>
-<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer"><title>Beobachtungsbogen · FestPay</title><link rel="stylesheet" href="../umfrage/survey.css?v=3"><link rel="stylesheet" href="observation.css?v=2"><script src="../js/test-tasks.js?v=6" defer></script><script src="observation.js?v=6" defer></script></head>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer"><title>Beobachtungsbogen · FestPay</title><link rel="stylesheet" href="../umfrage/survey.css?v=3"><link rel="stylesheet" href="observation.css?v=2"><script src="../js/test-tasks.js?v=6" defer></script><script src="../js/test-identity.js?v=7" defer></script><script src="observation.js?v=7" defer></script></head>
 <body><header><span class="brand">festpay<span class="dot">.</span></span><span class="badge">NUTZERTEST · BEOBACHTUNG</span></header>
 <main><h1>Beobachtungsbogen</h1>
 <form id="observation">
 <section class="metadata" aria-label="Testdaten">
-<label>Name Testperson<input name="participant_code" required maxlength="60" autocomplete="off"></label>
+<label>Versuchs-ID<input name="trial_id" required autocomplete="off" placeholder="Gemeinsame ID für diese Testperson"></label><button type="button" id="newTrial">Neue Versuchs-ID</button><p><a id="appLink" target="_blank" rel="noopener">App mit dieser Versuchs-ID öffnen</a> · <a id="surveyLink" target="_blank" rel="noopener">Fragebogen öffnen</a></p>
+<label>Pseudonym der Testperson (kein Name)<input name="participant_code" required maxlength="60" autocomplete="off"></label>
 <label>Alter (Jahre)<input name="age" type="number" min="0" max="120" step="1" inputmode="numeric"></label>
 <label>Geschlecht<select name="gender"><option value="">Bitte auswählen</option><option value="female">Weiblich</option><option value="male">Männlich</option><option value="diverse">Divers</option><option value="not_specified">Keine Angabe</option></select></label>
 <label>App<input name="app" required value="FestPay" maxlength="80"></label>
@@ -20,7 +21,7 @@
 <label class="feedback-label" for="other">Sonstiges (persönliches Feedback, Beobachtungen, Ideen der Testperson)</label>
 <textarea id="other" name="other" rows="3" maxlength="4000"></textarea>
 <p class="hint">Danach: Fragebogen geben (oder durchgehen), Raum lassen.</p>
-<p class="hint">Die Beobachtungen werden zur Auswertung in Supabase gespeichert.</p>
+<p class="hint">Die Beobachtungen und das Alter werden über die Versuchs-ID mit Fragebogen und App-Aufzeichnung verknüpft. Vorher die Einwilligung der Testperson einholen. Keine Namen oder Kontaktdaten eintragen.</p>
 <p id="error" role="alert" hidden></p><div class="actions"><button class="primary" type="submit">Beobachtungsbogen speichern</button></div>
 </form>
 <section id="success" hidden aria-live="polite"><h2>Beobachtungsbogen gespeichert</h2><p>Danach: Fragebogen geben (oder durchgehen), Raum lassen.</p><div class="after"><a href="../umfrage/">Zur FestPay-Umfrage</a><button type="button" id="again">Neuen Bogen öffnen</button></div></section>
