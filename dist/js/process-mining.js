@@ -10,6 +10,9 @@ window.FestPayMining = (() => {
   "festival_helper_saved": "Helfer hinzufügen und speichern",
   "wallet_charged": "Guthaben am Stand abbuchen"
 };
+  const taskGoals={gast_guthaben:'wallet_qr_shown',gast_marken:'token_redeemed',helfer:'wallet_charged',betreiber_marken:'festival_created',betreiber_guthaben:'festival_helper_saved'};
+  const goalForTask=task=>taskGoals[task];
+  const currentSessions=(sessions,version,task)=>sessions.filter(s=>s.version===version&&!!taskGoals[s.task]&&(!task||s.task===task));
   const assignedGoal = task => ({w1: 'wallet_topped_up', w2: 'token_redeemed', gast_guthaben: 'wallet_qr_shown', gast_marken: 'token_redeemed', helfer: 'wallet_charged', betreiber_marken: 'festival_created', betreiber_guthaben: 'festival_helper_saved'}[task] || task);
   const names = {
     ...goals, 'index.html': 'Karte', 'fest.html': 'Fest', 'guthaben.html': 'Guthaben',
@@ -94,5 +97,5 @@ window.FestPayMining = (() => {
     const middle = Math.floor(sorted.length / 2);
     return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
   }
-  return {goals, label, step, casesForGoal, median};
+  return {goals, label, step, casesForGoal, median, goalForTask, currentSessions};
 })();

@@ -157,3 +157,13 @@ Die additive Migration `supabase/study-linkage.sql` ergänzt Fremdschlüssel und
 - Für Altersvergleiche dieselbe Aufgabe und einen vorab festgelegten Zeitbegriff verwenden. Wiederholungen derselben Person sind keine unabhängigen Personen. Der Export führt keine Signifikanz- oder Gleichwertigkeitstests durch.
 
 Validierung: `node --test tests/*.test.cjs`; zusätzlich die transaktionale SQL-Prüfung `tests/study-linkage.sql` (mit Rollback). Synthetische Live-Prüfungen der Edge-Annahme und ID-Ablehnung wurden von der Auswertung ausgeschlossen. Frühere Ergebnisse ohne IDs können nur auf Basis anderweitig gesicherter Zuordnungsnachweise nachträglich verbunden werden; diese Umsetzung nimmt keine solche Rekonstruktion vor.
+
+## Aktuelle Testreihe nach dem Reset (v9, 10.11.2026)
+
+Die bisherigen Process-Mining-Rohdaten wurden vollständig exportiert und gesichert: 35 Sitzungen und 1.854 Ereignisse, einschließlich ausgeschlossener Probeläufe und aller bisherigen Versionen. Erst nach Prüfung und dauerhafter Speicherung der Sicherung wurden `analytics_events` und `analytics_sessions` geleert. Fragebögen, Beobachtungen, Testpersonen-Zuordnungen und Analyseberechtigungen bleiben erhalten. Die bisherigen Formular-Verweise werden nicht auf neue Versuche umgebogen.
+
+Das Dashboard zeigt jetzt genau die fünf aktuellen Aufgaben und ausschließlich `festpay-2026-11-10-v9-clean`. Der separate Versionsfilter, frühere Aufgaben, die freie Endzielauswahl und die erfundenen Beispieldaten sind entfernt. Der gemessene Zielschritt wird automatisch aus der gewählten Aufgabe abgeleitet. Diese Bedienung ersetzt die weiter oben dokumentierten Filtermöglichkeiten älterer Versionen.
+
+`analytics_run_settings` steuert die aktive Testreihe. Datenbank-Trigger prüfen Version und Aufgabe für Sitzungen und Ereignisse. Während Sicherung und Reset war die Aufzeichnung gesperrt; dadurch konnten zwischen Export und Löschung keine Ereignisse verloren gehen. Alte Browserstände und ausgemusterte Aufgaben werden auch serverseitig abgelehnt. Die Oberfläche verwendet neue Sitzungs-, Zuordnungs- und Entwurfsschlüssel, damit bereits gelöschte Versuchs-IDs nicht aus dem Browser übernommen werden. Nach der Veröffentlichung einmal neu laden und für die nächste Person eine neue Testpersonen-ID verwenden.
+
+Nach dem Veröffentlichen wird `accepting=true` gesetzt. Die SQL-Integrationsprüfung öffnet die Sperre nur innerhalb ihrer eigenen Transaktion und setzt alles per Rollback zurück. Sie erzeugt keine verbleibenden Testdaten.

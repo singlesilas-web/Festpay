@@ -6,7 +6,7 @@ const headers={apikey:service,Authorization:`Bearer ${service}`,'Content-Type':'
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const screens=new Set(['index.html','fest.html','guthaben.html','speisekarte.html','bezahlen.html','marken.html','profil.html','login.html','helfer.html','betreiber.html']);
 const types=new Set(['page_view','click','repeated_click','field_focus','scroll','browser_zoom','map_zoom','map_pan','activity','session_end','page_hidden','page_visible','page_leave','heartbeat']);
-const tasks = new Set(["w1","w2","explore","wallet_topped_up","wallet_qr_shown","tokens_purchased","token_redeemed","festival_created","festival_updated","festival_helper_saved","wallet_charged","gast_guthaben","gast_marken","helfer","betreiber_marken","betreiber_guthaben"]);
+const tasks = new Set(['gast_guthaben','gast_marken','helfer','betreiber_marken','betreiber_guthaben']);
 const numeric=new Set(['vw','vh','aw','dh','scroll','browser_scale','map_scale','x','y','scale','depth','viewport_width','viewport_height']);
 const strings=new Set(['ui_state','target','source','activity','reason','coordinate_space']);
 async function hash(s:string){return [...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)))].map(x=>x.toString(16).padStart(2,'0')).join('');}
@@ -42,11 +42,15 @@ Deno.serve(async req=>{
    if(saved[0]?.participant_id!==p.participant_id.toLowerCase())return reply(409,{error:'id_conflict'});
    return reply(200,{saved:true});
   }
+  if(b.action==='start'||b.action==='events'){
+   const settings=(await db('analytics_run_settings?singleton=eq.true&select=accepting,active_version'))[0];
+   if(!settings?.accepting)return reply(503,{error:'analytics_paused'});
+   if(b.action==='start'&&b.version!==settings.active_version)return reply(409,{error:'version_retired'});
+  }
   if(b.action==='start'){
-   if(!tasks.has(b.task)||!['2026-11-02-v2','2026-11-10-linked-v1'].includes(b.consent_version)||!['festpay-2026-11-02-v3','festpay-2026-11-02-v4-helper','festpay-2026-11-06-v5-process','festpay-2026-11-09-v6-tasks','festpay-2026-11-09-v7-tests','festpay-2026-11-10-v8-linked'].includes(b.version))return reply(400,{error:'start'});
-   if(b.version==='festpay-2026-11-10-v8-linked' && (!uuid.test(b.participant_id)||b.consent_version!=='2026-11-10-linked-v1'))return reply(400,{error:'participant'});
-   const participant=b.version==='festpay-2026-11-10-v8-linked'?b.participant_id.toLowerCase():null;
-   if(participant)await db('study_participants?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=ignore-duplicates'},body:JSON.stringify({id:participant})});
+   if(!tasks.has(b.task)||b.version!=='festpay-2026-11-10-v9-clean'||b.consent_version!=='2026-11-10-linked-v1'||!uuid.test(b.participant_id))return reply(409,{error:'version_retired'});
+   const participant=b.participant_id.toLowerCase();
+   await db('study_participants?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=ignore-duplicates'},body:JSON.stringify({id:participant})});
    const id=crypto.randomUUID(),token=crypto.randomUUID()+crypto.randomUUID();
    await db('analytics_sessions',{method:'POST',body:JSON.stringify({id,token_hash:await hash(token),task:b.task,version:b.version,consent_version:b.consent_version,participant_id:participant})});
    return reply(200,{id,token});

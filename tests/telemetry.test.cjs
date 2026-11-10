@@ -4,13 +4,13 @@ function runtime({preview=false,guest=false,previous=[]}={}){
  const appended=[];
  const local=new Map(preview?[['festpay_exclude_device','1']]:[]),session=new Map(),listeners={},timers=[];
  const store=m=>({getItem:k=>m.get(k)||null,setItem:(k,v)=>m.set(k,v),removeItem:k=>m.delete(k)});
- if(guest)session.set('festpay_test_session_v2',JSON.stringify({id:'test',token:'token',started:Date.now(),seq:5,task:'w1',pending:previous}));
+ if(guest)session.set('festpay_test_session_v3',JSON.stringify({id:'test',token:'token',started:Date.now(),seq:5,task:'w1',pending:previous}));
  const element=()=>({dataset:{},className:'',innerHTML:'',textContent:'',setAttribute(){},addEventListener(){},querySelector(selector){this.controls ||= new Map();if(!this.controls.has(selector))this.controls.set(selector,element());return this.controls.get(selector)},querySelectorAll(){return[]},replaceChildren(...items){this.value=items[0]?.value;},append(){},focus(){},remove(){}});
  const document={getElementById:()=>null,documentElement:{scrollHeight:800},hidden:false,body:{classList:{add(){},remove(){}},append(...items){appended.push(...items)},appendChild(item){appended.push(item)}},addEventListener:(n,f)=>listeners[n]=f,createElement:element,querySelector:s=>s==='.app'?{getBoundingClientRect:()=>({width:390,left:0})}:null};
  const api={};for(const k of ['aufladen','markenKaufen','markeEntwerten','abbuchen','festSpeichern'])api[k]=async()=>({error:null});
  const context={console,crypto,document,API:api,Date,URLSearchParams,innerWidth:390,innerHeight:800,scrollY:0,localStorage:store(local),sessionStorage:store(session),Option:function(title,value){this.text=title;this.value=value;},location:{pathname:'/index.html',search:'',href:'',replace(url){this.href=url}},history:{replaceState(){}},setInterval(fn){timers.push(fn)},setTimeout(){},clearTimeout(){},alert(){},fetch:async()=>({ok:true,json:async()=>({})})};
  context.window=context;context.APP_CONFIG={ANALYTICS_URL:'https://test.supabase.co',ANALYTICS_KEY:'public',BUILD_VERSION:'test'};context.addEventListener=()=>{};
- vm.createContext(context);vm.runInContext(fs.readFileSync(require('node:path').join(__dirname,'../dist/js/study-link.js'),'utf8'),context);vm.runInContext(fs.readFileSync(require('node:path').join(__dirname,'../dist/js/test-tasks.js'),'utf8'),context);vm.runInContext(source,context);return{context,listeners,session,timers,appended,queue:()=>JSON.parse(session.get('festpay_test_session_v2')||'{"pending":[]}').pending};
+ vm.createContext(context);vm.runInContext(fs.readFileSync(require('node:path').join(__dirname,'../dist/js/study-link.js'),'utf8'),context);vm.runInContext(fs.readFileSync(require('node:path').join(__dirname,'../dist/js/test-tasks.js'),'utf8'),context);vm.runInContext(source,context);return{context,listeners,session,timers,appended,queue:()=>JSON.parse(session.get('festpay_test_session_v3')||'{"pending":[]}').pending};
 }
 test('no consent creates no session and emits nothing',()=>{const r=runtime();r.context.TestLog.event('click',{target:'secret'});assert.equal(r.session.size,0)});
 test('preview suppresses all analytics including successful actions',async()=>{const r=runtime({preview:true,guest:true});await r.context.API.aufladen();assert.equal(r.queue().length,0)});
@@ -37,7 +37,7 @@ test('a delayed acknowledgement preserves events appended by the next page', asy
  let acknowledge;
  r.context.fetch = () => new Promise(resolve => { acknowledge = resolve; });
  const request = r.timers[0]();
- const key = 'festpay_test_session_v2';
+ const key = 'festpay_test_session_v3';
  const next = JSON.parse(r.session.get(key));
  next.pending.push({id:'next-page',seq:++next.seq,type:'page_view'});
  r.session.set(key,JSON.stringify(next));
@@ -63,7 +63,7 @@ test('return to task selection sends one end event and keeps pending data until 
  acknowledge({ok:true,json:async()=>({})});
  await finishing;
  assert.equal(r.context.location.href,'index.html?mode=choose');
- assert.equal(r.session.has('festpay_test_session_v2'),false);
+ assert.equal(r.session.has('festpay_test_session_v3'),false);
 });
 
 test('failed return retains the attempt and retry sends the same end event', async () => {
@@ -84,7 +84,7 @@ test('menu return uses the same acknowledged case closure as the persistent butt
  r.context.fetch=async(_,request)=>{ended=JSON.parse(request.body).events.some(e=>e.type==='session_end');return {ok:true,json:async()=>({})};};
  await r.context.TestLog.returnToSelection();
  assert.equal(ended,true);
- assert.equal(r.session.has('festpay_test_session_v2'),false);
+ assert.equal(r.session.has('festpay_test_session_v3'),false);
  assert.equal(r.context.location.href,'index.html?mode=choose');
 });
 
@@ -92,14 +92,14 @@ test('all five tasks initialize their catalogue role before recording the attemp
  for (const [task,expected] of [['gast_guthaben','gast'],['gast_marken','gast'],['helfer','helfer'],['betreiber_marken','betreiber'],['betreiber_guthaben','betreiber']]) {
   const r=runtime();let role='previous-role',funded=0;
   r.context.API.istDemo=()=>true;
-  r.context.API.setDemoRolle=value=>{role=value;assert.equal(r.session.has('festpay_test_session_v2'),false);};
-  r.context.API.aufladen=async(fest,amount)=>{assert.equal(role,'helfer');assert.equal(fest,'demo-sommerfest');funded+=amount;assert.equal(r.session.has('festpay_test_session_v2'),false);return {error:null};};
+  r.context.API.setDemoRolle=value=>{role=value;assert.equal(r.session.has('festpay_test_session_v3'),false);};
+  r.context.API.aufladen=async(fest,amount)=>{assert.equal(role,'helfer');assert.equal(fest,'demo-sommerfest');funded+=amount;assert.equal(r.session.has('festpay_test_session_v3'),false);return {error:null};};
   r.context.fetch=async()=>({ok:true,json:async()=>({id:'12345678-1234-4321-8123-123456789012',token:'test-token'})});
   const gate=r.appended.find(el=>el.className==='test-gate');gate.querySelector('select').value=task;
   await gate.querySelector('#startTest').onclick();
   assert.equal(role,expected,task);
   assert.equal(funded,expected==='helfer'?20:0);
-  const saved=JSON.parse(r.session.get('festpay_test_session_v2'));assert.equal(saved.task,task);assert.equal(saved.seq,0);
+  const saved=JSON.parse(r.session.get('festpay_test_session_v3'));assert.equal(saved.task,task);assert.equal(saved.seq,0);
   assert.equal(r.context.location.href,'index.html');
  }
 });

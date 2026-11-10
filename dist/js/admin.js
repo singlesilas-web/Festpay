@@ -1,20 +1,20 @@
 (async()=>{
-  localStorage.setItem('festpay_exclude_device','1');sessionStorage.removeItem('festpay_test_session_v2');
+  localStorage.setItem('festpay_exclude_device','1');sessionStorage.removeItem('festpay_test_session_v3');
   const $=id=>document.getElementById(id),C=APP_CONFIG;
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const {goals, label, step, casesForGoal, median} = FestPayMining;
-  let client,sessions=[],events=[],selected=[],sample=false,linked=[];
+  const {goals, label, step, casesForGoal, median, goalForTask, currentSessions} = FestPayMining;
+  let client,sessions=[],events=[],selected=[],linked=[];
   const configured=/^https:\/\//.test(C.ANALYTICS_URL)&&!!C.ANALYTICS_KEY;
   if(configured&&window.supabase)client=supabase.createClient(C.ANALYTICS_URL,C.ANALYTICS_KEY,{auth:{storageKey:'festpay_analyst_auth'}});
-  $('status').textContent=configured?'Mit eurem freigegebenen Analyse-Account anmelden.':'Supabase ist noch nicht eingerichtet. Die Auswertung lässt sich mit klar gekennzeichneten Beispieldaten ansehen.';
+  $('status').textContent=configured?'Mit eurem freigegebenen Analyse-Account anmelden.':'Supabase ist noch nicht eingerichtet.';
   $('login').querySelector('button').disabled=!client;$('register').disabled=!client;
   $('register').onclick=async()=>{if(!$('login').querySelector('form').reportValidity())return;const {error}=await client.auth.signUp({email:$('email').value,password:$('password').value});$('password').value='';$('status').textContent=error?'Registrierung fehlgeschlagen. Bitte gültige E-Mail und ein starkes Passwort mit mindestens 8 Zeichen verwenden.':'Falls eine neue Registrierung möglich war, wurde eine Bestätigungsmail versandt. Bestätige die E-Mail und melde dich anschließend hier an. Der Account benötigt zusätzlich eine Admin-Freigabe durch die Projektverantwortlichen.';};
   $('login').querySelector('form').onsubmit=async e=>{e.preventDefault();const {error}=await client.auth.signInWithPassword({email:$('email').value,password:$('password').value});$('password').value='';if(error){$('status').textContent='Anmeldung fehlgeschlagen.';return;}await load();};
   $('logout').onclick=async()=>{await client.auth.signOut();location.reload();};
-  async function all(table,columns){let rows=[];for(let offset=0;;offset+=1000){let query=client.from(table).select(columns);if(table==='analytics_sessions')query=query.eq('excluded',false);const {data,error}=await query.order(['analytics_sessions','study_attempt_analysis'].includes(table)?'started_at':['festpay_survey_responses','festpay_observations'].includes(table)?'created_at':'received_at',{ascending:true}).order(table==='study_attempt_analysis'?'attempt_id':'id',{ascending:true}).range(offset,offset+999);if(error)throw error;rows.push(...data);if(data.length<1000)return rows;}}
-  async function load(){try{const {data,error}=await client.from('analytics_admins').select('user_id');if(error||!data.length){$('status').textContent='Dieser Account hat keine Analysefreigabe.';$('logout').hidden=false;return;}sessions=await all('analytics_sessions','id,participant_id,task,version,started_at');events=await all('analytics_events','id,session_id,seq,type,screen,at,received_at,elapsed,props');linked=await all('study_attempt_analysis','*');sample=false;show();$('logout').hidden=false;}catch{$('status').textContent='Daten konnten nicht geladen werden. Verbindung und Zugriffsrechte prüfen.';}}
+  async function all(table,columns){let rows=[];for(let offset=0;;offset+=1000){let query=client.from(table).select(columns);if(table==='analytics_sessions')query=query.eq('excluded',false);if(['analytics_sessions','study_attempt_analysis'].includes(table))query=query.eq('version',C.BUILD_VERSION).in('task',window.FestPayTasks.map(t=>t[0]));if(table==='analytics_events'){if(!sessions.length)return [];query=query.in('session_id',sessions.map(s=>s.id));}const {data,error}=await query.order(['analytics_sessions','study_attempt_analysis'].includes(table)?'started_at':['festpay_survey_responses','festpay_observations'].includes(table)?'created_at':'received_at',{ascending:true}).order(table==='study_attempt_analysis'?'attempt_id':'id',{ascending:true}).range(offset,offset+999);if(error)throw error;rows.push(...data);if(data.length<1000)return rows;}}
+  async function load(){try{const {data,error}=await client.from('analytics_admins').select('user_id');if(error||!data.length){$('status').textContent='Dieser Account hat keine Analysefreigabe.';$('logout').hidden=false;return;}sessions=await all('analytics_sessions','id,participant_id,task,version,started_at');events=await all('analytics_events','id,session_id,seq,type,screen,at,received_at,elapsed,props');linked=await all('study_attempt_analysis','*');show();$('logout').hidden=false;}catch{$('status').textContent='Daten konnten nicht geladen werden. Verbindung und Zugriffsrechte prüfen.';}}
   const routeNames = {happy:'Happy Path', other:'Anderer erfolgreicher Weg', open:'Ohne Zielerfolg'};
-  const taskNames = {...Object.fromEntries(window.FestPayTasks.map(([id,role,title]) => [id,role+' · '+title])), ...goals, w1:'W1 · Guthaben', w2:'W2 · Entwertung', explore:'Frei erkunden'};
+  const taskNames=Object.fromEntries(window.FestPayTasks.map(([id,role,title])=>[id,role+' · '+title]));
   const duration = ms => ms == null ? '—' : (ms < 60000 ? Math.round(ms / 1000) + ' s' : Math.floor(ms / 60000) + ' min ' + Math.floor(ms % 60000 / 1000) + ' s');
   function options(id, values, empty = '') {
     const select = $(id);
@@ -26,18 +26,14 @@
   function show() {
     $('login').hidden = true;
     $('dashboard').hidden = false;
-    $('reload').hidden = sample;
-    $('notice').textContent = sample ? 'BEISPIELDATEN · Erfunden und nicht gespeichert.' : 'Live-Daten · Nur freigegebene Testsitzungen.';
-    options('goal', Object.entries(goals));
-    options('task', [['all','Alle Aufgaben'], ...window.FestPayTasks.map(([id,role,title]) => [id,role+' · '+title]), ...Object.entries(taskNames).filter(([id]) => !window.FestPayTasks.some(task => task[0] === id)).map(([id,title]) => [id,'Früher · '+title])]);
-    options('version', [['current','Aktuelle Testversion'], ['all','Alle Versionen'], ...[...new Set(sessions.map(s => s.version))].map(v => [v,v])]);
-    if (sample) $('version').value = 'all';
-    else $('version').value = [...$('version').options].some(o => o.value === C.BUILD_VERSION) ? C.BUILD_VERSION : 'current';
+    $('reload').hidden = false;
+    $('notice').textContent = 'Aktuelle Testreihe · Fünf Aufgaben';
+    options('task',window.FestPayTasks.map(([id,role,title],i)=>[id,(i+1)+'. '+role+' · '+title]));
     render();
   }
   function linkedSelection(){
-    const version=$('version').value,task=$('task').value;
-    return linked.filter(r=>(version==='all'||r.version===(version==='current'?C.BUILD_VERSION:version))&&(task==='all'||r.task===task));
+    const task=$('task').value;
+    return linked.filter(r=>r.version===C.BUILD_VERSION&&r.task===task);
   }
   function renderLinked(){
     const rows=linkedSelection();
@@ -60,9 +56,10 @@
   const pathText = path => path.map(label).join(' → ') || 'Keine Schritte erfasst';
   const metric = (value, name) => '<div class="metric"><b>' + esc(value) + '</b><span>' + esc(name) + '</span></div>';
   function render() {
-    const goal = $('goal').value, version = $('version').value, route = $('route').value;
+    const goal=goalForTask($('task').value),route=$('route').value;
+    $('goalDescription').textContent='Gemessener Zielschritt: '+label(goal);
     renderLinked();
-    const cases = casesForGoal(sessions.filter(s => (version === 'all' || s.version === (version === 'current' ? C.BUILD_VERSION : version)) && ($('task').value === 'all' || s.task === $('task').value)), events, goal);
+    const cases = casesForGoal(currentSessions(sessions,C.BUILD_VERSION,$('task').value), events, goal);
     const filtered = cases.filter(c => route === 'all' || route === c.route);
     const groups = variants(filtered);
     options('variant', [['all','Alle Varianten'], ...groups.map(([key,v],i) => [key, 'Weg ' + (i+1) + ' · ' + v.cases.length + ' Fälle · ' + routeNames[v.route]])]);
@@ -70,11 +67,9 @@
     const completed = selected.filter(c => c.completed);
     const assigned = selected.filter(c => c.assigned);
     const reached = assigned.filter(c => c.completed);
-    const observed = completed.length - reached.length;
-    $('metrics').innerHTML = metric(completed.length,'Ziel erreicht')
-      + metric(assigned.length ? reached.length + ' / ' + assigned.length : '—','Zugewiesene Tests erfolgreich')
-      + metric(observed,'Ziel aus anderer Aufgabe / Erkundung')
-      + metric(duration(median(completed.map(c => c.duration))),'Median bis Ziel')
+    $('metrics').innerHTML = metric(completed.length,'Zielschritt erreicht')
+      + metric(assigned.length ? reached.length + ' / ' + assigned.length : '—','Zielschritt erreicht / Versuche')
+      + metric(duration(median(completed.map(c => c.duration))),'Median bis Zielschritt')
       + metric(median(completed.map(c => c.clicks)) ?? '—','Median Klicks bis Ziel');
     $('sessions').innerHTML = selected.map(c =>
       '<tr><td>' + esc(c.session.id.slice(0,12)) + '</td><td>' + esc(taskNames[c.session.task] || c.session.task) +
@@ -205,51 +200,16 @@
     const rows = [['case_id','activity','timestamp','sequence','task','version','goal','outcome','route','elapsed_ms','end_reason']];
     for (const c of selected) for (const e of c.fullTrace) {
       const key = step(e);
-      if (key) rows.push([c.session.id,label(key),e.at,e.seq,c.session.task,c.session.version,$('goal').value,c.status,c.route,e.elapsed,c.endReason]);
+      if (key) rows.push([c.session.id,label(key),e.at,e.seq,c.session.task,c.session.version,goalForTask($('task').value),c.status,c.route,e.elapsed,c.endReason]);
     }
     download('festpay-process-log.csv','\uFEFF'+rows.map(row => row.map(quote).join(',')).join('\r\n'),'text/csv;charset=utf-8');
   };
   $('raw').onclick = () => download('festpay-events.json',JSON.stringify({
-    example:sample, goal:$('goal').value, sessions:selected.map(c => c.session), events:selected.flatMap(c => c.fullTrace)
+    example:false, goal:goalForTask($('task').value), sessions:selected.map(c => c.session), events:selected.flatMap(c => c.fullTrace)
   },null,2),'application/json');
-  for (const id of ['goal','task','version','route','variant']) $(id).onchange=render;
-  $('task').onchange = () => {
-    const goal = {gast_guthaben:'wallet_qr_shown',gast_marken:'token_redeemed',helfer:'wallet_charged',betreiber_marken:'festival_created',betreiber_guthaben:'festival_helper_saved'}[$('task').value];
-    if (goal) $('goal').value = goal;
-    render();
-  };
+  for(const id of ['task','route','variant'])$(id).onchange=render;
   $('screen').onchange=contexts;
   $('context').onchange=heat;
   $('reload').onclick=load;
-  $('sample').onclick=() => {
-    sample=true;linked=[];
-    sessions=[];
-    events=[];
-    let index=0;
-    const routes = {
-      wallet_topped_up:['guthaben.html','bezahlen.html'], wallet_qr_shown:['guthaben.html'],
-      tokens_purchased:['speisekarte.html','bezahlen.html'], token_redeemed:['marken.html'],
-      festival_created:['profil.html','betreiber.html'], festival_updated:['profil.html','betreiber.html'],
-      festival_helper_saved:['profil.html','betreiber.html'], wallet_charged:['helfer.html']
-    };
-    for (const [goal,pages] of Object.entries(routes)) for (const kind of ['happy','happy','other','open']) {
-      const id='beispiel-'+(++index), start=Date.now()-3600000;
-      const path=['index.html',...(kind==='other'?['fest.html','index.html']:[]),...pages,...(kind==='open'?[]:[goal])];
-      sessions.push({id,task:goal,version:'BEISPIEL · Process Mining',started_at:new Date(start).toISOString()});
-      let seq=0;
-      path.forEach((key,i) => {
-        const isPage=key.endsWith('.html');
-        const screen=isPage?key:pages.at(-1);
-        const add=(type,props,offset=0) => {
-          const elapsed=i*5500+offset;
-          const at=new Date(start+elapsed).toISOString();
-          events.push({id:id+'-'+(++seq),session_id:id,seq,type,screen,at,received_at:at,elapsed,props});
-        };
-        add(isPage?'page_view':'activity',isPage?{}:{activity:key});
-        if (isPage) add('click',{coordinate_space:'viewport_v1',viewport_width:390,viewport_height:740,x:.12+(i%3)*.31,y:.83-(i%4)*.21},1300);
-      });
-    }
-    show();
-  };
   if(client){const {data}=await client.auth.getSession();if(data.session)load();}
 })();

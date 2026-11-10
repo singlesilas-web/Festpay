@@ -1,6 +1,6 @@
 /* Versioned, consent-gated event log. No input contents, DOM text or raw URLs. */
 (() => {
-  const C=window.APP_CONFIG, KEY='festpay_test_session_v2', OFF='festpay_exclude_device';
+  const C=window.APP_CONFIG, KEY='festpay_test_session_v3', OFF='festpay_exclude_device';
   const screen=location.pathname.split('/').pop()||'index.html';
   let session, currentRequest=null, stopped=false, pill, scrollTimer, finishing=false, lastZoom=1, clicks=[], returnButton;
   function readSession() {
