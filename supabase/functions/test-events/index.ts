@@ -28,10 +28,12 @@ Deno.serve(async req=>{
   const raw=await req.text();if(raw.length>60000)return reply(413,{error:'size'});
   const b=JSON.parse(raw);
   if(b.action==='start'){
-   if(!tasks.has(b.task)||b.consent_version!=='2026-11-02-v2'||!['festpay-2026-11-02-v3','festpay-2026-11-02-v4-helper','festpay-2026-11-06-v5-process','festpay-2026-11-09-v6-tasks'].includes(b.version))return reply(400,{error:'start'});
+   if(!tasks.has(b.task)||!['2026-11-02-v2','2026-11-10-v3-linked'].includes(b.consent_version)||!['festpay-2026-11-02-v3','festpay-2026-11-02-v4-helper','festpay-2026-11-06-v5-process','festpay-2026-11-09-v6-tasks','festpay-2026-11-10-v7-linked'].includes(b.version))return reply(400,{error:'start'});
+   const linked = b.version === 'festpay-2026-11-10-v7-linked';
+   if (linked && (b.consent_version !== '2026-11-10-v3-linked' || typeof b.trial_id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(b.trial_id))) return reply(400,{error:'trial_id'});
    const id=crypto.randomUUID(),token=crypto.randomUUID()+crypto.randomUUID();
-   await db('analytics_sessions',{method:'POST',body:JSON.stringify({id,token_hash:await hash(token),task:b.task,version:b.version,consent_version:b.consent_version})});
-   return reply(200,{id,token});
+   await db('analytics_sessions',{method:'POST',body:JSON.stringify({id,token_hash:await hash(token),task:b.task,version:b.version,consent_version:b.consent_version,...(linked?{trial_id:b.trial_id.toLowerCase()}:{})})});
+   return reply(200,{id,token,...(linked?{trial_id:b.trial_id.toLowerCase()}:{})});
   }
   if(b.action!=='events'||!uuid.test(b.session_id)||typeof b.token!=='string'||b.token.length!==72||!Array.isArray(b.events)||!b.events.length||b.events.length>25)return reply(400,{error:'batch'});
   const sessions=await db('analytics_sessions?id=eq.'+b.session_id+'&select=token_hash,started_at,event_count');

@@ -1,9 +1,11 @@
 'use strict';
 (() => {
-  // Deliberately standalone: no app scripts, auth, analytics, cookies or app storage.
+  // No click recording or app accounts. Shared trial ID only for consented research linkage.
+  const identity = window.FestPayIdentity;
   const endpoint = 'https://orrprvpypsvuzspwzevf.supabase.co/rest/v1/festpay_survey_responses';
   const key = 'sb_publishable_IBp-YQesCAmLfB0qNwwsxw_j6O2cTU1';
   const form = document.getElementById('survey');
+  form.elements.trial_id.value = identity.read() || '';
   const sections = [...document.querySelectorAll('[data-step]')];
   const back = document.getElementById('back'), next = document.getElementById('next'), submit = document.getElementById('submit');
   const error = document.getElementById('error');
@@ -141,6 +143,9 @@
     error.hidden = true; document.getElementById(`heading-${step}`).focus();
   }
   function validate() {
+    if (step === 0 && !identity.normalize(form.elements.trial_id.value)) {
+      error.textContent='Bitte die vollständige Versuchs-ID aus dem Test übernehmen.';error.hidden=false;form.elements.trial_id.focus();return false;
+    }
     if (step === 0 && selectedRoles().length === 0) {
       error.textContent = 'Bitte wähle mindestens eine Rolle aus.';
       error.hidden = false;
@@ -173,7 +178,7 @@
     const data = new FormData(form);
     const roles = selectedRoles();
     const fee = data.get('organizer_transaction_fee_percent');
-    const payload = {id, survey_version:5, real_role:roles[0], real_roles:roles, organizer_transaction_fee_percent:roles.includes('organizer') ? Number(fee) : null, legacy_payment_satisfaction:Number(data.get('legacy_payment_satisfaction')), guest_abuse_feedback:data.get('guest_abuse_feedback')?.trim() || null, payment_preference:data.get('payment_preference'), feedback:data.get('feedback').trim(), consent:true};
+    const payload = {id, trial_id:identity.save(form.elements.trial_id.value), age:data.get('age') === '' ? null : Number(data.get('age')), survey_version:5, real_role:roles[0], real_roles:roles, organizer_transaction_fee_percent:roles.includes('organizer') ? Number(fee) : null, legacy_payment_satisfaction:Number(data.get('legacy_payment_satisfaction')), guest_abuse_feedback:data.get('guest_abuse_feedback')?.trim() || null, payment_preference:data.get('payment_preference'), feedback:data.get('feedback').trim(), consent:true};
     for (const [name] of tasks) payload[name] = data.get(name);
     for (const [name] of [...experience,...value,...perspectives]) payload[name] = data.has(name) ? Number(data.get(name)) : null;
     // Retry the exact same payload after an ambiguous network failure.
@@ -183,11 +188,11 @@
     try {
       const response = await fetch(endpoint, {method:'POST',credentials:'omit',referrerPolicy:'no-referrer',headers:{apikey:key,'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify(pendingPayload),signal:controller.signal});
       let duplicate = false;
-      if (response.status === 409) { const result = await response.json(); duplicate = result.code === '23505'; }
+      if (response.status === 409) { const result = await response.json(); duplicate = result.code === '23505' && result.message?.includes('festpay_survey_responses_pkey'); }
       if (!response.ok && !duplicate) { pendingPayload = null; throw new Error('save'); }
       sent = true; document.getElementById('survey-shell').hidden = true; document.getElementById('success').hidden = false; document.querySelector('#success h2').focus();
     } catch {
-      error.textContent = 'Das Speichern konnte nicht bestätigt werden. Bitte prüfe deine Internetverbindung und versuche es erneut. Deine Antworten bleiben hier erhalten; bei unklarem Versandstatus senden wir dieselbe Antwort erneut.';
+      error.textContent = 'Das Speichern konnte nicht bestätigt werden. Pro Versuchs-ID ist nur ein Fragebogen möglich. Bitte prüfe die Versuchs-ID und deine Internetverbindung und versuche es erneut. Deine Antworten bleiben hier erhalten; bei unklarem Versandstatus senden wir dieselbe Antwort erneut.';
       error.hidden = false;
     } finally { clearTimeout(timeout); sending = false; submit.disabled = false; back.disabled = false; submit.textContent = 'Feedback absenden'; }
   });

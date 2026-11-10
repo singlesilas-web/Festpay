@@ -80,9 +80,15 @@ Es ist **keine automatische Datenlöschung aktiv**. `supabase/retention.sql` ent
 
 Für ein neues eigenes Supabase-Projekt zuerst `supabase/analytics.sql`, dann `supabase/admin-enrollment.sql` ausführen, die Edge Function `test-events` bereitstellen und URL/Publishable Key in `dist/js/config.js` anpassen. `verify_jwt=false` gilt nur für den Erfassungs-Endpunkt, der seine eigenen Sitzungstoken überprüft. Neue erlaubte Ursprünge in der Edge Function ergänzen. `legacy-supabase/` nicht ausführen.
 
+## Gemeinsame Versuchs-ID (v7)
+
+Fragebogen, Beobachtungsbogen und App-Aufzeichnung verwenden dieselbe `trial_id`. Jeder Aufgabenstart und jede Wiederholung erhält zusätzlich eine eigene Aufgabenversuchs-ID. Der Beobachtungsbogen prüft die genaue Zuordnung serverseitig. Das Dashboard bietet Altersgruppenfilter und einen verknüpften CSV-Export. Vor Veröffentlichung müssen das SQL-Upgrade und die Edge Function im FestPay-Supabase-Projekt bereitgestellt werden.
+
+Durchführung, Datenmodell, wissenschaftliche Grenzen und Bereitstellungsreihenfolge: [supabase/RESEARCH-LINKAGE.md](supabase/RESEARCH-LINKAGE.md).
+
 ## Auswertung
 
-Ein Fall ist eine ausdrücklich gestartete Aufgabe. Das Dashboard wählt `festpay-2026-11-09-v6-tasks` standardmäßig voraus. Ältere Daten bleiben über den Versionsfilter erreichbar und behalten ihre ursprüngliche Aufgabenbezeichnung. Die Erweiterung bestehender Datenbanken steht in `supabase/analytics-tasks-v6.sql`. `seq` bestimmt die Reihenfolge bei verspätetem Versand; `at` ist Clientzeit und `received_at` Serverzeit.
+Ein Fall ist eine ausdrücklich gestartete Aufgabe. Das Dashboard wählt `festpay-2026-11-10-v7-linked` standardmäßig voraus. Ältere Daten bleiben über den Versionsfilter erreichbar und behalten ihre ursprüngliche Aufgabenbezeichnung. Die Erweiterung bestehender Datenbanken steht in `supabase/analytics-tasks-v6.sql`. `seq` bestimmt die Reihenfolge bei verspätetem Versand; `at` ist Clientzeit und `received_at` Serverzeit.
 
 - **Gast-Guthabenaufgabe:** `wallet_qr_shown` als beobachtetes Teilziel. Dies belegt keine erfolgte Zahlung am Stand. Alte W1-Tests behalten `wallet_topped_up` als Ziel.
 - **Gast-Markenaufgabe / W2:** `token_redeemed`; der Kauf allein genügt nicht.
@@ -97,8 +103,11 @@ Der **Prozess-CSV-Export** enthält `case_id, activity, timestamp, sequence, tas
 
 ## Prüfen
 
+Node.js 24 oder neuer; Testabhängigkeiten werden nur für die Entwicklung benötigt. Die Website bleibt ohne Build nutzbar.
+
 ```bash
-node --test tests/*.test.cjs
+npm ci
+npm test
 ```
 
 Vor Freigabe neuer Versionen zusätzlich beide Bezahlwege im Browser prüfen. Bei Änderungen an der Datenbank RLS und Advisors kontrollieren. Die bereits geprüfte Anbindung speichert Ereignisse, verhindert Duplikate, weist falsche Sitzungstoken ab und sperrt den direkten Gast-Lesezugriff.

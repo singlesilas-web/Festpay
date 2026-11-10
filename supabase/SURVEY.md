@@ -1,3 +1,9 @@
+# Aktueller Stand: verknüpfte Umfrage (v7)
+
+Die Umfrage verwendet jetzt eine gemeinsame Versuchs-ID und kann darüber mit Alter, Beobachtungen und App-Protokollen verknüpft werden. Sie zeichnet weiterhin keine Klicks auf und benötigt keinen App-Account. Das bestehende Antwortschema bleibt `survey_version=5`; `trial_id` und freiwilliges Alter werden ergänzt. Pro Versuchs-ID ist ein Fragebogen möglich.
+
+Aktuelle Durchführung und Bereitstellung: [RESEARCH-LINKAGE.md](RESEARCH-LINKAGE.md). Die folgenden Abschnitte dokumentieren ältere, noch nicht verknüpfte Versionen.
+
 # Eigenständige Festpay-Testumfrage
 
 URL: https://singlesilas-web.github.io/Festpay/umfrage/

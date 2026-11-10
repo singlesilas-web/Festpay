@@ -9,8 +9,10 @@
 <label>Version<select id="version"></select></label>
 <label>Wege<select id="route"><option value="all">Alle Wege</option><option value="happy">Happy Paths</option><option value="other">Andere erfolgreiche Wege</option><option value="open">Ohne Zielerfolg</option></select></label>
 <label>Beobachtete Variante<select id="variant"></select></label>
+<label>Altersgruppe<select id="ageGroup"><option value="all">Alle / auch ohne Altersangabe</option><option value="20–30">20–30 Jahre</option><option value="50–80">50–80 Jahre</option><option value="Andere">Andere Altersgruppen</option><option value="Unbekannt">Unbekannt / widersprüchlich</option></select></label><button id="researchCsv">Verknüpfte Auswertung (CSV)</button>
 <button id="csv">Prozess-CSV</button><button id="raw">Ereignisse (JSON)</button>
 </div>
+<p id="linkageNote" class="note"></p><p class="note">Der verknüpfte Export hat genau eine Zeile pro Aufgabenversuch. Fragebogenantworten gelten für den gesamten Test; Beobachtungen sind dem konkreten Aufgabenversuch zugeordnet. Fehlgeschlagene App-Aktionen und wiederholte Klicks sind beobachtete Signale, keine vollständige Fehlerzählung. Ein fehlender statistisch signifikanter Unterschied beweist keine Gleichheit der Altersgruppen.</p>
 <div id="metrics" class="metrics"></div>
 <p class="note">Die aktuelle Testversion ist vorausgewählt. Frühere Versuche bleiben über den Versionsfilter verfügbar. Aufgabenfilter und Endziel sind getrennt wählbar. Ein erreichtes Endziel belegt den jeweiligen Schritt, nicht automatisch alle Anforderungen der Aufgabe. Beim Gast-Guthabentest belegt „Guthaben-QR anzeigen“ das Vorzeigen des Codes, nicht die Zahlung am Stand. Prozess-CSV und JSON enthalten den ganzen Versuch einschließlich Rückkehr zur Testauswahl. Zeit und Klicks zählen ab Teststart bis zum ersten Erreichen des gewählten Endziels. Die Zeit enthält auch Pausen. Unvollständige Fälle stammen aus Tests, denen dieses Ziel zugewiesen war.</p>
 <section class="panel">
@@ -25,6 +27,6 @@
 <section class="panel"><h2>Beobachtete Varianten</h2><div id="variants"></div></section>
 <section class="panel"><h2>Einzelne Testfälle</h2>
 <p class="note">„Vermuteter Abbruch“ bedeutet mindestens 30 Minuten ohne neues Ereignis. Ein ausdrücklich beendeter Test wird separat markiert.</p>
-<div class="table-wrap"><table><thead><tr><th>Sitzung</th><th>Gewählte Aufgabe</th><th>Ergebnis</th><th>Klicks</th><th>Dauer</th><th>Weg</th></tr></thead><tbody id="sessions"></tbody></table></div></section>
+<div class="table-wrap"><table><thead><tr><th>Sitzung</th><th>Gewählte Aufgabe</th><th>Alter</th><th>Verknüpfung</th><th>Ergebnis</th><th>Klicks</th><th>Dauer</th><th>Weg</th></tr></thead><tbody id="sessions"></tbody></table></div></section>
 </div></main>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.99.2/dist/umd/supabase.min.js"></script><script src="js/config.js?v=6"></script><script src="js/test-tasks.js?v=6"></script><script src="js/process-mining.js?v=6"></script><script src="js/admin.js?v=6.1"></script></body></html>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.99.2/dist/umd/supabase.min.js"></script><script src="js/config.js?v=7"></script><script src="js/test-tasks.js?v=6"></script><script src="js/process-mining.js?v=6"></script><script src="js/admin.js?v=7"></script></body></html>
