@@ -12,7 +12,7 @@
   $('login').querySelector('form').onsubmit=async e=>{e.preventDefault();const {error}=await client.auth.signInWithPassword({email:$('email').value,password:$('password').value});$('password').value='';if(error){$('status').textContent='Anmeldung fehlgeschlagen.';return;}await load();};
   $('logout').onclick=async()=>{await client.auth.signOut();location.reload();};
   async function all(table,columns){let rows=[];for(let offset=0;;offset+=1000){let query=client.from(table).select(columns);if(table==='analytics_sessions')query=query.eq('excluded',false);if(['analytics_sessions','study_attempt_analysis'].includes(table))query=query.eq('version',C.BUILD_VERSION).in('task',window.FestPayTasks.map(t=>t[0]));if(table==='analytics_events'){if(!sessions.length)return [];query=query.in('session_id',sessions.map(s=>s.id));}const {data,error}=await query.order(['analytics_sessions','study_attempt_analysis'].includes(table)?'started_at':['festpay_survey_responses','festpay_observations'].includes(table)?'created_at':'received_at',{ascending:true}).order(table==='study_attempt_analysis'?'attempt_id':'id',{ascending:true}).range(offset,offset+999);if(error)throw error;rows.push(...data);if(data.length<1000)return rows;}}
-  async function load(){try{const {data,error}=await client.from('analytics_admins').select('user_id');if(error||!data.length){$('status').textContent='Dieser Account hat keine Analysefreigabe.';$('logout').hidden=false;return;}sessions=await all('analytics_sessions','id,participant_id,task,version,started_at');events=await all('analytics_events','id,session_id,seq,type,screen,at,received_at,elapsed,props');linked=await all('study_attempt_analysis','*');show();$('logout').hidden=false;}catch{$('status').textContent='Daten konnten nicht geladen werden. Verbindung und Zugriffsrechte prüfen.';}}
+  async function load(){try{const {data,error}=await client.from('analytics_admins').select('user_id');if(error||!data.length){$('status').textContent='Dieser Account hat keine Analysefreigabe.';$('logout').hidden=false;return;}sessions=await all('analytics_sessions','id,participant_id,participant_code,attempt_code,attempt_number,task,version,started_at');events=await all('analytics_events','id,session_id,seq,type,screen,at,received_at,elapsed,props');linked=await all('study_attempt_analysis','*');show();$('logout').hidden=false;}catch{$('status').textContent='Daten konnten nicht geladen werden. Verbindung und Zugriffsrechte prüfen.';}}
   const routeNames = {happy:'Happy Path', other:'Anderer erfolgreicher Weg', open:'Ohne Zielerfolg'};
   const taskNames=Object.fromEntries(window.FestPayTasks.map(([id,role,title])=>[id,role+' · '+title]));
   const duration = ms => ms == null ? '—' : (ms < 60000 ? Math.round(ms / 1000) + ' s' : Math.floor(ms / 60000) + ' min ' + Math.floor(ms % 60000 / 1000) + ' s');
@@ -37,11 +37,11 @@
   }
   function renderLinked(){
     const rows=linkedSelection();
-    $('linkedRows').innerHTML=rows.map(r=>'<tr><td>'+esc(r.participant_id||'—')+'</td><td>'+esc(r.attempt_id)+'</td><td>'+esc(taskNames[r.task]||r.task)+'</td><td>'+esc(r.age_conflict?'Widersprüchlich':r.age??'—')+'</td><td>'+esc(r.observation_result||'—')+'</td><td>'+duration(r.goal_elapsed_ms)+'</td><td>'+esc(r.linkage_status)+' · '+r.survey_count+' Fragebögen / '+r.observation_count+' Beobachtungen</td></tr>').join('')||'<tr><td colspan="7">Noch keine passenden Versuche.</td></tr>';
+    $('linkedRows').innerHTML=rows.map(r=>'<tr><td>'+esc(r.participant_code||'—')+'</td><td>'+esc(r.attempt_code||'—')+'</td><td>'+esc(taskNames[r.task]||r.task)+'</td><td>'+esc(r.age_conflict?'Widersprüchlich':r.age??'—')+'</td><td>'+esc(r.observation_result||'—')+'</td><td>'+duration(r.goal_elapsed_ms)+'</td><td>'+esc(r.linkage_status)+' · '+r.survey_count+' Fragebögen / '+r.observation_count+' Beobachtungen</td></tr>').join('')||'<tr><td colspan="7">Noch keine passenden Versuche.</td></tr>';
     $('linkSummary').textContent=rows.length+' Versuche · '+new Set(rows.map(r=>r.participant_id).filter(Boolean)).size+' Testpersonen · '+rows.filter(r=>r.linkage_status==='all_three_linked').length+' vollständig verknüpft · '+rows.filter(r=>r.age_conflict).length+' mit widersprüchlichem Alter.';
   }
   $('linkedCsv').onclick=()=>{
-    const columns=['participant_id','attempt_id','task','version','started_at','age','age_group','age_conflict','linkage_status','survey_ids','observation_ids','survey_count','observation_count','selected_survey_id','selected_observation_id','survey_task_result','survey_reported_task_result','survey_task_attempt_count','survey_helper_result','observation_result','observation_duration_ms','goal_elapsed_ms','end_elapsed_ms','last_elapsed_ms','clicks','recorded_errors','repeated_clicks','mining_outcome','survey_ease','survey_navigation'];
+    const columns=['participant_code','attempt_code','attempt_number','participant_id','attempt_id','task','version','started_at','age','age_group','age_conflict','linkage_status','survey_ids','observation_ids','survey_count','observation_count','selected_survey_id','selected_observation_id','survey_task_result','survey_reported_task_result','survey_task_attempt_count','survey_helper_result','observation_result','observation_duration_ms','goal_elapsed_ms','end_elapsed_ms','last_elapsed_ms','clicks','recorded_errors','repeated_clicks','mining_outcome','survey_ease','survey_navigation'];
     const quote=value=>'"'+String(Array.isArray(value)?value.join('|'):value??'').replace(/"/g,'""')+'"';
     download('festpay-linked-study.csv','\uFEFF'+[columns,...linkedSelection().map(row=>columns.map(k=>row[k]))].map(row=>row.map(quote).join(',')).join('\r\n'),'text/csv;charset=utf-8');
   };
@@ -72,7 +72,7 @@
       + metric(duration(median(completed.map(c => c.duration))),'Median bis Zielschritt')
       + metric(median(completed.map(c => c.clicks)) ?? '—','Median Klicks bis Ziel');
     $('sessions').innerHTML = selected.map(c =>
-      '<tr><td>' + esc(c.session.id.slice(0,12)) + '</td><td>' + esc(taskNames[c.session.task] || c.session.task) +
+      '<tr><td>' + esc(c.session.attempt_code||'—') + '</td><td>' + esc(taskNames[c.session.task] || c.session.task) +
       '</td><td>' + esc(c.status) + (c.endReason ? ' · Versuch beendet' : '') + '</td><td>' + c.clicks + '</td><td>' + duration(c.duration) +
       '</td><td><details><summary>' + routeNames[c.route] + '</summary><p>' + esc(pathText(c.path)) + '</p></details></td></tr>'
     ).join('') || '<tr><td colspan="6">Für dieses Endziel und diese Filter liegen noch keine Fälle vor.</td></tr>';
@@ -197,10 +197,10 @@
   }
   $('csv').onclick = () => {
     const quote = value => '"'+String(value??'').replace(/"/g,'""')+'"';
-    const rows = [['case_id','activity','timestamp','sequence','task','version','goal','outcome','route','elapsed_ms','end_reason']];
+    const rows = [['person_code','attempt_code','case_id','activity','timestamp','sequence','task','version','goal','outcome','route','elapsed_ms','end_reason']];
     for (const c of selected) for (const e of c.fullTrace) {
       const key = step(e);
-      if (key) rows.push([c.session.id,label(key),e.at,e.seq,c.session.task,c.session.version,goalForTask($('task').value),c.status,c.route,e.elapsed,c.endReason]);
+      if (key) rows.push([c.session.participant_code,c.session.attempt_code,c.session.id,label(key),e.at,e.seq,c.session.task,c.session.version,goalForTask($('task').value),c.status,c.route,e.elapsed,c.endReason]);
     }
     download('festpay-process-log.csv','\uFEFF'+rows.map(row => row.map(quote).join(',')).join('\r\n'),'text/csv;charset=utf-8');
   };

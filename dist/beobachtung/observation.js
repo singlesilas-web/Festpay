@@ -2,13 +2,13 @@
 (() => {
   const tasks = window.FestPayTasks;
   const form = document.querySelector('#observation');
-  const person=document.getElementById('studyParticipant');person.value=FestPayStudy.current();
+  const person=document.getElementById('studyParticipant');person.value=FestPayStudy.personCode();FestPayStudy.refresh().then(()=>{if(!person.value)person.value=FestPayStudy.personCode();}).catch(()=>{});
   const draftKey = 'festpay-observation-linked-v2';
   const statuses = {independent:'ohne Hilfe', help:'mit Hilfe', aborted:'abgebrochen'};
   let draft;
   try { draft = JSON.parse(sessionStorage.getItem(draftKey)); } catch {}
-  const state = (draft?.participant_id===person.value?draft:null) || {id:crypto.randomUUID(), fields:{}, tasks:{}, active:null};
-  state.participant_id=person.value;
+  const state = (draft && (draft.participant_id===person.value || draft.participant_id===FestPayStudy.current() || (person.value && FestPayStudy.personCode(draft.participant_id)===person.value))?draft:null) || {id:crypto.randomUUID(), fields:{}, tasks:{}, active:null};
+  state.participant_id=person.value||FestPayStudy.current();
   const store = () => sessionStorage.setItem(draftKey, JSON.stringify(state));
   const elapsed = task => task.elapsed_ms + (task.started ? Math.max(0, Date.now() - task.started) : 0);
   const format = ms => {
@@ -25,7 +25,7 @@
     card.open = state.active === key || (key === tasks[0][0] && !draft);
     card.innerHTML = '<summary><b>'+role+' · '+title+'</b><span data-summary></span></summary>'+
       '<p class="readout"><b>Aufgabe (vorlesen)</b><br>'+instruction+'</p>'+
-      '<label class="study-field">Versuchs-ID dieser Aufgabe<input data-attempt autocomplete="off" placeholder="Aus dem Klickdummy übernehmen"></label>'+
+      '<details data-repeat><summary>Aufgabe mehrfach durchgeführt? (optional)</summary><label class="study-field">Versuchscode<input data-attempt autocomplete="off" placeholder="z. B. P001-A2-2"></label><p class="hint">Bei einem einzigen Durchlauf leer lassen.</p></details>'+
       '<div class="timer-row"><output aria-label="Stoppuhr">0:00 min</output><button class="secondary" type="button" data-timer>Zeit starten</button>'+
       '<label class="duration">Dauer (min)<input type="text" placeholder="1:15" maxlength="7" pattern="[0-9]{1,4}:[0-5][0-9]" aria-label="Dauer in Minuten und Sekunden"></label></div>'+
       '<div class="outcomes" role="group" aria-label="Geschafft?">'+Object.entries(statuses).map(([value,label])=>'<button class="secondary" type="button" data-result="'+value+'" aria-pressed="false">'+label+'</button>').join('')+'</div>'+
@@ -34,9 +34,9 @@
     cards.set(key,card);
     document.getElementById('tasks').append(card);
     const attempt=card.querySelector('[data-attempt]');
-    attempt.value=task.session_id || FestPayStudy.attempts(person.value).filter(a=>a.task===key).at(-1)?.id || '';
-    task.session_id=attempt.value;
-    attempt.oninput=()=>{attempt.setCustomValidity('');task.session_id=attempt.value.trim();store();};
+    attempt.value=task.session_code||'';
+    task.session_id ||= attempt.value;
+    attempt.oninput=()=>{attempt.setCustomValidity('');task.session_code=attempt.value.trim();task.session_id=attempt.value.trim();store();};
     const duration = card.querySelector('.duration input');
     duration.value = task.elapsed_ms ? format(task.elapsed_ms) : '';
     duration.oninput = () => {
@@ -103,7 +103,7 @@
   form.elements.participant_code.value ||= person.value;
   person.oninput=()=>{
     person.setCustomValidity('');state.participant_id=person.value.trim();
-    for(const [key,card] of cards){const value=FestPayStudy.attempts(person.value.trim()).filter(a=>a.task===key).at(-1)?.id||'';card.querySelector('[data-attempt]').value=value;state.tasks[key].session_id=value;}
+    for(const [key,card] of cards){const value='';card.querySelector('[data-attempt]').value=value;state.tasks[key].session_id=value;state.tasks[key].session_code=value;}
     store();
   };
   update();
@@ -121,7 +121,7 @@
     if (state.active) stop(state.active);
     update();
     if(!FestPayStudy.valid(person.value.trim())){person.setCustomValidity('Bitte eine gültige Testpersonen-ID übernehmen.');person.reportValidity();return;}
-    for(const [key,card] of cards){const task=state.tasks[key];if((task.result||task.elapsed_ms||Object.values(task.notes).some(v=>v.trim()))&&!FestPayStudy.valid(task.session_id)){card.open=true;const input=card.querySelector('[data-attempt]');input.setCustomValidity('Bitte die genaue Versuchs-ID dieser Aufgabe eintragen.');input.reportValidity();return;}}
+    for(const [key,card] of cards){const task=state.tasks[key];if((task.result||task.elapsed_ms||Object.values(task.notes).some(v=>v.trim()))&&task.session_id&&!FestPayStudy.validAttempt(task.session_id)){card.open=true;const input=card.querySelector('[data-attempt]');input.setCustomValidity('Bitte die genaue Versuchs-ID dieser Aufgabe eintragen.');input.reportValidity();return;}}
     const values = new FormData(form);
     const observations = Object.fromEntries(tasks.flatMap(([key]) => {
       const task = state.tasks[key];
@@ -134,7 +134,7 @@
       return;
     }
     state.pending ||= {
-      id:state.id,form_version:1,participant_id:person.value.trim().toLowerCase(),attempt_ids:Object.values(observations).map(o=>o.session_id),linkage_consent:true,
+      id:state.id,form_version:1,participant_id:person.value.trim().toLowerCase(),attempt_ids:[],linkage_consent:true,
       ...Object.fromEntries(['participant_code','app','test_date','observer','other'].map(key=>[key,String(values.get(key)||'').trim()])),
       age: values.get('age') === '' ? null : Number(values.get('age')),
       gender: values.get('gender') || null,
@@ -152,19 +152,24 @@
         headers:{apikey:'sb_publishable_IBp-YQesCAmLfB0qNwwsxw_j6O2cTU1','Content-Type':'application/json',Prefer:'return=minimal'},
         body:JSON.stringify({action:'observation',payload:state.pending}),signal:controller.signal
       });
+      const reply=await response.clone().json().catch(()=>({}));
       const duplicate = response.status === 409 && (await response.json()).code === '23505';
       if (!response.ok && !duplicate) {
         delete state.pending;
         store();
-        throw Error('save');
+        if(reply.error==='attempt_required'){
+          const card=cards.get(reply.task);if(card){card.open=true;card.querySelector('[data-repeat]').open=true;}
+          throw Error('Diese Aufgabe wurde mehrfach durchgeführt. Bitte den passenden Versuchscode eintragen: '+(reply.attempt_codes||[]).join(', '));
+        }
+        throw Error('Speichern nicht bestätigt. Bitte Personencode, Aufgabenzuordnung und Internetverbindung prüfen.');
       }
       sessionStorage.removeItem(draftKey);
       document.querySelector('#success a').href=FestPayStudy.url('umfrage',person.value.trim());
       form.hidden = true;
       document.getElementById('success').hidden = false;
       document.getElementById('success').scrollIntoView();
-    } catch {
-      error.textContent = 'Speichern konnte nicht bestätigt werden. Der Entwurf bleibt erhalten. Bei unklarem Versandstatus wird derselbe Stand erneut gesendet.';
+    } catch (problem) {
+      error.textContent = (problem.message||'Speichern konnte nicht bestätigt werden.')+' Der Entwurf bleibt erhalten.';
       error.hidden = false;
     } finally {
       clearTimeout(timeout);

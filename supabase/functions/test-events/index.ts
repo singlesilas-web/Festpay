@@ -4,6 +4,8 @@ const service=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const allowedOrigins=new Set(['https://festpay-klicktest-silas.chicchair12.chatgpt.site','https://singlesilas-web.github.io']);
 const headers={apikey:service,Authorization:`Bearer ${service}`,'Content-Type':'application/json'};
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const personCode=/^P[0-9]{3,}$/i;
+const attemptCode=/^P[0-9]{3,}-A[1-5]-[1-9][0-9]*$/i;
 const screens=new Set(['index.html','fest.html','guthaben.html','speisekarte.html','bezahlen.html','marken.html','profil.html','login.html','helfer.html','betreiber.html']);
 const types=new Set(['page_view','click','repeated_click','field_focus','scroll','browser_zoom','map_zoom','map_pan','activity','session_end','page_hidden','page_visible','page_leave','heartbeat']);
 const tasks = new Set(['gast_guthaben','gast_marken','helfer','betreiber_marken','betreiber_guthaben']);
@@ -27,19 +29,63 @@ Deno.serve(async req=>{
   if(auth){const r=await fetch(base+'/auth/v1/user',{headers:{apikey:service,Authorization:auth}});if(r.ok){const u=await r.json();const admins=await db('analytics_admins?user_id=eq.'+u.id+'&select=user_id');if(admins.length)return reply(403,{error:'admin_excluded'});}}
   const raw=await req.text();if(raw.length>400000)return reply(413,{error:'size'});
   const b=JSON.parse(raw);
+  async function personFor(ref:unknown,create=false){
+   if(typeof ref!=='string'||(!uuid.test(ref)&&!personCode.test(ref)))return null;
+   const lookup=uuid.test(ref)?'id=eq.'+ref.toLowerCase():'participant_code=eq.'+ref.toUpperCase();
+   let found=await db('study_participants?'+lookup+'&select=id,participant_code');
+   if(!found.length&&create&&uuid.test(ref)){
+    await db('study_participants?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=ignore-duplicates'},body:JSON.stringify({id:ref.toLowerCase()})});
+    found=await db('study_participants?'+lookup+'&select=id,participant_code');
+   }
+   return found[0]||null;
+  }
+  // Resolve labels only for a caller who already knows the random internal person ID.
+  // This response contains no event log, demographics, form answers or ingest token.
+  if(b.action==='labels'){
+   if(!uuid.test(b.participant_id))return reply(400,{error:'participant'});
+   const person=await personFor(b.participant_id);if(!person)return reply(404,{error:'unknown_person'});
+   const attempts=await db('analytics_sessions?participant_id=eq.'+person.id+'&excluded=eq.false&version=eq.festpay-2026-11-10-v9-clean&select=id,task,attempt_code,attempt_number&order=started_at.asc,id.asc');
+   return reply(200,{participant_id:person.id,participant_code:person.participant_code,attempts});
+  }
   if(b.action==='survey'||b.action==='observation'){
    const p=b.payload;
-   if(!p||!uuid.test(p.id)||!uuid.test(p.participant_id)||p.linkage_consent!==true||!Array.isArray(p.attempt_ids)||p.attempt_ids.length<1||p.attempt_ids.length>100||p.attempt_ids.some((id:unknown)=>typeof id!=='string'||!uuid.test(id)))return reply(400,{error:'linkage'});
+   if(!p||!uuid.test(p.id)||p.linkage_consent!==true||!Array.isArray(p.attempt_ids)||p.attempt_ids.length>100||p.attempt_ids.some((id:unknown)=>typeof id!=='string'||(!uuid.test(id)&&!attemptCode.test(id))))return reply(400,{error:'linkage'});
    const allowed=new Set(b.action==='survey'?
      ['id','participant_id','attempt_ids','linkage_consent','age','survey_version','real_role','real_roles','organizer_transaction_fee_percent','legacy_payment_satisfaction','guest_abuse_feedback','payment_preference','feedback','consent','task_guest_balance','task_guest_tokens','task_helper_checkout','task_organizer_tokens','task_organizer_balance','task_organizer_helper','ease','navigation','design','enjoyment','payment_clarity','balance_clarity','usefulness','guest_usefulness','organizer_usefulness']:
      ['id','participant_id','attempt_ids','linkage_consent','form_version','participant_code','app','test_date','observer','other','age','gender','observations']);
    if(Object.keys(p).some(k=>!allowed.has(k)))return reply(400,{error:'fields'});
+   const person=await personFor(p.participant_id);if(!person)return reply(400,{error:'unknown_person'});
+   p.participant_id=person.id;
    const table=b.action==='survey'?'festpay_survey_responses':'festpay_observations';
    const existing=await db(table+'?id=eq.'+p.id+'&select=participant_id');
-   if(existing.length)return existing[0].participant_id===p.participant_id.toLowerCase()?reply(200,{saved:true}):reply(409,{error:'id_conflict'});
+   if(existing.length)return existing[0].participant_id===person.id?reply(200,{saved:true}):reply(409,{error:'id_conflict'});
+   const catalog=await db('analytics_sessions?participant_id=eq.'+person.id+'&excluded=eq.false&version=eq.festpay-2026-11-10-v9-clean&select=id,task,attempt_code,attempt_number');
+   const match=(ref:string)=>catalog.find((a:any)=>a.id===ref.toLowerCase()||a.attempt_code===ref.toUpperCase());
+   const requested=p.attempt_ids.map((ref:string)=>match(ref)?.id);
+   if(requested.some((id:unknown)=>!id))return reply(400,{error:'attempt_mismatch'});
+   if(b.action==='observation'){
+    if(!p.observations||Array.isArray(p.observations)||typeof p.observations!=='object')return reply(400,{error:'observations'});
+    const resolved=[];
+    for(const [task,value] of Object.entries(p.observations)){
+     const entry=value as any;if(!tasks.has(task)||!entry||typeof entry!=='object')return reply(400,{error:'task'});
+     let attempt;
+     if(entry.session_id){if(typeof entry.session_id!=='string')return reply(400,{error:'attempt_mismatch'});attempt=match(entry.session_id);}
+     else{
+      const choices=catalog.filter((a:any)=>a.task===task);
+      if(choices.length>1)return reply(400,{error:'attempt_required',task,attempt_codes:choices.map((a:any)=>a.attempt_code)});
+      attempt=choices[0];
+     }
+     if(!attempt||attempt.task!==task)return reply(400,{error:'attempt_mismatch',task});
+     entry.session_id=attempt.id;resolved.push(attempt.id);
+    }
+    if(requested.length&&(requested.length!==resolved.length||requested.some((id:string)=>!resolved.includes(id))))return reply(400,{error:'attempt_mismatch'});
+    p.attempt_ids=resolved;
+    p.participant_code=person.participant_code;
+   }else p.attempt_ids=requested.length?[...new Set(requested)]:catalog.map((a:any)=>a.id);
+   if(p.attempt_ids.length<1||p.attempt_ids.length>100)return reply(400,{error:'no_attempts'});
    await db(table+'?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=ignore-duplicates'},body:JSON.stringify(p)});
    const saved=await db(table+'?id=eq.'+p.id+'&select=participant_id');
-   if(saved[0]?.participant_id!==p.participant_id.toLowerCase())return reply(409,{error:'id_conflict'});
+   if(saved[0]?.participant_id!==person.id)return reply(409,{error:'id_conflict'});
    return reply(200,{saved:true});
   }
   if(b.action==='start'||b.action==='events'){
@@ -48,12 +94,13 @@ Deno.serve(async req=>{
    if(b.action==='start'&&b.version!==settings.active_version)return reply(409,{error:'version_retired'});
   }
   if(b.action==='start'){
-   if(!tasks.has(b.task)||b.version!=='festpay-2026-11-10-v9-clean'||b.consent_version!=='2026-11-10-linked-v1'||!uuid.test(b.participant_id))return reply(409,{error:'version_retired'});
-   const participant=b.participant_id.toLowerCase();
-   await db('study_participants?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=ignore-duplicates'},body:JSON.stringify({id:participant})});
+   if(!tasks.has(b.task)||b.version!=='festpay-2026-11-10-v9-clean'||b.consent_version!=='2026-11-10-linked-v1'||(!uuid.test(b.participant_id)&&!personCode.test(b.participant_id)))return reply(409,{error:'version_retired'});
+   const person=await personFor(b.participant_id,true);if(!person)return reply(400,{error:'unknown_person'});
+   const participant=person.id;
    const id=crypto.randomUUID(),token=crypto.randomUUID()+crypto.randomUUID();
    await db('analytics_sessions',{method:'POST',body:JSON.stringify({id,token_hash:await hash(token),task:b.task,version:b.version,consent_version:b.consent_version,participant_id:participant})});
-   return reply(200,{id,token});
+   const attempt=(await db('analytics_sessions?id=eq.'+id+'&select=attempt_code,attempt_number'))[0];
+   return reply(200,{id,token,participant_id:person.id,participant_code:person.participant_code,attempt_code:attempt.attempt_code,attempt_number:attempt.attempt_number});
   }
   if(raw.length>60000||b.action!=='events'||!uuid.test(b.session_id)||typeof b.token!=='string'||b.token.length!==72||!Array.isArray(b.events)||!b.events.length||b.events.length>25)return reply(400,{error:'batch'});
   const sessions=await db('analytics_sessions?id=eq.'+b.session_id+'&select=token_hash,started_at,event_count');
