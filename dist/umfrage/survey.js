@@ -5,7 +5,7 @@
   const key = 'sb_publishable_IBp-YQesCAmLfB0qNwwsxw_j6O2cTU1';
   const form = document.getElementById('survey');
   const person=document.getElementById('studyParticipant'),attemptInput=document.getElementById('studyAttempts');
-  person.value=FestPayStudy.current();attemptInput.value=FestPayStudy.attempts(person.value).map(a=>a.id).join(', ');
+  person.value=FestPayStudy.personCode();FestPayStudy.refresh().then(()=>{if(!person.value)person.value=FestPayStudy.personCode();}).catch(()=>{});
   person.oninput=()=>{person.setCustomValidity('');};attemptInput.oninput=()=>{attemptInput.setCustomValidity('');};
   const sections = [...document.querySelectorAll('[data-step]')];
   const back = document.getElementById('back'), next = document.getElementById('next'), submit = document.getElementById('submit');
@@ -145,9 +145,8 @@
   }
   function validate() {
     if(step===0){
-      person.setCustomValidity(FestPayStudy.valid(person.value.trim())?'':'Bitte eine gültige Testpersonen-ID aus dem Klickdummy übernehmen.');
-      const ids=attemptInput.value.split(',').map(s=>s.trim()).filter(Boolean);
-      attemptInput.setCustomValidity(ids.length && ids.length<=100 && ids.every(FestPayStudy.valid)?'':'Bitte gültige Versuchs-IDs aus dem Klickdummy übernehmen.');
+      person.setCustomValidity(FestPayStudy.valid(person.value.trim())?'':'Bitte den Personencode aus dem Klickdummy eintragen, zum Beispiel P001.');
+
     }
     if (step === 0 && selectedRoles().length === 0) {
       error.textContent = 'Bitte wähle mindestens eine Rolle aus.';
@@ -181,7 +180,7 @@
     const data = new FormData(form);
     const roles = selectedRoles();
     const fee = data.get('organizer_transaction_fee_percent');
-    const payload = {id, participant_id:person.value.trim().toLowerCase(), attempt_ids:[...new Set(attemptInput.value.split(',').map(s=>s.trim()).filter(Boolean))], age:data.get('study_age')===''?null:Number(data.get('study_age')), linkage_consent:true, survey_version:5, real_role:roles[0], real_roles:roles, organizer_transaction_fee_percent:roles.includes('organizer') ? Number(fee) : null, legacy_payment_satisfaction:Number(data.get('legacy_payment_satisfaction')), guest_abuse_feedback:data.get('guest_abuse_feedback')?.trim() || null, payment_preference:data.get('payment_preference'), feedback:data.get('feedback').trim(), consent:true};
+    const payload = {id, participant_id:person.value.trim().toLowerCase(), attempt_ids:[], age:data.get('study_age')===''?null:Number(data.get('study_age')), linkage_consent:true, survey_version:5, real_role:roles[0], real_roles:roles, organizer_transaction_fee_percent:roles.includes('organizer') ? Number(fee) : null, legacy_payment_satisfaction:Number(data.get('legacy_payment_satisfaction')), guest_abuse_feedback:data.get('guest_abuse_feedback')?.trim() || null, payment_preference:data.get('payment_preference'), feedback:data.get('feedback').trim(), consent:true};
     for (const [name] of tasks) payload[name] = data.get(name);
     for (const [name] of [...experience,...value,...perspectives]) payload[name] = data.has(name) ? Number(data.get(name)) : null;
     // Retry the exact same payload after an ambiguous network failure.

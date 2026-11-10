@@ -111,10 +111,10 @@
   }
   function gate(){
     const g=document.createElement('section');g.className='test-gate';g.dataset.noTrack='1';g.setAttribute('role','dialog');g.setAttribute('aria-modal','true');g.setAttribute('aria-label','FestPay Nutzertest');
-    g.innerHTML='<div class="test-card"><div class="eyebrow">FESTPAY / NUTZERTEST</div><h1>Welche Aufgabe testest du?</h1><p>Teste unseren Klickdummy. Alle Beträge und Zahlungen sind simuliert.</p><label class="study-field">Testpersonen-ID<input id="studyParticipant" aria-label="Testpersonen-ID" required></label><button type="button" class="secondary" id="newParticipant">Neue Testperson</button><button type="button" class="secondary" id="studyLinks">IDs und Links zu den Fragebögen</button><select aria-label="Testaufgabe"></select><p id="taskInstructions" class="task-instructions"></p><p>Mit deiner Zustimmung erfassen wir Klickpositionen, Seitenwechsel, Scrollen, Zoom, Zeitpunkte und erfolgreiche Schritte unter einer zufälligen Sitzungs-ID. Die Testpersonen-ID und die Versuchs-ID verknüpfen diese Aufzeichnung mit Fragebogen und Beobachtungsbogen, einschließlich freiwilliger Altersangaben. Keine Eingabetexte, Passwörter oder echten Zahlungsdaten. Aktuell erfolgt keine automatische Löschung. Die Projektverantwortlichen verwalten die Aufbewahrung und Löschung der Testdaten.</p><label><input type="checkbox">Ich möchte am aufgezeichneten Nutzertest teilnehmen.</label><p class="test-alert" id="testStatus"></p><button id="startTest" disabled>Aufgabe starten</button><button class="secondary" id="previewTest">Admin / Vorschau ohne Aufzeichnung</button><a href="admin.html">Zur geschützten Auswertung</a></div>';
-    const personInput=g.querySelector('#studyParticipant');personInput.value=FestPayStudy.current();
-    g.querySelector('#newParticipant').onclick=()=>{personInput.value=FestPayStudy.choose(crypto.randomUUID());};
-    g.querySelector('#studyLinks').onclick=()=>{if(FestPayStudy.valid(personInput.value.trim())){FestPayStudy.choose(personInput.value.trim());FestPayStudy.show();}};
+    g.innerHTML='<div class="test-card"><div class="eyebrow">FESTPAY / NUTZERTEST</div><h1>Welche Aufgabe testest du?</h1><p>Teste unseren Klickdummy. Alle Beträge und Zahlungen sind simuliert.</p><label class="study-field">Personencode<input id="studyParticipant" aria-label="Personencode" placeholder="Wird beim Start vergeben"><span class="small">Für weitere Aufgaben derselben Person den Code behalten.</span></label><button type="button" class="secondary" id="newParticipant">Neue Testperson</button><button type="button" class="secondary" id="studyLinks">IDs und Links zu den Fragebögen</button><select aria-label="Testaufgabe"></select><p id="taskInstructions" class="task-instructions"></p><p>Mit deiner Zustimmung erfassen wir Klickpositionen, Seitenwechsel, Scrollen, Zoom, Zeitpunkte und erfolgreiche Schritte unter einer zufälligen Sitzungs-ID. Die Testpersonen-ID und die Versuchs-ID verknüpfen diese Aufzeichnung mit Fragebogen und Beobachtungsbogen, einschließlich freiwilliger Altersangaben. Keine Eingabetexte, Passwörter oder echten Zahlungsdaten. Aktuell erfolgt keine automatische Löschung. Die Projektverantwortlichen verwalten die Aufbewahrung und Löschung der Testdaten.</p><label><input type="checkbox">Ich möchte am aufgezeichneten Nutzertest teilnehmen.</label><p class="test-alert" id="testStatus"></p><button id="startTest" disabled>Aufgabe starten</button><button class="secondary" id="previewTest">Admin / Vorschau ohne Aufzeichnung</button><a href="admin.html">Zur geschützten Auswertung</a></div>';
+    const personInput=g.querySelector('#studyParticipant');personInput.value=FestPayStudy.personCode();const originalPerson=FestPayStudy.current();FestPayStudy.refresh().then(()=>{if(!personInput.value&&FestPayStudy.current()===originalPerson)personInput.value=FestPayStudy.personCode();}).catch(()=>{});
+    g.querySelector('#newParticipant').onclick=()=>{FestPayStudy.choose(crypto.randomUUID());personInput.value='';};
+    g.querySelector('#studyLinks').onclick=()=>{if(personInput.value.trim()){if(!FestPayStudy.valid(personInput.value.trim()))return;FestPayStudy.choose(personInput.value.trim());}FestPayStudy.show();};
     const taskSelect = g.querySelector('select');
     taskSelect.replaceChildren(...window.FestPayTasks.map(([id,role,title], index) => new Option((index+1)+'. '+role+' · '+title, id)));
     const instructions = () => { g.querySelector('#taskInstructions').textContent = window.FestPayTasks.find(task => task[0] === taskSelect.value)[3]; };
@@ -128,8 +128,8 @@
       if(analystSignedIn()){status.textContent='Auf diesem Gerät ist ein Analyse-Account angemeldet. Bitte zuerst in der Auswertung abmelden oder die Vorschau nutzen.';return;}
       btn.disabled=true;status.textContent='Testsitzung wird angelegt …';
       try{
-        const participant=personInput.value.trim().toLowerCase();
-        if(!FestPayStudy.valid(participant)){status.textContent='Bitte eine gültige Testpersonen-ID eingeben oder Neue Testperson wählen.';btn.disabled=false;return;}
+        const participant=personInput.value.trim()||FestPayStudy.current();
+        if(!FestPayStudy.valid(participant)){status.textContent='Bitte einen gültigen Personencode eingeben (z. B. P001) oder Neue Testperson wählen.';btn.disabled=false;return;}
         FestPayStudy.choose(participant);
         const task=g.querySelector('select').value;
         const data=await send({action:'start',task,participant_id:participant,version:C.BUILD_VERSION,consent_version:'2026-11-10-linked-v1'});
@@ -145,7 +145,7 @@
           }
         }
         sessionStorage.removeItem('festpay_ended');
-        localStorage.removeItem(OFF);session={id:data.id,token:data.token,started:Date.now(),seq:0,task,participant_id:participant};stopped=false;persist();FestPayStudy.remember(data.id,task,participant);g.remove();
+        localStorage.removeItem(OFF);FestPayStudy.registerPerson(data.participant_id,data.participant_code);const savedPerson=FestPayStudy.choose(data.participant_id||participant);session={id:data.id,token:data.token,started:Date.now(),seq:0,task,participant_id:savedPerson,participant_code:data.participant_code,attempt_code:data.attempt_code};stopped=false;persist();FestPayStudy.remember(data.id,task,savedPerson,data.attempt_code,data.attempt_number);g.remove();
         // Restart to render a clean demo state for every participant.
         location.replace('index.html');
       }catch{status.textContent='Testsitzung konnte nicht gestartet werden. Bitte erneut versuchen.';btn.disabled=false;}
