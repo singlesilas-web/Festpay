@@ -3,7 +3,7 @@
   const tasks = window.FestPayTasks;
   const form = document.querySelector('#observation');
   const person=document.getElementById('studyParticipant');person.value=FestPayStudy.current();
-  const draftKey = 'festpay-observation-linked-v1';
+  const draftKey = 'festpay-observation-linked-v2';
   const statuses = {independent:'ohne Hilfe', help:'mit Hilfe', aborted:'abgebrochen'};
   let draft;
   try { draft = JSON.parse(sessionStorage.getItem(draftKey)); } catch {}

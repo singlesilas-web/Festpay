@@ -1,15 +1,34 @@
 -- Transactional integration check: all synthetic rows are rolled back.
 begin;
 do $$
+declare rejected boolean:=false;
+begin
+  begin
+    insert into public.analytics_sessions(token_hash,task,version,consent_version) values('guard-test','helfer','festpay-2026-11-10-v8-linked','2026-11-10-linked-v1');
+  exception when others then rejected=true; end;
+  if not rejected then raise exception 'Paused or retired ingest was accepted'; end if;
+end $$;
+update public.analytics_run_settings set accepting=true where singleton;
+do $$
 declare
   person uuid:=gen_random_uuid(); other_person uuid:=gen_random_uuid();
   a uuid:=gen_random_uuid(); b uuid:=gen_random_uuid();
   survey uuid:=gen_random_uuid(); observation uuid:=gen_random_uuid(); rejected boolean:=false;
 begin
+  begin
+    insert into public.analytics_sessions(token_hash,task,version,consent_version) values('guard-test','explore','festpay-2026-11-10-v9-clean','2026-11-10-linked-v1');
+  exception when others then rejected=true; end;
+  if not rejected then raise exception 'Retired task was accepted'; end if;
+  rejected=false;
+  begin
+    insert into public.analytics_sessions(token_hash,task,version,consent_version) values('guard-test','helfer','festpay-2026-11-10-v8-linked','2026-11-10-linked-v1');
+  exception when others then rejected=true; end;
+  if not rejected then raise exception 'Retired build was accepted'; end if;
+  rejected=false;
   insert into public.study_participants(id) values(person),(other_person);
   insert into public.analytics_sessions(id,token_hash,task,version,consent_version,participant_id)
-  values(a,'internal-sql-test','gast_marken','festpay-2026-11-10-v8-linked','2026-11-10-linked-v1',person),
-        (b,'internal-sql-test','gast_marken','festpay-2026-11-10-v8-linked','2026-11-10-linked-v1',person);
+  values(a,'internal-sql-test','gast_marken','festpay-2026-11-10-v9-clean','2026-11-10-linked-v1',person),
+        (b,'internal-sql-test','gast_marken','festpay-2026-11-10-v9-clean','2026-11-10-linked-v1',person);
   insert into public.analytics_events(id,session_id,seq,type,screen,at,elapsed,props)
   values(gen_random_uuid(),a,1,'activity','marken.html',now(),40000,'{"activity":"token_redeemed"}'),
         (gen_random_uuid(),a,2,'session_end','marken.html',now(),42000,'{"reason":"internal_qa"}');

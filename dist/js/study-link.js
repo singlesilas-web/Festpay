@@ -1,6 +1,6 @@
 /* Pseudonymous study identity. Contains IDs only: no answers, age, names or session tokens. */
 window.FestPayStudy = (() => {
-  const key='festpay_study_v1';
+  const key='festpay_study_v2';
   const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   const valid=value=>typeof value==='string' && uuid.test(value);
   function read(){try{return JSON.parse(localStorage.getItem(key))||{people:{}};}catch{return {people:{}};}}

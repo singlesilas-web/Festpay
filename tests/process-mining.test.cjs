@@ -30,3 +30,15 @@ test('ending a test is distinct from reaching a goal and is retained for full ex
   assert.equal(completed.fullTrace.length,2);
   assert.equal(completed.endReason,'return_to_task_selection');
 });
+
+test('current run accepts only the five scripted tasks and exact current version',()=>{
+ const current='festpay-2026-11-10-v9-clean';
+ const tasks=['gast_guthaben','gast_marken','helfer','betreiber_marken','betreiber_guthaben'];
+ const fixtures=[...tasks.map((task,i)=>({id:'current-'+i,task,version:current})),{id:'old-task',task:'explore',version:current},{id:'old-version',task:'helfer',version:'festpay-2026-11-10-v8-linked'}];
+ const mining=context.window.FestPayMining;
+ assert.equal(mining.currentSessions(fixtures,current).length,5);
+ assert.equal(mining.currentSessions(fixtures,current,'helfer').length,1);
+ assert.equal(mining.currentSessions([],current).length,0);
+ assert.equal(mining.goalForTask('gast_guthaben'),'wallet_qr_shown');
+ assert.equal(mining.goalForTask('festival_updated'),undefined);
+});
