@@ -2,11 +2,13 @@
 (() => {
   const tasks = window.FestPayTasks;
   const form = document.querySelector('#observation');
-  const draftKey = 'festpay-observation-v1';
+  const person=document.getElementById('studyParticipant');person.value=FestPayStudy.current();
+  const draftKey = 'festpay-observation-linked-v1';
   const statuses = {independent:'ohne Hilfe', help:'mit Hilfe', aborted:'abgebrochen'};
   let draft;
   try { draft = JSON.parse(sessionStorage.getItem(draftKey)); } catch {}
-  const state = draft || {id:crypto.randomUUID(), fields:{}, tasks:{}, active:null};
+  const state = (draft?.participant_id===person.value?draft:null) || {id:crypto.randomUUID(), fields:{}, tasks:{}, active:null};
+  state.participant_id=person.value;
   const store = () => sessionStorage.setItem(draftKey, JSON.stringify(state));
   const elapsed = task => task.elapsed_ms + (task.started ? Math.max(0, Date.now() - task.started) : 0);
   const format = ms => {
@@ -23,6 +25,7 @@
     card.open = state.active === key || (key === tasks[0][0] && !draft);
     card.innerHTML = '<summary><b>'+role+' · '+title+'</b><span data-summary></span></summary>'+
       '<p class="readout"><b>Aufgabe (vorlesen)</b><br>'+instruction+'</p>'+
+      '<label class="study-field">Versuchs-ID dieser Aufgabe<input data-attempt autocomplete="off" placeholder="Aus dem Klickdummy übernehmen"></label>'+
       '<div class="timer-row"><output aria-label="Stoppuhr">0:00 min</output><button class="secondary" type="button" data-timer>Zeit starten</button>'+
       '<label class="duration">Dauer (min)<input type="text" placeholder="1:15" maxlength="7" pattern="[0-9]{1,4}:[0-5][0-9]" aria-label="Dauer in Minuten und Sekunden"></label></div>'+
       '<div class="outcomes" role="group" aria-label="Geschafft?">'+Object.entries(statuses).map(([value,label])=>'<button class="secondary" type="button" data-result="'+value+'" aria-pressed="false">'+label+'</button>').join('')+'</div>'+
@@ -30,6 +33,10 @@
       '<details class="followup"><summary>Nachfragen nach Abschluss einer Aufgabe</summary><div class="observation-fields">'+textFields.slice(2).map((field,i)=>'<label>'+fieldLabels[i+2]+'<textarea data-field="'+field+'" rows="2" maxlength="4000"></textarea></label>').join('')+'</div></details>';
     cards.set(key,card);
     document.getElementById('tasks').append(card);
+    const attempt=card.querySelector('[data-attempt]');
+    attempt.value=task.session_id || FestPayStudy.attempts(person.value).filter(a=>a.task===key).at(-1)?.id || '';
+    task.session_id=attempt.value;
+    attempt.oninput=()=>{attempt.setCustomValidity('');task.session_id=attempt.value.trim();store();};
     const duration = card.querySelector('.duration input');
     duration.value = task.elapsed_ms ? format(task.elapsed_ms) : '';
     duration.oninput = () => {
@@ -93,6 +100,12 @@
     if (state.fields[field] != null) input.value = state.fields[field];
     input.addEventListener('input', () => {state.fields[field]=input.value;store();});
   }
+  form.elements.participant_code.value ||= person.value;
+  person.oninput=()=>{
+    person.setCustomValidity('');state.participant_id=person.value.trim();
+    for(const [key,card] of cards){const value=FestPayStudy.attempts(person.value.trim()).filter(a=>a.task===key).at(-1)?.id||'';card.querySelector('[data-attempt]').value=value;state.tasks[key].session_id=value;}
+    store();
+  };
   update();
   setInterval(tick, 250);
   const error = document.getElementById('error');
@@ -107,11 +120,13 @@
     if (sending) return;
     if (state.active) stop(state.active);
     update();
+    if(!FestPayStudy.valid(person.value.trim())){person.setCustomValidity('Bitte eine gültige Testpersonen-ID übernehmen.');person.reportValidity();return;}
+    for(const [key,card] of cards){const task=state.tasks[key];if((task.result||task.elapsed_ms||Object.values(task.notes).some(v=>v.trim()))&&!FestPayStudy.valid(task.session_id)){card.open=true;const input=card.querySelector('[data-attempt]');input.setCustomValidity('Bitte die genaue Versuchs-ID dieser Aufgabe eintragen.');input.reportValidity();return;}}
     const values = new FormData(form);
     const observations = Object.fromEntries(tasks.flatMap(([key]) => {
       const task = state.tasks[key];
       if (!task.result && !task.elapsed_ms && !Object.values(task.notes).some(value=>value.trim())) return [];
-      return [[key,{result:task.result||null,duration_ms:task.elapsed_ms,...Object.fromEntries(textFields.map(field=>[field,(task.notes[field]||'').trim()]))}]];
+      return [[key,{session_id:task.session_id,result:task.result||null,duration_ms:task.elapsed_ms,...Object.fromEntries(textFields.map(field=>[field,(task.notes[field]||'').trim()]))}]];
     }));
     if (!Object.keys(observations).length && !state.pending) {
       error.textContent = 'Erfasse mindestens eine Aufgabe, bevor du den Bogen speicherst.';
@@ -119,7 +134,7 @@
       return;
     }
     state.pending ||= {
-      id:state.id,form_version:1,
+      id:state.id,form_version:1,participant_id:person.value.trim().toLowerCase(),attempt_ids:Object.values(observations).map(o=>o.session_id),linkage_consent:true,
       ...Object.fromEntries(['participant_code','app','test_date','observer','other'].map(key=>[key,String(values.get(key)||'').trim()])),
       age: values.get('age') === '' ? null : Number(values.get('age')),
       gender: values.get('gender') || null,
@@ -132,10 +147,10 @@
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);
     try {
-      const response = await fetch('https://orrprvpypsvuzspwzevf.supabase.co/rest/v1/festpay_observations', {
+      const response = await fetch('https://orrprvpypsvuzspwzevf.supabase.co/functions/v1/test-events', {
         method:'POST',credentials:'omit',referrerPolicy:'no-referrer',
         headers:{apikey:'sb_publishable_IBp-YQesCAmLfB0qNwwsxw_j6O2cTU1','Content-Type':'application/json',Prefer:'return=minimal'},
-        body:JSON.stringify(state.pending),signal:controller.signal
+        body:JSON.stringify({action:'observation',payload:state.pending}),signal:controller.signal
       });
       const duplicate = response.status === 409 && (await response.json()).code === '23505';
       if (!response.ok && !duplicate) {
@@ -144,6 +159,7 @@
         throw Error('save');
       }
       sessionStorage.removeItem(draftKey);
+      document.querySelector('#success a').href=FestPayStudy.url('umfrage',person.value.trim());
       form.hidden = true;
       document.getElementById('success').hidden = false;
       document.getElementById('success').scrollIntoView();

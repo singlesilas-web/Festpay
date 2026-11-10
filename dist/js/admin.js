@@ -3,7 +3,7 @@
   const $=id=>document.getElementById(id),C=APP_CONFIG;
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const {goals, label, step, casesForGoal, median} = FestPayMining;
-  let client,sessions=[],events=[],selected=[],sample=false;
+  let client,sessions=[],events=[],selected=[],sample=false,linked=[];
   const configured=/^https:\/\//.test(C.ANALYTICS_URL)&&!!C.ANALYTICS_KEY;
   if(configured&&window.supabase)client=supabase.createClient(C.ANALYTICS_URL,C.ANALYTICS_KEY,{auth:{storageKey:'festpay_analyst_auth'}});
   $('status').textContent=configured?'Mit eurem freigegebenen Analyse-Account anmelden.':'Supabase ist noch nicht eingerichtet. Die Auswertung lässt sich mit klar gekennzeichneten Beispieldaten ansehen.';
@@ -11,8 +11,8 @@
   $('register').onclick=async()=>{if(!$('login').querySelector('form').reportValidity())return;const {error}=await client.auth.signUp({email:$('email').value,password:$('password').value});$('password').value='';$('status').textContent=error?'Registrierung fehlgeschlagen. Bitte gültige E-Mail und ein starkes Passwort mit mindestens 8 Zeichen verwenden.':'Falls eine neue Registrierung möglich war, wurde eine Bestätigungsmail versandt. Bestätige die E-Mail und melde dich anschließend hier an. Der Account benötigt zusätzlich eine Admin-Freigabe durch die Projektverantwortlichen.';};
   $('login').querySelector('form').onsubmit=async e=>{e.preventDefault();const {error}=await client.auth.signInWithPassword({email:$('email').value,password:$('password').value});$('password').value='';if(error){$('status').textContent='Anmeldung fehlgeschlagen.';return;}await load();};
   $('logout').onclick=async()=>{await client.auth.signOut();location.reload();};
-  async function all(table,columns){let rows=[];for(let offset=0;;offset+=1000){let query=client.from(table).select(columns);if(table==='analytics_sessions')query=query.eq('excluded',false);const {data,error}=await query.order(table==='analytics_sessions'?'started_at':'received_at',{ascending:true}).order('id',{ascending:true}).range(offset,offset+999);if(error)throw error;rows.push(...data);if(data.length<1000)return rows;}}
-  async function load(){try{const {data,error}=await client.from('analytics_admins').select('user_id');if(error||!data.length){$('status').textContent='Dieser Account hat keine Analysefreigabe.';$('logout').hidden=false;return;}sessions=await all('analytics_sessions','id,task,version,started_at');events=await all('analytics_events','id,session_id,seq,type,screen,at,received_at,elapsed,props');sample=false;show();$('logout').hidden=false;}catch{$('status').textContent='Daten konnten nicht geladen werden. Verbindung und Zugriffsrechte prüfen.';}}
+  async function all(table,columns){let rows=[];for(let offset=0;;offset+=1000){let query=client.from(table).select(columns);if(table==='analytics_sessions')query=query.eq('excluded',false);const {data,error}=await query.order(['analytics_sessions','study_attempt_analysis'].includes(table)?'started_at':['festpay_survey_responses','festpay_observations'].includes(table)?'created_at':'received_at',{ascending:true}).order(table==='study_attempt_analysis'?'attempt_id':'id',{ascending:true}).range(offset,offset+999);if(error)throw error;rows.push(...data);if(data.length<1000)return rows;}}
+  async function load(){try{const {data,error}=await client.from('analytics_admins').select('user_id');if(error||!data.length){$('status').textContent='Dieser Account hat keine Analysefreigabe.';$('logout').hidden=false;return;}sessions=await all('analytics_sessions','id,participant_id,task,version,started_at');events=await all('analytics_events','id,session_id,seq,type,screen,at,received_at,elapsed,props');linked=await all('study_attempt_analysis','*');sample=false;show();$('logout').hidden=false;}catch{$('status').textContent='Daten konnten nicht geladen werden. Verbindung und Zugriffsrechte prüfen.';}}
   const routeNames = {happy:'Happy Path', other:'Anderer erfolgreicher Weg', open:'Ohne Zielerfolg'};
   const taskNames = {...Object.fromEntries(window.FestPayTasks.map(([id,role,title]) => [id,role+' · '+title])), ...goals, w1:'W1 · Guthaben', w2:'W2 · Entwertung', explore:'Frei erkunden'};
   const duration = ms => ms == null ? '—' : (ms < 60000 ? Math.round(ms / 1000) + ' s' : Math.floor(ms / 60000) + ' min ' + Math.floor(ms % 60000 / 1000) + ' s');
@@ -35,6 +35,20 @@
     else $('version').value = [...$('version').options].some(o => o.value === C.BUILD_VERSION) ? C.BUILD_VERSION : 'current';
     render();
   }
+  function linkedSelection(){
+    const version=$('version').value,task=$('task').value;
+    return linked.filter(r=>(version==='all'||r.version===(version==='current'?C.BUILD_VERSION:version))&&(task==='all'||r.task===task));
+  }
+  function renderLinked(){
+    const rows=linkedSelection();
+    $('linkedRows').innerHTML=rows.map(r=>'<tr><td>'+esc(r.participant_id||'—')+'</td><td>'+esc(r.attempt_id)+'</td><td>'+esc(taskNames[r.task]||r.task)+'</td><td>'+esc(r.age_conflict?'Widersprüchlich':r.age??'—')+'</td><td>'+esc(r.observation_result||'—')+'</td><td>'+duration(r.goal_elapsed_ms)+'</td><td>'+esc(r.linkage_status)+' · '+r.survey_count+' Fragebögen / '+r.observation_count+' Beobachtungen</td></tr>').join('')||'<tr><td colspan="7">Noch keine passenden Versuche.</td></tr>';
+    $('linkSummary').textContent=rows.length+' Versuche · '+new Set(rows.map(r=>r.participant_id).filter(Boolean)).size+' Testpersonen · '+rows.filter(r=>r.linkage_status==='all_three_linked').length+' vollständig verknüpft · '+rows.filter(r=>r.age_conflict).length+' mit widersprüchlichem Alter.';
+  }
+  $('linkedCsv').onclick=()=>{
+    const columns=['participant_id','attempt_id','task','version','started_at','age','age_group','age_conflict','linkage_status','survey_ids','observation_ids','survey_count','observation_count','selected_survey_id','selected_observation_id','survey_task_result','survey_reported_task_result','survey_task_attempt_count','survey_helper_result','observation_result','observation_duration_ms','goal_elapsed_ms','end_elapsed_ms','last_elapsed_ms','clicks','recorded_errors','repeated_clicks','mining_outcome','survey_ease','survey_navigation'];
+    const quote=value=>'"'+String(Array.isArray(value)?value.join('|'):value??'').replace(/"/g,'""')+'"';
+    download('festpay-linked-study.csv','\uFEFF'+[columns,...linkedSelection().map(row=>columns.map(k=>row[k]))].map(row=>row.map(quote).join(',')).join('\r\n'),'text/csv;charset=utf-8');
+  };
   function variants(cases) {
     const groups = new Map();
     for (const c of cases) {
@@ -47,6 +61,7 @@
   const metric = (value, name) => '<div class="metric"><b>' + esc(value) + '</b><span>' + esc(name) + '</span></div>';
   function render() {
     const goal = $('goal').value, version = $('version').value, route = $('route').value;
+    renderLinked();
     const cases = casesForGoal(sessions.filter(s => (version === 'all' || s.version === (version === 'current' ? C.BUILD_VERSION : version)) && ($('task').value === 'all' || s.task === $('task').value)), events, goal);
     const filtered = cases.filter(c => route === 'all' || route === c.route);
     const groups = variants(filtered);
@@ -207,7 +222,7 @@
   $('context').onchange=heat;
   $('reload').onclick=load;
   $('sample').onclick=() => {
-    sample=true;
+    sample=true;linked=[];
     sessions=[];
     events=[];
     let index=0;

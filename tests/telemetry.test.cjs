@@ -10,7 +10,7 @@ function runtime({preview=false,guest=false,previous=[]}={}){
  const api={};for(const k of ['aufladen','markenKaufen','markeEntwerten','abbuchen','festSpeichern'])api[k]=async()=>({error:null});
  const context={console,crypto,document,API:api,Date,URLSearchParams,innerWidth:390,innerHeight:800,scrollY:0,localStorage:store(local),sessionStorage:store(session),Option:function(title,value){this.text=title;this.value=value;},location:{pathname:'/index.html',search:'',href:'',replace(url){this.href=url}},history:{replaceState(){}},setInterval(fn){timers.push(fn)},setTimeout(){},clearTimeout(){},alert(){},fetch:async()=>({ok:true,json:async()=>({})})};
  context.window=context;context.APP_CONFIG={ANALYTICS_URL:'https://test.supabase.co',ANALYTICS_KEY:'public',BUILD_VERSION:'test'};context.addEventListener=()=>{};
- vm.createContext(context);vm.runInContext(fs.readFileSync(require('node:path').join(__dirname,'../dist/js/test-tasks.js'),'utf8'),context);vm.runInContext(source,context);return{context,listeners,session,timers,appended,queue:()=>JSON.parse(session.get('festpay_test_session_v2')||'{"pending":[]}').pending};
+ vm.createContext(context);vm.runInContext(fs.readFileSync(require('node:path').join(__dirname,'../dist/js/study-link.js'),'utf8'),context);vm.runInContext(fs.readFileSync(require('node:path').join(__dirname,'../dist/js/test-tasks.js'),'utf8'),context);vm.runInContext(source,context);return{context,listeners,session,timers,appended,queue:()=>JSON.parse(session.get('festpay_test_session_v2')||'{"pending":[]}').pending};
 }
 test('no consent creates no session and emits nothing',()=>{const r=runtime();r.context.TestLog.event('click',{target:'secret'});assert.equal(r.session.size,0)});
 test('preview suppresses all analytics including successful actions',async()=>{const r=runtime({preview:true,guest:true});await r.context.API.aufladen();assert.equal(r.queue().length,0)});
@@ -94,7 +94,7 @@ test('all five tasks initialize their catalogue role before recording the attemp
   r.context.API.istDemo=()=>true;
   r.context.API.setDemoRolle=value=>{role=value;assert.equal(r.session.has('festpay_test_session_v2'),false);};
   r.context.API.aufladen=async(fest,amount)=>{assert.equal(role,'helfer');assert.equal(fest,'demo-sommerfest');funded+=amount;assert.equal(r.session.has('festpay_test_session_v2'),false);return {error:null};};
-  r.context.fetch=async()=>({ok:true,json:async()=>({id:'new-attempt',token:'test-token'})});
+  r.context.fetch=async()=>({ok:true,json:async()=>({id:'12345678-1234-4321-8123-123456789012',token:'test-token'})});
   const gate=r.appended.find(el=>el.className==='test-gate');gate.querySelector('select').value=task;
   await gate.querySelector('#startTest').onclick();
   assert.equal(role,expected,task);

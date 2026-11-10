@@ -1,9 +1,12 @@
 'use strict';
 (() => {
-  // Deliberately standalone: no app scripts, auth, analytics, cookies or app storage.
-  const endpoint = 'https://orrprvpypsvuzspwzevf.supabase.co/rest/v1/festpay_survey_responses';
+  // No click tracking or app auth. Only pseudonymous study IDs are shared with the app.
+  const endpoint = 'https://orrprvpypsvuzspwzevf.supabase.co/functions/v1/test-events';
   const key = 'sb_publishable_IBp-YQesCAmLfB0qNwwsxw_j6O2cTU1';
   const form = document.getElementById('survey');
+  const person=document.getElementById('studyParticipant'),attemptInput=document.getElementById('studyAttempts');
+  person.value=FestPayStudy.current();attemptInput.value=FestPayStudy.attempts(person.value).map(a=>a.id).join(', ');
+  person.oninput=()=>{person.setCustomValidity('');};attemptInput.oninput=()=>{attemptInput.setCustomValidity('');};
   const sections = [...document.querySelectorAll('[data-step]')];
   const back = document.getElementById('back'), next = document.getElementById('next'), submit = document.getElementById('submit');
   const error = document.getElementById('error');
@@ -141,6 +144,11 @@
     error.hidden = true; document.getElementById(`heading-${step}`).focus();
   }
   function validate() {
+    if(step===0){
+      person.setCustomValidity(FestPayStudy.valid(person.value.trim())?'':'Bitte eine gültige Testpersonen-ID aus dem Klickdummy übernehmen.');
+      const ids=attemptInput.value.split(',').map(s=>s.trim()).filter(Boolean);
+      attemptInput.setCustomValidity(ids.length && ids.length<=100 && ids.every(FestPayStudy.valid)?'':'Bitte gültige Versuchs-IDs aus dem Klickdummy übernehmen.');
+    }
     if (step === 0 && selectedRoles().length === 0) {
       error.textContent = 'Bitte wähle mindestens eine Rolle aus.';
       error.hidden = false;
@@ -173,7 +181,7 @@
     const data = new FormData(form);
     const roles = selectedRoles();
     const fee = data.get('organizer_transaction_fee_percent');
-    const payload = {id, survey_version:5, real_role:roles[0], real_roles:roles, organizer_transaction_fee_percent:roles.includes('organizer') ? Number(fee) : null, legacy_payment_satisfaction:Number(data.get('legacy_payment_satisfaction')), guest_abuse_feedback:data.get('guest_abuse_feedback')?.trim() || null, payment_preference:data.get('payment_preference'), feedback:data.get('feedback').trim(), consent:true};
+    const payload = {id, participant_id:person.value.trim().toLowerCase(), attempt_ids:[...new Set(attemptInput.value.split(',').map(s=>s.trim()).filter(Boolean))], age:data.get('study_age')===''?null:Number(data.get('study_age')), linkage_consent:true, survey_version:5, real_role:roles[0], real_roles:roles, organizer_transaction_fee_percent:roles.includes('organizer') ? Number(fee) : null, legacy_payment_satisfaction:Number(data.get('legacy_payment_satisfaction')), guest_abuse_feedback:data.get('guest_abuse_feedback')?.trim() || null, payment_preference:data.get('payment_preference'), feedback:data.get('feedback').trim(), consent:true};
     for (const [name] of tasks) payload[name] = data.get(name);
     for (const [name] of [...experience,...value,...perspectives]) payload[name] = data.has(name) ? Number(data.get(name)) : null;
     // Retry the exact same payload after an ambiguous network failure.
@@ -181,13 +189,13 @@
     sending = true; submit.disabled = true; back.disabled = true; submit.textContent = 'Wird gespeichert …'; error.hidden = true;
     const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), 15000);
     try {
-      const response = await fetch(endpoint, {method:'POST',credentials:'omit',referrerPolicy:'no-referrer',headers:{apikey:key,'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify(pendingPayload),signal:controller.signal});
+      const response = await fetch(endpoint, {method:'POST',credentials:'omit',referrerPolicy:'no-referrer',headers:{apikey:key,'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({action:'survey',payload:pendingPayload}),signal:controller.signal});
       let duplicate = false;
       if (response.status === 409) { const result = await response.json(); duplicate = result.code === '23505'; }
       if (!response.ok && !duplicate) { pendingPayload = null; throw new Error('save'); }
       sent = true; document.getElementById('survey-shell').hidden = true; document.getElementById('success').hidden = false; document.querySelector('#success h2').focus();
     } catch {
-      error.textContent = 'Das Speichern konnte nicht bestätigt werden. Bitte prüfe deine Internetverbindung und versuche es erneut. Deine Antworten bleiben hier erhalten; bei unklarem Versandstatus senden wir dieselbe Antwort erneut.';
+      error.textContent = 'Das Speichern konnte nicht bestätigt werden. Bitte prüfe Internetverbindung und Zuordnungs-IDs und versuche es erneut. Deine Antworten bleiben hier erhalten; bei unklarem Versandstatus senden wir dieselbe Antwort erneut.';
       error.hidden = false;
     } finally { clearTimeout(timeout); sending = false; submit.disabled = false; back.disabled = false; submit.textContent = 'Feedback absenden'; }
   });
