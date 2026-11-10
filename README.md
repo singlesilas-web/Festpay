@@ -122,3 +122,38 @@ Der QR-Button auf der Startkarte öffnet bei genau einem Fest mit Guthaben direk
 Das manuelle Ortsfeld entfällt. Die aktuelle SVG-Karte besitzt keine geografischen Koordinaten; eine automatische Ortsermittlung ist deshalb erst mit einer echten Kartenanbindung möglich. Bestehende Ortsangaben bleiben in gespeicherten Festen erhalten. Der Zonen-Reset steht unter der Karte. Kategorien werden aus einer festen Liste gewählt; vorhandene individuelle Kategorien bleiben beim Bearbeiten erhalten. Die Icon-Palette ist standardmäßig geöffnet.
 
 Die Helferkasse zeigt Artikelkacheln mit Symbol, Preis und Anzahl sowie ein bearbeitbares Gesamtfeld. Bei umfangreichen Karten scrollt die Artikelliste innerhalb ihres Bereichs. Nach dem Scan erscheint die Bestätigung direkt über der Kamerafläche; Abbrechen behält die Bestellung, Abbuchen setzt sie nach erfolgreicher Buchung zurück.
+
+
+### Ergänzungen zur Testdurchführung (09.11.2026, v7)
+
+Im Menü führt „Zur Testauswahl“ über dieselbe übertragungssichere Abschlussfunktion wie der feste Rücksprungbutton zum ersten Bildschirm. Ein Rücksprung ist ein Versuchsende und kein Erfolgsnachweis. Vor dem nächsten Versuch werden auch ausgeblendete Helferartikel zurückgesetzt. Demo-Fest B bietet 10/20/50 € an, damit die 20-€-Aufladung aus dem finalen Aufgabenblatt durchführbar ist.
+
+Vorhandene Rohdaten bleiben unverändert. Über den Versionsfilter sind ältere Versuche weiterhin verfügbar; standardmäßig zeigt die Auswertung die aktuelle Version. Die Endziele im Dashboard sind beobachtete Zwischen- bzw. Endaktivitäten (z. B. QR sichtbar, Marke entwertet), kein automatischer Nachweis sämtlicher Details einer mehrteiligen Aufgabe. Den vollständigen Aufgabenerfolg mit dem Beobachtungsbogen abgleichen. Eine geräteübergreifende Standzahlung ist im lokalen Klickdummy weiterhin nur als getrennte Helferhandlung testbar.
+
+## Verknüpfte Nutzertest-Studie (v8, 10.11.2026)
+
+Eine zufällige **Testpersonen-ID** (`study_participants.id`) bleibt über mehrere Aufgaben derselben Person gleich. Jeder gestartete Versuch erhält weiterhin eine eigene **Versuchs-ID** (`analytics_sessions.id`). Auch Wiederholungen derselben Aufgabe erzeugen neue Versuchs-IDs. Es werden keine historischen Datensätze anhand von Namen, Alter oder Zeitnähe zugeordnet.
+
+Durchführung:
+1. Auf der Aufgabenauswahl **Neue Testperson** wählen, wenn die Person wechselt. Für weitere Aufgaben derselben Person die bestehende ID behalten. Der Rollenwechsel erfolgt automatisch.
+2. Aufgabe starten und nach dem Versuch **Zur Testauswahl** wählen. IDs und Fragebogenlinks stehen unter **IDs / Fragebögen** bzw. **IDs und Links zu den Fragebögen**. Vor der ersten gestarteten Aufgabe existiert noch keine gespeicherte Verknüpfung.
+3. Fragebogen und Beobachtungsbogen über diese Links öffnen. Auf demselben Gerät werden die IDs automatisch übernommen. Für ein anderes Gerät den jeweiligen vollständigen Link übertragen. Der Link enthält ausschließlich pseudonyme IDs und Aufgabenkennungen im Fragment, keine Antworten oder Telemetrie-Zugriffstoken. Die IDs sind Zuordnungscodes, kein Identitätsnachweis der natürlichen Person; Links nur innerhalb der Testdurchführung teilen.
+4. Im Beobachtungsbogen pro aufgezeichneter Aufgabe die konkrete Versuchs-ID prüfen. Bei Wiederholung derselben Aufgabe einen neuen Bogen verwenden; die vorgeschlagene ID ist der zuletzt gestartete Versuch dieser Aufgabe. Ohne Aufzeichnung kann kein verknüpfter Bogen gespeichert werden. Die Fragebogen-Antwort zu einer Aufgabe ist bei mehreren enthaltenen Wiederholungen eine übergreifende Selbstauskunft und wird im Export nicht als Ergebnis jedes einzelnen Versuchs ausgegeben.
+
+Der Fragebogen fragt das Alter nun ebenfalls **freiwillig** ab; es kann weiterhin allein im Beobachtungsbogen stehen. Die Einwilligungstexte beschreiben die Zusammenführung. Die Daten sind pseudonymisiert, nicht anonym. Im Beobachtungsbogen keine Namen erfassen.
+
+### Speicherung und Zugriffsprüfung
+
+Die additive Migration `supabase/study-linkage.sql` ergänzt Fremdschlüssel und `attempt_ids` an beiden Formularen. `validate_study_form` prüft Person, genaue Sitzung und Beobachtungsaufgabe in derselben Datenbanktransaktion. Der Edge-Endpunkt nimmt nur bekannte Felder an und bestätigt wiederholte Übertragungen derselben Formular-ID ohne zweite Zeile. Verknüpfte Daten können nicht direkt mit dem öffentlichen Schlüssel eingetragen werden. Bestehende unverknüpfte Formularversionen bleiben kompatibel. Rohdaten wurden nicht rückwirkend verändert.
+
+`study_attempt_analysis` ist eine View mit `security_invoker=true`; Lesen erfordert den bestehenden Analyse-Adminzugang. Die View erzeugt genau eine Zeile je nicht ausgeschlossenem Versuch. Die neue Admin-Tabelle und **Verknüpfte Daten als CSV** berücksichtigen Aufgaben- und Versionsfilter, unabhängig vom Endzielfilter. Der Export enthält Personen-/Versuchs- und Formular-IDs, Alter und Altersgruppe, Quellenanzahl, Beobachtungsergebnis, Selbstauskunft, protokollierte Zielzeit, Zeit bis zum Versuchsende, Beobachtungszeit, Klicks, protokollierte Fehler und wiederholte Klicks.
+
+- Fehlende Verbindung: `historical_unlinked` oder `partially_linked`; keine Zuordnung wird geraten.
+- Unterschiedliche Altersangaben derselben Person: `age_conflict=true`, ausgewertetes Alter bleibt leer.
+- Mehrere Formulare für denselben Versuch: alle IDs und Anzahlen bleiben sichtbar; die jüngste Antwort ist explizit als ausgewählter Datensatz gekennzeichnet.
+- Mehrere Versuche derselben Aufgabe in einem Fragebogen: `survey_task_result` bleibt leer; `survey_reported_task_result` enthält die übergreifende Antwort und `survey_task_attempt_count` die Zahl der erfassten Versuche.
+- `goal_elapsed_ms` ist die Zeit bis zur vorhandenen Mining-Zielaktivität, kein Nachweis, dass die gesamte mehrteilige Aufgabe erfolgreich war. `end_elapsed_ms` zählt bis zum Rücksprung inklusive Pausen. Den vollständigen Aufgabenerfolg am Beobachtungsergebnis prüfen.
+- Protokollierte Fehler sind beobachtete fehlgeschlagene API-Aktivitäten; nicht jeder Bedienfehler ist automatisch erkennbar. Wiederholte Klicks werden separat ausgewiesen.
+- Für Altersvergleiche dieselbe Aufgabe und einen vorab festgelegten Zeitbegriff verwenden. Wiederholungen derselben Person sind keine unabhängigen Personen. Der Export führt keine Signifikanz- oder Gleichwertigkeitstests durch.
+
+Validierung: `node --test tests/*.test.cjs`; zusätzlich die transaktionale SQL-Prüfung `tests/study-linkage.sql` (mit Rollback). Synthetische Live-Prüfungen der Edge-Annahme und ID-Ablehnung wurden von der Auswertung ausgeschlossen. Frühere Ergebnisse ohne IDs können nur auf Basis anderweitig gesicherter Zuordnungsnachweise nachträglich verbunden werden; diese Umsetzung nimmt keine solche Rekonstruktion vor.

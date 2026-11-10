@@ -14,7 +14,7 @@ window.APP_CONFIG = {
   DEMO_MODUS: true,
   ANALYTICS_URL: "https://orrprvpypsvuzspwzevf.supabase.co", // https://<project>.supabase.co
   ANALYTICS_KEY: "sb_publishable_IBp-YQesCAmLfB0qNwwsxw_j6O2cTU1", // publishable key only
-  BUILD_VERSION: "festpay-2026-11-09-v6-tasks",
+  BUILD_VERSION: "festpay-2026-11-10-v8-linked",
 };
 
 window.APP_CONFIG.isSupabaseReady = function () {

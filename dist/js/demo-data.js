@@ -30,7 +30,7 @@ window.DEMO_DATA = {
       zone: [[120, 700], [300, 680], [320, 860], [140, 880]],
       w1_aktiv: true,
       w2_aktiv: false,
-      aufladeoptionen: [5, 15, 25],
+      aufladeoptionen: [10, 20, 50],
       speisekarte: [
         { id: "d1", name: "Getränk A", preis: 3.5, icon: "cup-soda", kategorie: "Getränke" },
         { id: "d2", name: "Getränk B", preis: 4.0, icon: "wine", kategorie: "Getränke" },

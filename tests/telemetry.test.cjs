@@ -10,7 +10,7 @@ function runtime({preview=false,guest=false,previous=[]}={}){
  const api={};for(const k of ['aufladen','markenKaufen','markeEntwerten','abbuchen','festSpeichern'])api[k]=async()=>({error:null});
  const context={console,crypto,document,API:api,Date,URLSearchParams,innerWidth:390,innerHeight:800,scrollY:0,localStorage:store(local),sessionStorage:store(session),Option:function(title,value){this.text=title;this.value=value;},location:{pathname:'/index.html',search:'',href:'',replace(url){this.href=url}},history:{replaceState(){}},setInterval(fn){timers.push(fn)},setTimeout(){},clearTimeout(){},alert(){},fetch:async()=>({ok:true,json:async()=>({})})};
  context.window=context;context.APP_CONFIG={ANALYTICS_URL:'https://test.supabase.co',ANALYTICS_KEY:'public',BUILD_VERSION:'test'};context.addEventListener=()=>{};
- vm.createContext(context);vm.runInContext(fs.readFileSync(require('node:path').join(__dirname,'../dist/js/test-tasks.js'),'utf8'),context);vm.runInContext(source,context);return{context,listeners,session,timers,appended,queue:()=>JSON.parse(session.get('festpay_test_session_v2')||'{"pending":[]}').pending};
+ vm.createContext(context);vm.runInContext(fs.readFileSync(require('node:path').join(__dirname,'../dist/js/study-link.js'),'utf8'),context);vm.runInContext(fs.readFileSync(require('node:path').join(__dirname,'../dist/js/test-tasks.js'),'utf8'),context);vm.runInContext(source,context);return{context,listeners,session,timers,appended,queue:()=>JSON.parse(session.get('festpay_test_session_v2')||'{"pending":[]}').pending};
 }
 test('no consent creates no session and emits nothing',()=>{const r=runtime();r.context.TestLog.event('click',{target:'secret'});assert.equal(r.session.size,0)});
 test('preview suppresses all analytics including successful actions',async()=>{const r=runtime({preview:true,guest:true});await r.context.API.aufladen();assert.equal(r.queue().length,0)});
@@ -77,4 +77,29 @@ test('failed return retains the attempt and retry sends the same end event', asy
  r.context.fetch=async(_,request)=>{const batch=JSON.parse(request.body);assert.equal(batch.events.filter(e=>e.type==='session_end').length,1);assert.equal(batch.events.at(-1).id,end.id);return {ok:true,json:async()=>({})};};
  await button.onclick();
  assert.equal(r.context.location.href,'index.html?mode=choose');
+});
+
+test('menu return uses the same acknowledged case closure as the persistent button', async () => {
+ const r=runtime({guest:true});let ended=false;
+ r.context.fetch=async(_,request)=>{ended=JSON.parse(request.body).events.some(e=>e.type==='session_end');return {ok:true,json:async()=>({})};};
+ await r.context.TestLog.returnToSelection();
+ assert.equal(ended,true);
+ assert.equal(r.session.has('festpay_test_session_v2'),false);
+ assert.equal(r.context.location.href,'index.html?mode=choose');
+});
+
+test('all five tasks initialize their catalogue role before recording the attempt', async () => {
+ for (const [task,expected] of [['gast_guthaben','gast'],['gast_marken','gast'],['helfer','helfer'],['betreiber_marken','betreiber'],['betreiber_guthaben','betreiber']]) {
+  const r=runtime();let role='previous-role',funded=0;
+  r.context.API.istDemo=()=>true;
+  r.context.API.setDemoRolle=value=>{role=value;assert.equal(r.session.has('festpay_test_session_v2'),false);};
+  r.context.API.aufladen=async(fest,amount)=>{assert.equal(role,'helfer');assert.equal(fest,'demo-sommerfest');funded+=amount;assert.equal(r.session.has('festpay_test_session_v2'),false);return {error:null};};
+  r.context.fetch=async()=>({ok:true,json:async()=>({id:'12345678-1234-4321-8123-123456789012',token:'test-token'})});
+  const gate=r.appended.find(el=>el.className==='test-gate');gate.querySelector('select').value=task;
+  await gate.querySelector('#startTest').onclick();
+  assert.equal(role,expected,task);
+  assert.equal(funded,expected==='helfer'?20:0);
+  const saved=JSON.parse(r.session.get('festpay_test_session_v2'));assert.equal(saved.task,task);assert.equal(saved.seq,0);
+  assert.equal(r.context.location.href,'index.html');
+ }
 });

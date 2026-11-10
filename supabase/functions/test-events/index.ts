@@ -25,15 +25,33 @@ Deno.serve(async req=>{
   // Do not ingest requests authenticated as one of the analysts.
   const auth=req.headers.get('Authorization');
   if(auth){const r=await fetch(base+'/auth/v1/user',{headers:{apikey:service,Authorization:auth}});if(r.ok){const u=await r.json();const admins=await db('analytics_admins?user_id=eq.'+u.id+'&select=user_id');if(admins.length)return reply(403,{error:'admin_excluded'});}}
-  const raw=await req.text();if(raw.length>60000)return reply(413,{error:'size'});
+  const raw=await req.text();if(raw.length>400000)return reply(413,{error:'size'});
   const b=JSON.parse(raw);
+  if(b.action==='survey'||b.action==='observation'){
+   const p=b.payload;
+   if(!p||!uuid.test(p.id)||!uuid.test(p.participant_id)||p.linkage_consent!==true||!Array.isArray(p.attempt_ids)||p.attempt_ids.length<1||p.attempt_ids.length>100||p.attempt_ids.some((id:unknown)=>typeof id!=='string'||!uuid.test(id)))return reply(400,{error:'linkage'});
+   const allowed=new Set(b.action==='survey'?
+     ['id','participant_id','attempt_ids','linkage_consent','age','survey_version','real_role','real_roles','organizer_transaction_fee_percent','legacy_payment_satisfaction','guest_abuse_feedback','payment_preference','feedback','consent','task_guest_balance','task_guest_tokens','task_helper_checkout','task_organizer_tokens','task_organizer_balance','task_organizer_helper','ease','navigation','design','enjoyment','payment_clarity','balance_clarity','usefulness','guest_usefulness','organizer_usefulness']:
+     ['id','participant_id','attempt_ids','linkage_consent','form_version','participant_code','app','test_date','observer','other','age','gender','observations']);
+   if(Object.keys(p).some(k=>!allowed.has(k)))return reply(400,{error:'fields'});
+   const table=b.action==='survey'?'festpay_survey_responses':'festpay_observations';
+   const existing=await db(table+'?id=eq.'+p.id+'&select=participant_id');
+   if(existing.length)return existing[0].participant_id===p.participant_id.toLowerCase()?reply(200,{saved:true}):reply(409,{error:'id_conflict'});
+   await db(table+'?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=ignore-duplicates'},body:JSON.stringify(p)});
+   const saved=await db(table+'?id=eq.'+p.id+'&select=participant_id');
+   if(saved[0]?.participant_id!==p.participant_id.toLowerCase())return reply(409,{error:'id_conflict'});
+   return reply(200,{saved:true});
+  }
   if(b.action==='start'){
-   if(!tasks.has(b.task)||b.consent_version!=='2026-11-02-v2'||!['festpay-2026-11-02-v3','festpay-2026-11-02-v4-helper','festpay-2026-11-06-v5-process','festpay-2026-11-09-v6-tasks'].includes(b.version))return reply(400,{error:'start'});
+   if(!tasks.has(b.task)||!['2026-11-02-v2','2026-11-10-linked-v1'].includes(b.consent_version)||!['festpay-2026-11-02-v3','festpay-2026-11-02-v4-helper','festpay-2026-11-06-v5-process','festpay-2026-11-09-v6-tasks','festpay-2026-11-09-v7-tests','festpay-2026-11-10-v8-linked'].includes(b.version))return reply(400,{error:'start'});
+   if(b.version==='festpay-2026-11-10-v8-linked' && (!uuid.test(b.participant_id)||b.consent_version!=='2026-11-10-linked-v1'))return reply(400,{error:'participant'});
+   const participant=b.version==='festpay-2026-11-10-v8-linked'?b.participant_id.toLowerCase():null;
+   if(participant)await db('study_participants?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=ignore-duplicates'},body:JSON.stringify({id:participant})});
    const id=crypto.randomUUID(),token=crypto.randomUUID()+crypto.randomUUID();
-   await db('analytics_sessions',{method:'POST',body:JSON.stringify({id,token_hash:await hash(token),task:b.task,version:b.version,consent_version:b.consent_version})});
+   await db('analytics_sessions',{method:'POST',body:JSON.stringify({id,token_hash:await hash(token),task:b.task,version:b.version,consent_version:b.consent_version,participant_id:participant})});
    return reply(200,{id,token});
   }
-  if(b.action!=='events'||!uuid.test(b.session_id)||typeof b.token!=='string'||b.token.length!==72||!Array.isArray(b.events)||!b.events.length||b.events.length>25)return reply(400,{error:'batch'});
+  if(raw.length>60000||b.action!=='events'||!uuid.test(b.session_id)||typeof b.token!=='string'||b.token.length!==72||!Array.isArray(b.events)||!b.events.length||b.events.length>25)return reply(400,{error:'batch'});
   const sessions=await db('analytics_sessions?id=eq.'+b.session_id+'&select=token_hash,started_at,event_count');
   const s=sessions[0];if(!s||await hash(b.token)!==s.token_hash||Date.now()-Date.parse(s.started_at)>14400000)return reply(403,{error:'session'});
   const rows=b.events.map((e:any)=>{
