@@ -18,7 +18,7 @@ async function db(path:string,init:RequestInit={}){
 }
 Deno.serve(async req=>{
  const origin=req.headers.get('origin')||'';
- const cors={'Access-Control-Allow-Origin':origin,'Access-Control-Allow-Headers':'content-type,apikey,authorization','Access-Control-Allow-Methods':'POST,OPTIONS','Vary':'Origin'};
+ const cors={'Access-Control-Allow-Origin':origin,'Access-Control-Allow-Headers':'content-type,apikey,authorization,prefer','Access-Control-Allow-Methods':'POST,OPTIONS','Vary':'Origin'};
  const reply=(status:number,data:unknown)=>new Response(JSON.stringify(data),{status,headers:{...cors,'Content-Type':'application/json','Cache-Control':'no-store'}});
  if(!allowedOrigins.has(origin))return reply(403,{error:'origin'});
  if(req.method==='OPTIONS')return new Response(null,{status:204,headers:cors});
