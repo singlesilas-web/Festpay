@@ -256,20 +256,21 @@ dialog::backdrop { background:rgba(2,81,60,.6); }
 /* Drawing controls */
 .zone-editor { display: grid; gap: 8px; }
 .zone-editor [hidden] { display: none; }
-.zone-editor .mini-map[data-mode="preview"] { cursor: default; }
-.zone-editor .mini-map[data-mode="rectangle"] { touch-action: none; }
-.zone-editor [data-corner] { cursor: move; }
+.zone-editor .mini-map { touch-action: none; width: min(100%, 420px); }
+.zone-editor [data-corner] { cursor: grab; touch-action: none; }
 .zone-editor #zoneModes button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
 .zone-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 
-/* Fixed tap areas keep order corrections predictable. */
-.product-info { display: flex; align-items: center; gap: 6px; }
-.product-stepper { display: grid; grid-template-columns: minmax(44px, 1fr) auto minmax(44px, 1fr); align-items: center; gap: 4px; }
-.product-stepper button { min-height: 44px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); font-size: 22px; font-weight: 800; touch-action: manipulation; }
-.product-stepper button[data-delta="1"] { background: var(--ink); color: var(--bg); }
-.product-stepper button:disabled { opacity: .42; cursor: default; }
+/* Compact checkout rows with permanently sized touch targets. */
+.helper-products { grid-template-columns: minmax(0, 1fr); gap: 0; }
+.helper-products .product-tile { grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 6px; padding: 3px 0; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; }
+.helper-products .product-tile:last-child { border-bottom: 0; }
+.product-info { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.product-stepper { display: grid; grid-template-columns: 44px minmax(26px, auto) 44px; align-items: center; border-radius: 24px; background: var(--bg); }
+.product-stepper button { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; color: var(--ink); font-size: 20px; touch-action: manipulation; }
+.product-stepper button:disabled { opacity: .35; }
 .product-stepper button.stepper-feedback { background: var(--accent); color: var(--accent-ink); }
-@media (max-width: 315px) { .helper-products { grid-template-columns: minmax(0, 1fr); } }
+.product-stepper .product-count, .product-tile.selected .product-stepper .product-count { min-width: 26px; background: transparent; color: var(--ink); font-variant-numeric: tabular-nums; }
 
 /* ---------- Tab-Seiten: Kopfzeile mit Logo ---------- */
 .tab-topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px 0; }
@@ -327,3 +328,22 @@ body.has-tabbar .search-panel { padding-bottom: calc(var(--tabbar-h) + 32px); }
 .sum-grid div { background: rgba(237, 232, 228, .1); border-radius: 12px; padding: 10px; }
 .sum-grid span { display: block; font-size: 11px; opacity: .75; }
 .sum-grid b { font: 800 15px var(--font-head); color: var(--accent); }
+
+/* Festguthaben: QR, choices and checkout share one view. */
+.wallet-page .app { padding-top: env(safe-area-inset-top); }
+@media (max-width: 699px) { .wallet-page .app { min-height: 100svh; } }
+.wallet-page .topbar { padding: 8px 16px; }
+.wallet-page .topbar .icon-btn { width: 44px; height: 44px; }
+.wallet-page .wallet-heading { padding: 4px 16px 0; }
+.wallet-heading h1 { font-size: clamp(22px, 6vw, 30px); }
+.wallet-page .wallet-content { display: grid; gap: clamp(5px, 1.1svh, 12px); padding: 8px 16px max(8px, env(safe-area-inset-bottom)); }
+.wallet-content .wallet { padding: clamp(6px, 1.8svh, 16px); }
+.wallet-content .saldo { font-size: clamp(27px, 6svh, 40px); margin: 0 0 6px; }
+.wallet-content .qr-box { padding: 12px; background: #fff; }
+.wallet-content #qr { width: clamp(124px, calc(100svh - 436px), 210px); height: auto; aspect-ratio: 1; }
+.wallet-content #qr > * { width: 100%; height: 100%; image-rendering: pixelated; }
+.wallet-content .live-time { margin-top: 4px; }
+.wallet-content .qr-help { margin: 0; }
+.wallet-content h3 { margin: 0; font-size: 16px; }
+.wallet-content .chips { gap: 6px; }
+.wallet-content .chip, .wallet-content #go { min-height: 44px; height: 44px; }

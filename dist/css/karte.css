@@ -98,4 +98,3 @@ body[data-tab="entdecken"] .tabbar { border-top: 0; box-shadow: none; }
 
 .festival-zone { cursor: pointer; }
 .festival-zone:focus-visible .zone { stroke: var(--ink); stroke-width: 6; }
-.sheet-topup { display: flex; justify-content: center; margin-top: 8px; width: 100%; }

@@ -64,16 +64,15 @@
       </div>
       <section class="zone-editor" aria-labelledby="zoneHeading">
         <h3 id="zoneHeading">Festzone</h3>
-        <button type="button" class="btn btn-ghost btn-sm" id="zoneStart" data-track="zone-start">Festzone zeichnen</button>
-        <div id="zoneModes" class="segment" role="group" aria-label="Zeichenart" hidden>
+        <div id="zoneModes" class="segment" role="group" aria-label="Zeichenart">
           <button type="button" id="zonePoints" data-track="zone-points">Punkte setzen</button>
           <button type="button" id="zoneRectangle" data-track="zone-rectangle">Rechteck aufziehen</button>
         </div>
         <p id="zoneHint" class="small muted" role="status"></p>
         <div class="mini-map" id="mm" tabindex="-1" aria-describedby="zoneHint"></div>
-        <div id="zoneActions" class="zone-actions" hidden>
+        <div id="zoneActions" class="zone-actions">
           <button type="button" class="btn btn-ghost btn-sm" id="zoneUndo" data-track="zone-undo">Letzten Punkt entfernen</button>
-          <button type="button" class="btn btn-ghost btn-sm" id="zoneCancel" data-track="zone-cancel">Zeichnen abbrechen</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="zoneCancel" data-track="zone-cancel">Änderungen verwerfen</button>
           <button type="button" class="btn btn-sm" id="zoneAccept" data-track="zone-accept">Festzone übernehmen</button>
         </div>
       </section>
@@ -216,14 +215,12 @@
   });
   // ---------- Zone zeichnen ----------
   const mm = document.getElementById("mm");
-  const zoneStart = document.getElementById("zoneStart");
-  const zoneModes = document.getElementById("zoneModes");
   const zoneActions = document.getElementById("zoneActions");
   const zoneHint = document.getElementById("zoneHint");
   const zonePoints = document.getElementById("zonePoints");
   const zoneRectangle = document.getElementById("zoneRectangle");
   const zoneUndo = document.getElementById("zoneUndo");
-  let mode = null, draft = [], drag = null, previousRectangle = null;
+  let mode = "points", draft = f.zone.slice(), drag = null, previousShape = null;
 
   function zoneProblem(points) {
     if (points.length < 3) {
@@ -238,7 +235,7 @@
   }
 
   function drawMap() {
-    const points = mode ? draft : f.zone;
+    const points = draft;
     const filled = points.length >= 3 && !zoneProblem(points);
     const coordinates = points.map(p => p.join(",")).join(" ");
     mm.innerHTML = `<svg viewBox="0 0 1000 1000" aria-hidden="true">
@@ -248,40 +245,35 @@
       ${filled ? `<polygon points="${coordinates}" fill="var(--zone)" stroke="var(--zone-line)" stroke-width="6"/>` :
         `<polyline points="${coordinates}" fill="none" stroke="var(--ink)" stroke-width="6"/>`}
       ${points.map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="14" fill="var(--ink)"/>
-        ${mode === "rectangle" && filled ? `<circle cx="${x}" cy="${y}" r="48" fill="transparent" data-corner="${i}"/>` : ""}`).join("")}
+        ${filled ? `<circle cx="${x}" cy="${y}" r="48" fill="transparent" data-corner="${i}"/>` : ""}`).join("")}
     </svg>`;
   }
 
   function renderZone() {
-    zoneStart.hidden = !!mode;
-    zoneStart.textContent = f.zone.length ? "Festzone bearbeiten" : "Festzone zeichnen";
-    zoneModes.hidden = zoneActions.hidden = !mode;
     zonePoints.setAttribute("aria-pressed", String(mode === "points"));
     zoneRectangle.setAttribute("aria-pressed", String(mode === "rectangle"));
-    mm.dataset.mode = mode || "preview";
+    mm.dataset.mode = mode;
     mm.removeAttribute("aria-invalid");
     mm.classList.remove("field-error");
-    zoneUndo.hidden = mode === "rectangle" ? !previousRectangle : !draft.length;
-    zoneUndo.textContent = mode === "rectangle" ? "Letzte Änderung rückgängig machen" : "Letzten Punkt entfernen";
+    zoneUndo.hidden = !previousShape && (mode === "rectangle" || !draft.length);
+    zoneUndo.textContent = previousShape ? "Letzte Änderung rückgängig machen" : "Letzten Punkt entfernen";
     if (mode === "points") {
       const progress = draft.length < 3 ? `${draft.length} von mindestens 3 Punkten.` : `${draft.length} Eckpunkte gesetzt.`;
       zoneHint.textContent = progress + (draft.length < 3 ? " Tippe auf die Karte, um einen Punkt zu setzen." :
-        " " + (zoneProblem(draft) || "Du kannst die Zone übernehmen oder weitere Punkte setzen."));
+        " " + (zoneProblem(draft) || "Ziehe einen Eckpunkt zum Anpassen oder setze weitere Punkte."));
     } else if (mode === "rectangle") {
       zoneHint.textContent = draft.length ? "Ziehe eine Ecke zum Anpassen oder die Fläche neu auf." :
         "Ziehe von einer Ecke diagonal zur gegenüberliegenden Ecke.";
-    } else {
-      zoneHint.textContent = f.zone.length ? "Festzone übernommen." : "Lege die Fläche fest, auf der dein Fest stattfindet.";
     }
     drawMap();
   }
 
   function setMode(next) {
     if (mode === next) return;
-    const original = mode && draft.length ? draft : f.zone;
+    const original = draft.length ? draft : f.zone;
     draft = next === "points" ? original.slice() : [];
     mode = next;
-    previousRectangle = null;
+    previousShape = null;
     renderZone();
   }
 
@@ -291,67 +283,83 @@
     return [coord(e.clientX, r.left, r.width), coord(e.clientY, r.top, r.height)];
   }
 
-  zoneStart.onclick = () => { setMode("points"); zonePoints.focus(); };
   zonePoints.onclick = () => setMode("points");
   zoneRectangle.onclick = () => setMode("rectangle");
   zoneUndo.onclick = () => {
-    if (mode === "rectangle" && previousRectangle) {
-      draft = previousRectangle;
-      previousRectangle = null;
+    if (previousShape) {
+      draft = previousShape;
+      previousShape = null;
     } else if (mode === "points") draft.pop();
     renderZone();
   };
-  zoneActions.querySelector("#zoneCancel").onclick = () => { mode = null; renderZone(); zoneStart.focus(); };
-  zoneActions.querySelector("#zoneAccept").onclick = () => { if (acceptZone()) zoneStart.focus(); };
-
-  mm.onclick = e => {
-    if (mode !== "points") return;
-    const point = mapCoordinates(e);
-    if (draft.some(([x, y]) => x === point[0] && y === point[1])) return;
-    draft.push(point);
+  zoneActions.querySelector("#zoneCancel").onclick = () => {
+    mode = "points";
+    draft = f.zone.slice();
+    previousShape = null;
     renderZone();
   };
+  zoneActions.querySelector("#zoneAccept").onclick = acceptZone;
 
   mm.onpointerdown = e => {
-    if (mode !== "rectangle" || !e.isPrimary || e.button !== 0 || drag) return;
+    if (!e.isPrimary || e.button !== 0 || drag) return;
     const corner = e.target.dataset.corner;
     drag = {id:e.pointerId, before:draft, origin:[e.clientX, e.clientY],
+      corner:corner === undefined ? null : Number(corner),
       anchor:corner === undefined ? mapCoordinates(e) : draft[(Number(corner) + 2) % 4]};
-    mm.setPointerCapture(e.pointerId);
+    if (mode === "rectangle" || drag.corner !== null) mm.setPointerCapture(e.pointerId);
   };
   mm.onpointermove = e => {
     if (drag?.id !== e.pointerId || Math.hypot(e.clientX - drag.origin[0], e.clientY - drag.origin[1]) < 5) return;
-    const [x1, y1] = drag.anchor, [x2, y2] = mapCoordinates(e);
-    draft = [[x1,y1], [x2,y1], [x2,y2], [x1,y2]];
+    drag.moved = true;
+    const point = mapCoordinates(e);
+    if (mode === "rectangle") {
+      const [x1, y1] = drag.anchor, [x2, y2] = point;
+      draft = [[x1,y1], [x2,y1], [x2,y2], [x1,y2]];
+    } else if (drag.corner !== null) {
+      draft = drag.before.map((p, i) => i === drag.corner ? point : p);
+    } else return;
     drawMap();
   };
-  function finishRectangle(e) {
+  function finishDrawing(e) {
     if (drag?.id !== e.pointerId) return;
-    if (e.type !== "pointerup" || zoneProblem(draft)) draft = drag.before;
-    else if (draft !== drag.before) {
-      previousRectangle = drag.before;
-      window.TestLog?.event("activity", {activity:"zone_rectangle_drawn"});
+    if (e.type !== "pointerup") {
+      draft = drag.before;
+    } else if (draft !== drag.before) {
+      if (zoneProblem(draft)) draft = drag.before;
+      else {
+        previousShape = drag.before;
+        const activity = drag.corner === null ? "zone_rectangle_drawn" : "zone_point_moved";
+        window.TestLog?.event("activity", {activity});
+      }
+    } else if (mode === "points" && drag.corner === null && !drag.moved) {
+      const point = mapCoordinates(e);
+      if (!draft.some(([x, y]) => x === point[0] && y === point[1])) {
+        draft = [...draft, point];
+        previousShape = null;
+      }
     }
     drag = null;
     renderZone();
   }
-  mm.onpointerup = mm.onpointercancel = mm.onlostpointercapture = finishRectangle;
+  mm.onpointerup = mm.onpointercancel = mm.onlostpointercapture = finishDrawing;
+  mm.onpointerleave = e => {
+    if (drag?.id === e.pointerId && !mm.hasPointerCapture(e.pointerId)) finishDrawing(e);
+  };
 
   function acceptZone() {
-    const problem = zoneProblem(mode ? draft : f.zone);
+    const problem = zoneProblem(draft);
     if (problem) {
-      if (!mode) setMode("points");
       zoneHint.textContent = problem;
       window.TestLog?.event("activity", {activity:"zone_invalid"});
       invalid("mm", problem);
       return false;
     }
-    if (mode) {
-      f.zone = draft;
-      mode = null;
-      renderZone();
+    if (JSON.stringify(f.zone) !== JSON.stringify(draft)) {
+      f.zone = draft.slice();
       window.TestLog?.event("activity", {activity:"zone_accepted"});
     }
+    renderZone();
+    zoneHint.textContent = "Festzone übernommen. Du kannst die Eckpunkte weiter verschieben.";
     return true;
   }
 
@@ -437,7 +445,7 @@
   document.getElementById("save").onclick = async () => {
     f.name = document.getElementById("name").value.trim();
     root.querySelectorAll('[aria-invalid]').forEach(el => { el.removeAttribute('aria-invalid'); el.classList.remove("field-error"); });
-    if (mode && zoneProblem(draft)) { acceptZone(); return; }
+    if (zoneProblem(draft)) { acceptZone(); return; }
     const itemName = document.getElementById("iName").value.trim();
     const itemPrice = document.getElementById("iPreis").value;
     if (editingItem || itemName || itemPrice) {

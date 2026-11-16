@@ -137,11 +137,15 @@
     e.preventDefault();
     selectZone(zone);
   });
+  function festivalHref(fest) {
+    const id = encodeURIComponent(fest.id);
+    return helperRole ? `helfer.html?fest=${id}` : `fest.html?id=${id}`;
+  }
   function selectZone(zone) {
     const fest = feste.find(f => f.id === zone.dataset.id);
     if (!fest) return;
     window.TestLog?.event('activity', {activity:'map_festival_selected'});
-    fly(fest);
+    location.href = festivalHref(fest);
   }
   window.addEventListener('resize',()=>{const [x,y]=mapPoint();centerOn(x,y);check();});
 
@@ -181,11 +185,10 @@
     } else {
       const w = aktuell.w1_aktiv ? "Festguthaben" : "Festmarken";
       sheet.innerHTML = `<div class="sheet-eyebrow"><i data-lucide="sparkles"></i>Fest ausgewählt</div>
-        <a class="fest-card" data-track="karte-fest-oeffnen" href="${helperRole ? `helfer.html?fest=${encodeURIComponent(aktuell.id)}` : `fest.html?id=${encodeURIComponent(aktuell.id)}`}">
+        <a class="fest-card" data-track="karte-fest-oeffnen" href="${festivalHref(aktuell)}">
           <span class="badge-icon accent"><i data-lucide="${UI.festIcon(aktuell.id)}"></i></span>
           <span style="flex:1"><div class="t">${helperRole ? "Scanner öffnen" : UI.escape(aktuell.name)}</div><div class="s">${UI.escape(aktuell.ort || "")} · ${w}</div></span>
-          <span class="small">${helperRole ? "" : "Zum Fest"}</span><i data-lucide="chevron-right"></i></a>
-        ${!helperRole && aktuell.w1_aktiv ? `<a class="btn btn-sm sheet-topup" data-track="karte-guthaben" href="guthaben.html?id=${encodeURIComponent(aktuell.id)}"><i data-lucide="plus-circle"></i>Guthaben aufladen</a>` : ""}`;
+          <span class="small">${helperRole ? "" : "Zum Fest"}</span><i data-lucide="chevron-right"></i></a>`;
     }
     UI.icons();
   }

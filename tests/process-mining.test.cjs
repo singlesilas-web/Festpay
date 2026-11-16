@@ -69,6 +69,7 @@ test('festival selection, zone editing and cash register clicks appear as distin
     [{type:'click',props:{target:'karte-guthaben'}}, 'Guthaben direkt von der Karte aufladen'],
     [{type:'click',props:{target:'zone-rectangle'}}, 'Zeichenart: Rechteck aufziehen'],
     [{type:'activity',props:{activity:'zone_invalid'}}, 'Festzone unvollständig'],
+    [{type:'activity',props:{activity:'zone_point_moved'}}, 'Eckpunkt verschoben'],
     [{type:'activity',props:{activity:'zone_accepted'}}, 'Festzone übernommen'],
     [{type:'click',props:{target:'helper-product-add'}}, 'Artikel hinzufügen (+)'],
     [{type:'click',props:{target:'helper-product-remove'}}, 'Artikel entfernen (−)']

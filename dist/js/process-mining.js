@@ -51,6 +51,7 @@ window.FestPayMining = (() => {
     map_festival_selected: 'Festfläche antippen',
     zone_rectangle_drawn: 'Rechteck gezeichnet oder angepasst',
     zone_invalid: 'Festzone unvollständig',
+    zone_point_moved: 'Eckpunkt verschoben',
     zone_accepted: 'Festzone übernommen',
     'zahlen.html': 'Bezahlen (Hotbar)', 'demnaechst.html': 'Demnächst',
     'aktivitaeten.html': 'Aktivitäten', 'login.html': 'Anmelden',

@@ -24,21 +24,21 @@
   if (aufladenErfolgreich) sessionStorage.removeItem("topupSuccess");
 
   root.innerHTML = `
-    <div class="page-head"><div class="small muted"><b>W1</b> · ${fest.name}</div><h1>Festguthaben</h1></div>
-    <div class="page stack">
+    <div class="page-head wallet-heading"><div class="small muted">${UI.escape(fest.name)}</div><h1>Festguthaben</h1></div>
+    <div class="page wallet-content">
       <div class="wallet">
         <div class="small" style="opacity:.7">Dein Guthaben</div>
         <div class="saldo" id="saldo">${UI.euro(saldo)}</div>
         <div class="qr-box"><div id="qr"></div><div class="qr-scanline"></div></div>
         <div class="live-time"><i data-lucide="radio"></i><span id="clock"></span></div>
       </div>
-      <p class="small muted center qr-help">Zeig diesen Code am Stand. Du findest ihn jederzeit wieder, wenn du in der App auf dieses Fest tippst.</p>
-      <h3 style="margin-top:24px">Aufladen</h3>
+      <p class="small muted center qr-help">Zeig den QR-Code am Stand.</p>
+      <h3>Aufladen</h3>
       ${optionen.length
         ? `<div class="chips">${optionen.map((b) => `<button class="chip" data-b="${b}">${b} €</button>`).join("")}</div>`
         : `<div class="empty"><i data-lucide="coins"></i><p>Der Betreiber hat noch keine Aufladebeträge hinterlegt.</p></div>`}
-    </div>
-    <div class="cta-bar"><button class="btn" id="go" disabled><i data-lucide="plus-circle"></i>Betrag wählen</button></div>`;
+      <button class="btn" id="go" disabled><i data-lucide="plus-circle"></i>Betrag wählen</button>
+    </div>`;
   UI.icons();
   new QRCode(document.getElementById("qr"), { text: `FESTPAY|${fest.id}|${user?.id}`, width: 210, height: 210 });
   if (aufladenErfolgreich) {
