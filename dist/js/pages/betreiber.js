@@ -46,7 +46,7 @@
   const iconNames = new Map(articleIcons.map(([id, name]) => [id, name]));
   const iconButton = ([id, name], showName = false) =>
     `<button type="button" data-icon="${id}" data-track="article-icon-select" aria-label="${name}" aria-pressed="false" title="${name}">
-      <i data-lucide="${id}"></i>${showName ? `<span>${name}</span>` : ""}</button>`;
+      <i ${showName ? "data-icon-preview" : "data-lucide"}="${id}"></i>${showName ? `<span>${name}</span>` : ""}</button>`;
   const TIME_OPTIONS = Array.from({ length: 96 }, (_, index) => {
     const minutes = index * 15;
     return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
@@ -130,9 +130,9 @@
             <div class="icon-options" role="group" aria-label="Standard-Icons">${articleIcons.slice(0, defaultIconCount).map(icon => iconButton(icon)).join("")}</div>
             <details class="more-icons">
               <summary data-track="article-more-icons"><i data-lucide="plus" aria-hidden="true"></i>Weitere Icons</summary>
-              <input type="search" id="articleIconSearch" class="input" aria-label="Icons suchen" placeholder="Z. B. Wasser, Burger, Kuchen">
+              <input type="search" id="articleIconSearch" class="input" aria-label="Icons suchen" placeholder="Z. B. Wasser, Burger, Camera">
               <p id="articleIconStatus" class="small muted" role="status"></p>
-              <div class="icon-options icon-results" id="articleIconResults" role="group" aria-label="Suchergebnisse"></div>
+              <div class="icon-options icon-results" id="articleIconResults" role="group" aria-label="Verfügbare Icons" tabindex="0"></div>
             </details>
           </details>
           <button class="btn btn-dark btn-sm" id="addItem" style="width:100%"><i data-lucide="plus"></i>Artikel hinzufügen</button>
@@ -252,33 +252,61 @@
   function showIcon() {
     const value = selectedIcon.value;
     const name = iconNames.get(value) || "Icon ändern";
-    document.getElementById("iconPreview").innerHTML = value
+    const preview = document.getElementById("iconPreview");
+    preview.innerHTML = value
       ? `<i data-lucide="${UI.escape(value)}"></i> ${name}` : "Icon auswählen";
     iconPicker.querySelectorAll("[data-icon]").forEach(button =>
       button.setAttribute("aria-pressed", String(button.dataset.icon === value)));
-    UI.icons();
+    window.lucide?.createIcons({root: preview});
   }
 
   const searchKey = value => value.toLocaleLowerCase("de").replace(/ß/g, "ss")
     .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  const searchableIcons = articleIcons.map(icon => ({
-    icon, keywords: searchKey(icon.join(" "))
-  }));
+  function buildIconCatalog() {
+    const catalog = articleIcons.map(icon => ({icon, keywords: searchKey(icon.join(" "))}));
+    const available = window.lucide?.icons || {};
+    const byShape = new Map();
+    for (const entry of catalog) {
+      const key = entry.icon[0].replace(/(^|-)([a-z])/g, (_, gap, letter) => letter.toUpperCase());
+      if (available[key]) byShape.set(available[key], entry);
+    }
+    for (const [key, shape] of Object.entries(available)) {
+      const words = key.replace(/([A-Z])([A-Z][a-z])/g, "$1 $2").replace(/([a-z0-9])([A-Z])/g, "$1 $2");
+      const existing = byShape.get(shape);
+      if (existing) {
+        existing.keywords += " " + searchKey(words + " " + key);
+        continue;
+      }
+      const entry = {icon: [key, words], keywords: searchKey(words + " " + key)};
+      catalog.push(entry);
+      byShape.set(shape, entry);
+      iconNames.set(key, words);
+    }
+    return catalog;
+  }
+  let iconCatalog;
+  const iconObserver = new IntersectionObserver(entries => {
+    for (const {target, isIntersecting} of entries) {
+      if (!isIntersecting) continue;
+      window.lucide?.createIcons({nameAttr: "data-icon-preview", root: target});
+      iconObserver.unobserve(target);
+    }
+  }, {root: iconResults, rootMargin: "120px"});
+
   function renderIconResults() {
+    iconCatalog ||= buildIconCatalog();
     const words = searchKey(iconSearch.value).trim().split(/\s+/).filter(Boolean);
-    const matches = words.length
-      ? searchableIcons.filter(entry => words.every(word => entry.keywords.includes(word))).map(entry => entry.icon)
-      : articleIcons.slice(defaultIconCount);
-    const shown = matches.slice(0, 8);
-    iconResults.innerHTML = shown.map(icon => iconButton(icon, true)).join("");
+    const matches = iconCatalog.filter(entry => words.every(word => entry.keywords.includes(word)));
+    iconObserver.disconnect();
+    iconResults.innerHTML = matches.map(entry => iconButton(entry.icon, true)).join("");
+    iconResults.scrollTop = 0;
+    iconResults.querySelectorAll("button").forEach(button => iconObserver.observe(button));
     iconStatus.textContent = !matches.length ? "Keine passenden Icons gefunden." :
-      !words.length ? "Vorschläge" :
-      matches.length > shown.length ? `${shown.length} von ${matches.length} Treffern. Suche genauer.` :
-      `${matches.length} Treffer`;
+      words.length ? `${matches.length} Treffer` : `${matches.length} Icons`;
     showIcon();
   }
   moreIcons.addEventListener("toggle", () => {
-    if (moreIcons.open) renderIconResults();
+    if (moreIcons.open && !iconCatalog) renderIconResults();
   });
   iconSearch.addEventListener("input", renderIconResults);
   iconPicker.addEventListener("click", event => {
