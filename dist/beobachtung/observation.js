@@ -150,7 +150,7 @@
       const response = await fetch('https://orrprvpypsvuzspwzevf.supabase.co/functions/v1/test-events', {
         method:'POST',credentials:'omit',referrerPolicy:'no-referrer',
         headers:{apikey:'sb_publishable_IBp-YQesCAmLfB0qNwwsxw_j6O2cTU1','Content-Type':'application/json',Prefer:'return=minimal'},
-        body:JSON.stringify({action:'observation',payload:state.pending}),signal:controller.signal
+        body:JSON.stringify({action:'observation',version:FestPayStudy.version(person.value.trim()),payload:state.pending}),signal:controller.signal
       });
       const reply=await response.clone().json().catch(()=>({}));
       const duplicate = response.status === 409 && (await response.json()).code === '23505';

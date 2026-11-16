@@ -5,12 +5,12 @@ const pid='11111111-1111-4111-8111-111111111111',sid='22222222-2222-4222-8222-22
 function backend(attempts){let handler,saved;const ctx={crypto,TextEncoder,Request,Response,Set,Date,JSON,Deno:{env:{get:()=> 'test'},serve:f=>handler=f},fetch:async(url,init={})=>{
  const path=url.split('/rest/v1/')[1];let rows=[];
  if(path.startsWith('study_participants?'))rows=[{id:pid,participant_code:'P007'}];
- else if(path.startsWith('analytics_sessions?'))rows=attempts;
+ else if(path.startsWith('analytics_sessions?'))rows=attempts.map(a=>({version:'festpay-2026-11-10-v9-clean',...a}));
  else if(init.method==='POST'){saved=JSON.parse(init.body);rows=null;}
  else if(saved)rows=[{participant_id:pid}];
  return new Response(rows===null?'':JSON.stringify(rows),{status:200});
  }};vm.createContext(ctx);vm.runInContext(edge,ctx);
- return {send:async(payload)=>{const r=await handler(new Request('https://test',{method:'POST',headers:{Origin:'https://singlesilas-web.github.io'},body:JSON.stringify({action:'observation',payload:{id:crypto.randomUUID(),participant_id:'p007',attempt_ids:[],linkage_consent:true,observations:{helfer:{session_id:'',result:'independent',duration_ms:2000}},...payload}})}));return {status:r.status,data:await r.json(),saved};}};
+ return {send:async(payload,version)=>{const r=await handler(new Request('https://test',{method:'POST',headers:{Origin:'https://singlesilas-web.github.io'},body:JSON.stringify({action:'observation',version,payload:{id:crypto.randomUUID(),participant_id:'p007',attempt_ids:[],linkage_consent:true,observations:{helfer:{session_id:'',result:'independent',duration_ms:2000}},...payload}})}));return {status:r.status,data:await r.json(),saved};}};
 }
 test('one observed task maps from short person code without manual attempt ID',async()=>{
  const b=backend([{id:sid,task:'helfer',attempt_code:'P007-A3-1',attempt_number:1}]);const r=await b.send();
@@ -26,4 +26,13 @@ test('short person and attempt codes survive sharing and resolve to original UUI
  const source=fs.readFileSync('dist/js/study-link.js','utf8'),values=new Map();const ctx={window:null,crypto,URL,URLSearchParams,location:{hash:'#participant=p007&attempts=p007-a3-1&tasks=helfer',href:'https://example.org/index.html',pathname:'/index.html',search:''},history:{replaceState(){}},localStorage:{getItem:k=>values.get(k)||null,setItem:(k,v)=>values.set(k,v)}};ctx.window=ctx;vm.createContext(ctx);vm.runInContext(source,ctx);const s=ctx.FestPayStudy;
  assert.equal(s.current(),'P007');s.registerPerson(pid,'P007');s.remember(sid,'helfer',pid,'P007-A3-1',1);
  assert.equal(s.current(),pid);assert.equal(s.attempts().length,1);assert.equal(s.attempts()[0].id,sid);assert.ok(s.url('umfrage').includes('participant=P007'));assert.ok(!s.url('umfrage').includes(pid));
+});
+
+const oldRound='festpay-2026-11-10-v9-clean',newRound='festpay-2026-11-16-v10-redesign';
+test('same person and task in two rounds requires a round and cannot auto-link across versions',async()=>{
+ const oldId=sid,newId=crypto.randomUUID(),rows=[{id:oldId,task:'helfer',attempt_code:'P007-A3-1',version:oldRound},{id:newId,task:'helfer',attempt_code:'P007-A3-2',version:newRound}];
+ const ambiguous=await backend(rows).send();assert.equal(ambiguous.status,400);assert.equal(ambiguous.data.error,'version_required');
+ const current=await backend(rows).send({},newRound);assert.equal(current.status,200);assert.deepEqual(current.saved.attempt_ids,[newId]);
+ const historical=await backend(rows).send({},oldRound);assert.equal(historical.status,200);assert.deepEqual(historical.saved.attempt_ids,[oldId]);
+ const mismatch=await backend(rows).send({observations:{helfer:{session_id:'P007-A3-1',result:'help'}}},newRound);assert.equal(mismatch.status,400);assert.equal(mismatch.data.error,'attempt_version_mismatch');
 });

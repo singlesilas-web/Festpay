@@ -8,6 +8,7 @@ const personCode=/^P[0-9]{3,}$/i;
 const attemptCode=/^P[0-9]{3,}-A[1-5]-[1-9][0-9]*$/i;
 const screens=new Set(['index.html','fest.html','guthaben.html','speisekarte.html','bezahlen.html','marken.html','profil.html','login.html','helfer.html','betreiber.html','zahlen.html','demnaechst.html','aktivitaeten.html']);
 const types=new Set(['page_view','click','repeated_click','field_focus','scroll','browser_zoom','map_zoom','map_pan','activity','session_end','page_hidden','page_visible','page_leave','heartbeat']);
+const studyVersions=new Set(['festpay-2026-11-10-v9-clean','festpay-2026-11-16-v10-redesign']);
 const tasks = new Set(['gast_guthaben','gast_marken','helfer','betreiber_marken','betreiber_guthaben']);
 const numeric=new Set(['vw','vh','aw','dh','scroll','browser_scale','map_scale','x','y','scale','depth','viewport_width','viewport_height']);
 const strings=new Set(['ui_state','target','source','activity','reason','coordinate_space']);
@@ -44,7 +45,7 @@ Deno.serve(async req=>{
   if(b.action==='labels'){
    if(!uuid.test(b.participant_id))return reply(400,{error:'participant'});
    const person=await personFor(b.participant_id);if(!person)return reply(404,{error:'unknown_person'});
-   const attempts=await db('analytics_sessions?participant_id=eq.'+person.id+'&excluded=eq.false&version=eq.festpay-2026-11-10-v9-clean&select=id,task,attempt_code,attempt_number&order=started_at.asc,id.asc');
+   const attempts=await db('analytics_sessions?participant_id=eq.'+person.id+'&excluded=eq.false&version=in.(festpay-2026-11-10-v9-clean,festpay-2026-11-16-v10-redesign)&select=id,task,version,attempt_code,attempt_number&order=started_at.asc,id.asc');
    return reply(200,{participant_id:person.id,participant_code:person.participant_code,attempts});
   }
   if(b.action==='survey'||b.action==='observation'){
@@ -59,7 +60,17 @@ Deno.serve(async req=>{
    const table=b.action==='survey'?'festpay_survey_responses':'festpay_observations';
    const existing=await db(table+'?id=eq.'+p.id+'&select=participant_id');
    if(existing.length)return existing[0].participant_id===person.id?reply(200,{saved:true}):reply(409,{error:'id_conflict'});
-   const catalog=await db('analytics_sessions?participant_id=eq.'+person.id+'&excluded=eq.false&version=eq.festpay-2026-11-10-v9-clean&select=id,task,attempt_code,attempt_number');
+   let catalog=await db('analytics_sessions?participant_id=eq.'+person.id+'&excluded=eq.false&version=in.(festpay-2026-11-10-v9-clean,festpay-2026-11-16-v10-redesign)&select=id,task,version,attempt_code,attempt_number');
+   const explicitRefs=[...p.attempt_ids,...(b.action==='observation'?Object.values(p.observations||{}).map((v:any)=>v?.session_id).filter(Boolean):[])];
+   const referenced=explicitRefs.map((ref:any)=>typeof ref==='string'?catalog.find((a:any)=>a.id===ref.toLowerCase()||a.attempt_code===ref.toUpperCase()):null);
+   if(referenced.some((a:any)=>!a))return reply(400,{error:'attempt_mismatch'});
+   const candidates=referenced.length?referenced:catalog;
+   const possible=[...new Set(candidates.map((a:any)=>a.version))];
+   if(b.version!=null&&!studyVersions.has(b.version))return reply(400,{error:'version'});
+   const formVersion=b.version||(possible.length===1?possible[0]:null);
+   if(!formVersion&&possible.length>1)return reply(400,{error:'version_required'});
+   if(formVersion&&referenced.some((a:any)=>a.version!==formVersion))return reply(400,{error:'attempt_version_mismatch'});
+   catalog=catalog.filter((a:any)=>a.version===formVersion);
    const match=(ref:string)=>catalog.find((a:any)=>a.id===ref.toLowerCase()||a.attempt_code===ref.toUpperCase());
    const requested=p.attempt_ids.map((ref:string)=>match(ref)?.id);
    if(requested.some((id:unknown)=>!id))return reply(400,{error:'attempt_mismatch'});
@@ -91,10 +102,10 @@ Deno.serve(async req=>{
   if(b.action==='start'||b.action==='events'){
    const settings=(await db('analytics_run_settings?singleton=eq.true&select=accepting,active_version'))[0];
    if(!settings?.accepting)return reply(503,{error:'analytics_paused'});
-   if(b.action==='start'&&b.version!==settings.active_version)return reply(409,{error:'version_retired'});
+   if(b.action==='start'&&b.version!==settings.active_version&&!(settings.active_version==='festpay-2026-11-10-v9-clean'&&b.version==='festpay-2026-11-16-v10-redesign'))return reply(409,{error:'version_retired'});
   }
   if(b.action==='start'){
-   if(!tasks.has(b.task)||b.version!=='festpay-2026-11-10-v9-clean'||b.consent_version!=='2026-11-10-linked-v1'||(!uuid.test(b.participant_id)&&!personCode.test(b.participant_id)))return reply(409,{error:'version_retired'});
+   if(!tasks.has(b.task)||!studyVersions.has(b.version)||b.consent_version!=='2026-11-10-linked-v1'||(!uuid.test(b.participant_id)&&!personCode.test(b.participant_id)))return reply(409,{error:'version_retired'});
    const person=await personFor(b.participant_id,true);if(!person)return reply(400,{error:'unknown_person'});
    const participant=person.id;
    const id=crypto.randomUUID(),token=crypto.randomUUID()+crypto.randomUUID();
