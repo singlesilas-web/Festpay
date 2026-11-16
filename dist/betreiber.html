@@ -33,16 +33,16 @@
       padding: 24px clamp(20px, 4vw, 40px) 40px;
     }
     .operator-page .festival-form > * + * { margin-top: 0; }
-    .operator-page #tabFest {
+    .operator-page .festival-fields {
       flex: 1; display: flex; flex-direction: column;
       justify-content: space-between; gap: clamp(16px, 1.5vh, 32px);
     }
-    .operator-page #tabFest > * { flex-shrink: 0; }
-    .operator-page #tabFest > * + * { margin-top: 0; }
-    .operator-page #tabFest > h3,
+    .operator-page .festival-fields > * { flex-shrink: 0; }
+    .operator-page .festival-fields > * + * { margin-top: 0; }
+    .operator-page .festival-fields > h3,
     .operator-page #w1box > h3,
     .operator-page #w2box > h3 { margin-top: 16px !important; margin-bottom: 8px; }
-    .operator-page #tabFest .mini-map { width: 100%; }
+    .operator-page .festival-fields .mini-map { width: 100%; }
     .operator-page .festival-form .card { padding: clamp(20px, 3vw, 28px); }
     .operator-page .festival-form .card.stack > * + * { margin-top: 16px; }
     .operator-page .festival-form .input { min-width: 0; }
@@ -82,6 +82,6 @@
   <script src="js/layout.js?v=20261114-green"></script>
   <script src="js/test-tasks.js?v=10"></script>
   <script src="js/telemetry.js?v=20261114-green"></script>
-  <script src="js/pages/betreiber.js?v=20261116-icon-catalog"></script>
+  <script src="js/pages/betreiber.js?v=20261116-inline-helpers"></script>
 </body>
 </html>

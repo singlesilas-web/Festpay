@@ -2,7 +2,7 @@
    betreiber.js – Betreiber-Bereich
    Fest anlegen: Name, Ort, Zone auf Karte zeichnen,
    W1/W2 aktivieren, Aufladebeträge, Speisekarte.
-   Tab "Helfer": Helfer (Name + E-Mail) dem Fest zuordnen.
+   Helfer am Ende des Formulars: Helfer (Name + E-Mail) dem Fest zuordnen.
    ========================================================= */
 (async function () {
   const root = document.getElementById("root");
@@ -60,19 +60,7 @@
     <div class="page-head"><h1>${editId ? "Fest bearbeiten" : "Fest anlegen"}</h1><p>Steck deinen Bereich digital ab und leg fest, wie Gäste zahlen.</p></div>
     <div class="page stack festival-form">
       ${editId && f.w1_aktiv ? `<a class="btn btn-dark" href="helfer.html?fest=${encodeURIComponent(editId)}">Kasse &amp; Scanner öffnen</a>` : ""}
-      <div class="segment"><button class="active" data-tab="fest">Fest</button><button data-tab="helfer">Helfer</button></div>
-
-      <div id="tabHelfer" class="stack hidden">
-        <p class="small muted">Eingetragene Helfer sehen beim Fest zusätzlich den Scanner. Zuordnung über die E-Mail ihres Kontos.</p>
-        <div class="list" id="helferList"></div>
-        <div class="card stack">
-          <input class="input" id="hName" placeholder="Name" aria-label="Name des Helfers">
-          <input class="input" id="hMail" type="email" placeholder="E-Mail" aria-label="E-Mail des Helfers">
-          <button class="btn btn-dark btn-sm" id="addHelfer" style="width:100%"><i data-lucide="user-plus"></i>Helfer hinzufügen</button>
-        </div>
-      </div>
-
-      <div id="tabFest" class="stack">
+      <div class="festival-fields stack">
       <label class="field"><span>Name des Fests</span><input class="input" id="name" placeholder="Name eingeben"></label>
 
       <div class="festival-dates">
@@ -138,6 +126,16 @@
           <button class="btn btn-dark btn-sm" id="addItem" style="width:100%"><i data-lucide="plus"></i>Artikel hinzufügen</button>
         </div>
       </div>
+      <section class="stack" aria-labelledby="festivalHelpersTitle">
+        <h3 id="festivalHelpersTitle">Helfer anlegen</h3>
+        <p class="small muted">Eingetragene Helfer sehen beim Fest zusätzlich den Scanner. Zuordnung über die E-Mail ihres Kontos.</p>
+        <div class="list" id="helferList"></div>
+        <div class="card stack">
+          <input class="input" id="hName" placeholder="Name" aria-label="Name des Helfers">
+          <input class="input" id="hMail" type="email" placeholder="E-Mail" aria-label="E-Mail des Helfers">
+          <button class="btn btn-dark btn-sm" id="addHelfer" style="width:100%"><i data-lucide="user-plus"></i>Helfer hinzufügen</button>
+        </div>
+      </section>
       </div>
     <button class="btn" id="save"><i data-lucide="save"></i>${editId ? "Änderungen speichern" : "Fest veröffentlichen"}</button></div>`;
   document.getElementById("name").value = f.name || "";
@@ -515,13 +513,6 @@
     ["iName", "iPreis", "iKat", "iIcon"].forEach((id) => (document.getElementById(id).value = "")); showIcon(); drawMenu();
   };
 
-  // ---------- Tabs ----------
-  root.querySelectorAll("[data-tab]").forEach((b) => (b.onclick = () => {
-    root.querySelectorAll("[data-tab]").forEach((x) => x.classList.toggle("active", x === b));
-    document.getElementById("tabFest").classList.toggle("hidden", b.dataset.tab !== "fest");
-    document.getElementById("tabHelfer").classList.toggle("hidden", b.dataset.tab !== "helfer");
-  }));
-
   // ---------- Helfer ----------
   function drawHelfer() {
     document.getElementById("helferList").innerHTML = f.helfer.map((h, n) => `
@@ -541,7 +532,6 @@
   };
 
     function invalid(id, message) {
-      document.querySelector('[data-tab="fest"]').click();
       const el = document.getElementById(id); el.classList.add("field-error"); el.setAttribute("aria-invalid", "true");
       el.scrollIntoView({ behavior: "smooth", block: "center" }); el.focus({preventScroll:true}); UI.toast(message, "info");
     }

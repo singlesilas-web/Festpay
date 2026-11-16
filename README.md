@@ -52,7 +52,7 @@ Nur `dist/` als Webverzeichnis veröffentlichen. Niemals Service-Role-Schlüssel
 
 Im **Profil** schaltet die Rolle **Helfer** den Helferzugang für **Demo-Fest A** frei – ohne zusätzliche E-Mail-Eingabe. Die Rollenwahl startet keine Kamera und öffnet keinen Scanner. Betreiber eigener Feste erhalten ebenfalls Helferzugang. Erst auf der Fest-Seite erscheint neben den beiden Bezahlwegen die dritte Karte **Helfer / Scanner öffnen**. Demo-Fest B erhält dadurch keinen Helferzugang.
 
-Betreiber können beim Anlegen eigener Feste im Tab **Helfer** Namen und E-Mail-Adressen eintragen. Für diese eigenen Feste wird die Demo-E-Mail im Profil mit der jeweiligen Helferliste abgeglichen. Dies ist eine lokale Simulation, keine Registrierung echter Helfer-Accounts.
+Betreiber können beim Anlegen eigener Feste unten im Festformular unter **Helfer anlegen** Namen und E-Mail-Adressen eintragen. Für diese eigenen Feste wird die Demo-E-Mail im Profil mit der jeweiligen Helferliste abgeglichen. Dies ist eine lokale Simulation, keine Registrierung echter Helfer-Accounts.
 
 Der Scanner öffnet sich erst über die Helfer-Karte ; die Kamera startet erst nach Auswahl von Artikeln oder Eingabe eines Betrags und einem Klick auf „Kamera starten“. Er akzeptiert ausschließlich Guthabencodes dieses Fests. Ohne Fest-Auswahl oder ohne Zuordnung kann nicht gescannt oder abgebucht werden. **Als Gast zum Fest** führt zur normalen Fest-Auswahl zurück, ohne die Helferzuordnung zu entfernen. Ein Wechsel zur Demo-Rolle Gast entfernt den automatischen Helferzugang für Fest A. Eigene Feste unterstützen Helferlisten nur bei aktivem W1.
 
