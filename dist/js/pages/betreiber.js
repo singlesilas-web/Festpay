@@ -15,7 +15,7 @@
     return UI.icons();
   }
   const articleIcons = [
-    ["cup-soda", "Softdrink", "spezi fanta cola limonade saft schorle"],
+    ["cup-soda", "Limonade", "softdrink spezi fanta cola limonade saft schorle"],
     ["beer", "Bier", "radler pils weizen"],
     ["wine", "Wein", "rotwein weißwein sekt"],
     ["coffee", "Kaffee", "tee kakao espresso"],
@@ -43,6 +43,7 @@
     ["apple", "Obst", "apfel früchte frucht"],
   ];
   const defaultIconCount = 8;
+  const localizedIconNames = window.NearBuyIconNamesDe || {};
   const iconNames = new Map(articleIcons.map(([id, name]) => [id, name]));
   const iconButton = ([id, name], showName = false) =>
     `<button type="button" data-icon="${id}" data-track="article-icon-select" aria-label="${name}" aria-pressed="false" title="${name}">
@@ -118,7 +119,7 @@
             <div class="icon-options" role="group" aria-label="Standard-Icons">${articleIcons.slice(0, defaultIconCount).map(icon => iconButton(icon)).join("")}</div>
             <details class="more-icons">
               <summary data-track="article-more-icons"><i data-lucide="plus" aria-hidden="true"></i>Weitere Icons</summary>
-              <input type="search" id="articleIconSearch" class="input" aria-label="Icons suchen" placeholder="Z. B. Wasser, Burger, Camera">
+              <input type="search" id="articleIconSearch" class="input" aria-label="Icons suchen" placeholder="Z. B. Wasser, Burger, Kamera">
               <p id="articleIconStatus" class="small muted" role="status"></p>
               <div class="icon-options icon-results" id="articleIconResults" role="group" aria-label="Verfügbare Icons" tabindex="0"></div>
             </details>
@@ -249,7 +250,7 @@
 
   function showIcon() {
     const value = selectedIcon.value;
-    const name = iconNames.get(value) || "Icon ändern";
+    const name = iconNames.get(value) || localizedIconNames[value] || "Icon ändern";
     const preview = document.getElementById("iconPreview");
     preview.innerHTML = value
       ? `<i data-lucide="${UI.escape(value)}"></i> ${name}` : "Icon auswählen";
@@ -275,10 +276,11 @@
         existing.keywords += " " + searchKey(words + " " + key);
         continue;
       }
-      const entry = {icon: [key, words], keywords: searchKey(words + " " + key)};
+      const name = localizedIconNames[key] || "Symbol";
+      const entry = {icon: [key, name], keywords: searchKey(name + " " + words + " " + key)};
       catalog.push(entry);
       byShape.set(shape, entry);
-      iconNames.set(key, words);
+      iconNames.set(key, name);
     }
     return catalog;
   }
