@@ -61,3 +61,17 @@ test('discovery labels hotbar clicks and recognizes the new payment screen witho
   assert.equal(eventScreen({screen:'demnaechst.html'}),'demnaechst.html');
   assert.equal(eventScreen({screen:'index.html',props:{source:'screen:unexpected.html'}}),'index.html');
 });
+
+test('festival selection, zone editing and cash register clicks appear as distinct process steps', () => {
+  const {label, step} = context.window.FestPayMining;
+  const trail = [
+    [{type:'activity',props:{activity:'map_festival_selected'}}, 'Festfläche antippen'],
+    [{type:'click',props:{target:'karte-guthaben'}}, 'Guthaben direkt von der Karte aufladen'],
+    [{type:'click',props:{target:'zone-rectangle'}}, 'Zeichenart: Rechteck aufziehen'],
+    [{type:'activity',props:{activity:'zone_invalid'}}, 'Festzone unvollständig'],
+    [{type:'activity',props:{activity:'zone_accepted'}}, 'Festzone übernommen'],
+    [{type:'click',props:{target:'helper-product-add'}}, 'Artikel hinzufügen (+)'],
+    [{type:'click',props:{target:'helper-product-remove'}}, 'Artikel entfernen (−)']
+  ];
+  for (const [event, expected] of trail) assert.equal(label(step(event)), expected);
+});

@@ -144,7 +144,7 @@ dialog::backdrop { background:rgba(2,81,60,.6); }
 .product-settings summary::-webkit-details-marker { display:none; }
 .product-settings #visibility { position:absolute; top:52px; left:12px; right:12px; z-index:5; padding:16px; max-height:210px; overflow:auto; border:1px solid var(--line); border-radius:14px; background:var(--bg); box-shadow:0 8px 24px rgba(2,81,60,.15); }
 .helper-products { display:grid; grid-template-columns:1fr 1fr; gap:8px; max-height:clamp(128px,25dvh,180px); overflow:auto; padding:2px; }
-.product-tile { display:flex; align-items:center; gap:8px; text-align:left; min-height:60px; padding:9px; border:1px solid var(--line); border-radius:14px; background:var(--bg); }
+.product-tile { display:grid; gap:6px; padding:7px; min-width:0; border:1px solid var(--line); border-radius:14px; background:var(--bg); }
 .product-tile.selected { border-color:var(--ink); background:var(--bg); }
 .product-icon { display:grid; place-items:center; width:28px; height:32px; flex-shrink:0; }
 .product-icon svg { width:22px; height:22px; }
@@ -253,26 +253,23 @@ dialog::backdrop { background:rgba(2,81,60,.6); }
 .time-options button { min-height:40px; border-radius:10px; font-variant-numeric:tabular-nums; font-weight:700; }
 .time-options button:hover, .time-options button:focus-visible, .time-options button[aria-selected="true"] { background:var(--ink); color:var(--bg); outline:none; }
 
-.product-tile { position: relative; overflow: hidden; user-select: none; touch-action: manipulation; }
-.product-tile::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: rgb(220 38 38 / 28%);
-  transform: scaleX(0);
-  transform-origin: left;
-}
-.product-tile.holding::before { animation: helper-hold 650ms linear forwards; }
-.product-tile.removed-one { animation: helper-shake 260ms ease-out; }
-@keyframes helper-hold { to { transform: scaleX(1); } }
-@keyframes helper-shake {
-  25%, 75% { transform: translateX(-3px); }
-  50% { transform: translateX(3px); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .product-tile.removed-one { animation: none; }
-}
+/* Drawing controls */
+.zone-editor { display: grid; gap: 8px; }
+.zone-editor [hidden] { display: none; }
+.zone-editor .mini-map[data-mode="preview"] { cursor: default; }
+.zone-editor .mini-map[data-mode="rectangle"] { touch-action: none; }
+.zone-editor [data-corner] { cursor: move; }
+.zone-editor #zoneModes button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.zone-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* Fixed tap areas keep order corrections predictable. */
+.product-info { display: flex; align-items: center; gap: 6px; }
+.product-stepper { display: grid; grid-template-columns: minmax(44px, 1fr) auto minmax(44px, 1fr); align-items: center; gap: 4px; }
+.product-stepper button { min-height: 44px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); font-size: 22px; font-weight: 800; touch-action: manipulation; }
+.product-stepper button[data-delta="1"] { background: var(--ink); color: var(--bg); }
+.product-stepper button:disabled { opacity: .42; cursor: default; }
+.product-stepper button.stepper-feedback { background: var(--accent); color: var(--accent-ink); }
+@media (max-width: 315px) { .helper-products { grid-template-columns: minmax(0, 1fr); } }
 
 /* ---------- Tab-Seiten: Kopfzeile mit Logo ---------- */
 .tab-topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px 0; }

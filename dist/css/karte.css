@@ -9,11 +9,11 @@
 .map svg { width: 100%; height: 100%; display: block; }
 
 .zone { fill: var(--zone); stroke: var(--zone-line); stroke-width: 3; transition: fill .4s, stroke-width .4s; }
-.zone.active { fill: rgba(138, 166, 19, .4); stroke-width: 5; }
+.festival-zone.active .zone { fill: rgba(138, 166, 19, .4); stroke-width: 5; }
 .zone-label rect { fill: var(--bg); stroke: var(--ink); stroke-width: 2; }
 .zone-label text { font: 700 22px var(--font-head); fill: var(--ink); }
-.zone-label.active rect { fill: var(--accent); stroke: var(--accent); }
-.zone-label.active text { fill: var(--accent-ink); }
+.festival-zone.active .zone-label rect { fill: var(--accent); stroke: var(--accent); }
+.festival-zone.active .zone-label text { fill: var(--accent-ink); }
 
 /* Fixer Standort-Pin in der Mitte (wie EasyPark-Auto) */
 .pin {
@@ -95,3 +95,7 @@ body[data-tab="entdecken"] .tabbar { border-top: 0; box-shadow: none; }
 .sheet-eyebrow { display: flex; align-items: center; gap: 6px; font: 800 11px var(--font-head); letter-spacing: .06em; text-transform: uppercase; color: var(--ink); margin: 2px 4px 10px; }
 .sheet-eyebrow svg { width: 15px; height: 15px; color: var(--accent); }
 .sheet .fest-card { padding: 12px 14px; border-radius: 16px; }
+
+.festival-zone { cursor: pointer; }
+.festival-zone:focus-visible .zone { stroke: var(--ink); stroke-width: 6; }
+.sheet-topup { display: flex; justify-content: center; margin-top: 8px; width: 100%; }

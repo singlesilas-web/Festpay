@@ -14,7 +14,15 @@ window.FestPayMining = (() => {
   const goalForTask=task=>taskGoals[task];
   const currentSessions=(sessions,version,task)=>sessions.filter(s=>s.version===version&&!!taskGoals[s.task]&&(!task||s.task===task));
   const assignedGoal = task => ({w1: 'wallet_topped_up', w2: 'token_redeemed', gast_guthaben: 'wallet_qr_shown', gast_marken: 'token_redeemed', helfer: 'wallet_charged', betreiber_marken: 'festival_created', betreiber_guthaben: 'festival_helper_saved'}[task] || task);
-  const navigation = {
+  const clickLabels = {
+    'karte-guthaben': 'Guthaben direkt von der Karte aufladen',
+    'zone-start': 'Festzone zeichnen oder bearbeiten',
+    'zone-points': 'Zeichenart: Punkte setzen',
+    'zone-rectangle': 'Zeichenart: Rechteck aufziehen',
+    'zone-undo': 'Zeichenschritt rückgängig machen',
+    'zone-cancel': 'Zeichnen abbrechen',
+    'helper-product-add': 'Artikel hinzufügen (+)',
+    'helper-product-remove': 'Artikel entfernen (−)',
     'nav-entdecken': 'Hotbar: Entdecken', 'nav-demnaechst': 'Hotbar: Demnächst',
     'nav-bezahlen': 'Hotbar: Bezahlen', 'nav-kasse': 'Hotbar: Kasse',
     'nav-aktivitaeten': 'Hotbar: Aktivitäten', 'nav-profil': 'Hotbar: Profil',
@@ -39,7 +47,11 @@ window.FestPayMining = (() => {
     return event.screen === 'index.html' && newScreens.has(screen) ? screen : event.screen;
   }
   const names = {
-    ...navigation,
+    ...clickLabels,
+    map_festival_selected: 'Festfläche antippen',
+    zone_rectangle_drawn: 'Rechteck gezeichnet oder angepasst',
+    zone_invalid: 'Festzone unvollständig',
+    zone_accepted: 'Festzone übernommen',
     'zahlen.html': 'Bezahlen (Hotbar)', 'demnaechst.html': 'Demnächst',
     'aktivitaeten.html': 'Aktivitäten', 'login.html': 'Anmelden',
     ...goals, 'index.html': 'Karte', 'fest.html': 'Fest', 'guthaben.html': 'Guthaben',
@@ -55,7 +67,7 @@ window.FestPayMining = (() => {
     '#addHelfer': 'Helfer vormerken', '#sim': 'Scan simulieren', '#cam': 'Kamera öffnen',
     '#book': 'Abbuchung bestätigen', '#clearOrder': 'Bestellung zurücksetzen'
   };
-  const actions = new Set([...Object.keys(navigation),'#btnSearch','#btnLocate','#go','#pay','#save','#mm','#addTop','#addItem','#addHelfer','#sim','#cam','#book','#clearOrder']);
+  const actions = new Set([...Object.keys(clickLabels),'#btnSearch','#btnLocate','#go','#pay','#save','#mm','#addTop','#addItem','#addHelfer','#sim','#cam','#book','#clearOrder']);
   function step(event) {
     if (event.type === 'session_end') return 'session_end';
     if (event.type === 'activity') return event.props?.activity;

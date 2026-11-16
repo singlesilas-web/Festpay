@@ -13,7 +13,7 @@
   const feste = [];
   for (const f of await API.getFeste()) if (API.istFestAktiv(f) && (!helperRole || await API.istHelferFuer(f.id))) feste.push(f);
   
-  let tx = 0, ty = 0, aktuell = null;
+  let tx = 0, ty = 0, aktuell = null, picked = null;
 
   // ---------- Karte zeichnen ----------
   const zonen = feste.map((f) => {
@@ -21,9 +21,10 @@
     const cx = f.zone.reduce((a, p) => a + p[0], 0) / f.zone.length;
     const cy = f.zone.reduce((a, p) => a + p[1], 0) / f.zone.length;
     const w = Math.max(120, f.name.length * 13 + 40);
-    return `<polygon class="zone" data-id="${f.id}" points="${pts}"/>
-      <g class="zone-label" data-id="${f.id}" transform="translate(${cx - w / 2},${cy - 22})">
-        <rect width="${w}" height="44" rx="12"/><text x="${w / 2}" y="29" text-anchor="middle">${f.name}</text></g>`;
+    return `<g class="festival-zone" data-id="${UI.escape(f.id)}" role="button" tabindex="0" aria-label="${UI.escape(f.name)} auswählen">
+      <polygon class="zone" points="${pts}"/>
+      <g class="zone-label" transform="translate(${cx - w / 2},${cy - 22})">
+        <rect width="${w}" height="44" rx="12"/><text x="${w / 2}" y="29" text-anchor="middle">${UI.escape(f.name)}</text></g></g>`;
   }).join("");
 
   map.innerHTML = `<svg viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
@@ -50,7 +51,15 @@
     ty = wrap.clientHeight / 2 - y * SCALE; apply();
   }
   function mapPoint() { return [(wrap.clientWidth / 2 - tx) / SCALE, (wrap.clientHeight / 2 - ty) / SCALE]; }
-  centerOn(520, 760);
+  if (feste.length > 1) {
+    const points = feste.flatMap(f => f.zone);
+    const xs = points.map(p => p[0]), ys = points.map(p => p[1]);
+    const left = Math.min(...xs), right = Math.max(...xs), top = Math.min(...ys), bottom = Math.max(...ys);
+    SCALE = Math.max(.24, Math.min(SCALE, (wrap.clientWidth - 70) / (right - left), (wrap.clientHeight - 230) / (bottom - top)));
+    centerOn((left + right) / 2, (top + bottom) / 2 + 25);
+  } else {
+    centerOn(520, 760);
+  }
   function zoomTo(next, x = wrap.clientWidth/2, y = wrap.clientHeight/2, source = 'button') {
     map.classList.remove('animate');const old = SCALE; SCALE = Math.max(.24, Math.min(4, next));
     tx = x - (x - tx) * SCALE/old; ty = y - (y - ty) * SCALE/old;
@@ -63,29 +72,77 @@
     if(e.target.closest('button,a,.sheet,.search-panel')) return;
     e.preventDefault(); const r=wrap.getBoundingClientRect(); zoomTo(SCALE*Math.exp(-Math.max(-240,Math.min(240,e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?wrap.clientHeight:1)))*.008),e.clientX-r.left,e.clientY-r.top,'wheel');
   }, {passive:false});
-  const pointers=new Map(); let start=null, pinch=null;
-  const distance=()=>{const [a,b]=[...pointers.values()];return Math.hypot(a.x-b.x,a.y-b.y);};
-  wrap.addEventListener('pointerdown',e=>{
-    if(e.target.closest('button,a,.sheet,.search-panel')) return;
-    pointers.set(e.pointerId,{x:e.clientX,y:e.clientY}); wrap.setPointerCapture(e.pointerId);
-    if(pointers.size===2){pinch={distance:distance(),scale:SCALE};start=null;}
-    else start={x:e.clientX,y:e.clientY,tx,ty};
-    wrap.classList.add('dragging','lifted');
+  const pointers = new Map();
+  let start, pinch, mapMoved, gestureHasMultiplePointers;
+  const distance = () => {
+    const [a, b] = [...pointers.values()];
+    return Math.hypot(a.x - b.x, a.y - b.y);
+  };
+  wrap.addEventListener('pointerdown', e => {
+    if (e.button !== 0 || e.target.closest('button,a,.sheet,.search-panel')) return;
+    if (!pointers.size) {
+      mapMoved = false;
+      gestureHasMultiplePointers = false;
+    }
+    pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
+    wrap.setPointerCapture(e.pointerId);
+    if (pointers.size === 1) {
+      start = {x:e.clientX, y:e.clientY, tx, ty, zone:e.target.closest('.festival-zone')};
+    } else {
+      gestureHasMultiplePointers = true;
+      picked = null;
+      start = null;
+      if (pointers.size === 2) pinch = {distance:distance(), scale:SCALE};
+    }
   });
-  wrap.addEventListener('pointermove',e=>{
-    if(!pointers.has(e.pointerId))return;
-    pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
-    if(pointers.size===2 && pinch){const [a,b]=[...pointers.values()],r=wrap.getBoundingClientRect();zoomTo(pinch.scale*Math.pow(distance()/pinch.distance,1.9),(a.x+b.x)/2-r.left,(a.y+b.y)/2-r.top,'pinch');}
-    else if(start){tx=start.tx+e.clientX-start.x;ty=start.ty+e.clientY-start.y;apply();check(true);}
+  wrap.addEventListener('pointermove', e => {
+    if (!pointers.has(e.pointerId)) return;
+    pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
+    if (pointers.size === 2 && pinch) {
+      const [a, b] = [...pointers.values()], r = wrap.getBoundingClientRect();
+      zoomTo(pinch.scale * Math.pow(distance() / Math.max(pinch.distance, 1), 1.9), (a.x+b.x)/2-r.left, (a.y+b.y)/2-r.top, 'pinch');
+    } else if (start) {
+      const dx = e.clientX - start.x, dy = e.clientY - start.y;
+      if (!mapMoved && Math.hypot(dx, dy) <= 6) return;
+      mapMoved = true;
+      picked = null;
+      map.classList.remove('animate');
+      wrap.classList.add('dragging', 'lifted');
+      tx = start.tx + dx; ty = start.ty + dy;
+      apply(); check();
+    }
   });
-  function end(e){
-    if(!pointers.has(e.pointerId))return;
-    const moved=start&&Math.hypot(tx-start.tx,ty-start.ty)>6;
-    pointers.delete(e.pointerId);start=null;pinch=null;
-    if(pointers.size===1){const a=[...pointers.values()][0];start={...a,tx,ty};}
-    if(!pointers.size){wrap.classList.remove('dragging','lifted');check();if(moved)window.TestLog?.event('map_pan',{scale:SCALE});}
+  function end(e) {
+    if (!pointers.has(e.pointerId)) return;
+    const tapped = e.type === 'pointerup' && !gestureHasMultiplePointers && !mapMoved && start &&
+      Math.hypot(e.clientX - start.x, e.clientY - start.y) <= 6 ? start.zone : null;
+    pointers.delete(e.pointerId);
+    start = null; pinch = null;
+    if (pointers.size === 1) {
+      const [a] = pointers.values();
+      start = {...a, tx, ty};
+    }
+    if (!pointers.size) {
+      wrap.classList.remove('dragging', 'lifted');
+      if (tapped) selectZone(tapped);
+      else check();
+      if (mapMoved) window.TestLog?.event('map_pan', {scale:SCALE});
+    }
   }
-  wrap.addEventListener('pointerup',end);wrap.addEventListener('pointercancel',end);
+  wrap.addEventListener('pointerup', end);
+  wrap.addEventListener('pointercancel', end);
+  map.addEventListener('keydown', e => {
+    const zone = e.target.closest('.festival-zone');
+    if (!zone || (e.key !== 'Enter' && e.key !== ' ') || e.repeat) return;
+    e.preventDefault();
+    selectZone(zone);
+  });
+  function selectZone(zone) {
+    const fest = feste.find(f => f.id === zone.dataset.id);
+    if (!fest) return;
+    window.TestLog?.event('activity', {activity:'map_festival_selected'});
+    fly(fest);
+  }
   window.addEventListener('resize',()=>{const [x,y]=mapPoint();centerOn(x,y);check();});
 
   // ---------- Zone prüfen ----------
@@ -97,17 +154,16 @@
     }
     return r;
   }
-  function check(live) {
+  function check() {
     const p = mapPoint();
-    const f = feste.find((f) => inside(p, f.zone)) || null;
-    document.querySelectorAll(".zone, .zone-label").forEach((el) => el.classList.toggle("active", f && el.dataset.id === f.id));
+    const f = picked || feste.find((f) => inside(p, f.zone)) || null;
+    map.querySelectorAll(".festival-zone").forEach(el => el.classList.toggle("active", el.dataset.id === f?.id));
     wrap.classList.toggle("inside", !!f);
     const icon = document.querySelector(".pin-head i, .pin-head svg");
     if (icon && icon.dataset.state !== (f ? "in" : "out")) {
       icon.outerHTML = `<i data-lucide="${f ? "party-popper" : "footprints"}" data-state="${f ? "in" : "out"}"></i>`;
       UI.icons();
     }
-    if (live && f === aktuell) return;
     if (f !== aktuell) { aktuell = f; renderSheet(); if (f && navigator.vibrate) navigator.vibrate(20); }
   }
 
@@ -119,16 +175,17 @@
         <span class="sheet-text"><b>Noch keine Feste</b><span>Sobald Betreiber ein Fest anlegen, erscheint es hier.</span></span></div>`;
     } else if (!aktuell) {
       sheet.innerHTML = `<div class="sheet-row"><span class="badge-icon soft"><i data-lucide="footprints"></i></span>
-        <span class="sheet-text"><b>Kein Fest hier</b><span>Karte in eine Fest-Zone schieben</span></span>
+        <span class="sheet-text"><b>Kein Fest hier</b><span>Tippe auf eine Festfläche oder schiebe die Karte.</span></span>
         <button class="btn btn-sm" id="sheetSearch"><i data-lucide="search"></i>Suchen</button></div>`;
       sheet.querySelector("#sheetSearch").onclick = openSearch;
     } else {
       const w = aktuell.w1_aktiv ? "Festguthaben" : "Festmarken";
-      sheet.innerHTML = `<div class="sheet-eyebrow"><i data-lucide="sparkles"></i>Fest gefunden · du bist in der Zone</div>
+      sheet.innerHTML = `<div class="sheet-eyebrow"><i data-lucide="sparkles"></i>Fest ausgewählt</div>
         <a class="fest-card" data-track="karte-fest-oeffnen" href="${helperRole ? `helfer.html?fest=${encodeURIComponent(aktuell.id)}` : `fest.html?id=${encodeURIComponent(aktuell.id)}`}">
           <span class="badge-icon accent"><i data-lucide="${UI.festIcon(aktuell.id)}"></i></span>
-          <span style="flex:1"><div class="t">${helperRole ? "Scanner öffnen" : UI.escape(aktuell.name)}</div><div class="s">${aktuell.ort || ""} · ${w}</div></span>
-          <i data-lucide="chevron-right"></i></a>`;
+          <span style="flex:1"><div class="t">${helperRole ? "Scanner öffnen" : UI.escape(aktuell.name)}</div><div class="s">${UI.escape(aktuell.ort || "")} · ${w}</div></span>
+          <span class="small">${helperRole ? "" : "Zum Fest"}</span><i data-lucide="chevron-right"></i></a>
+        ${!helperRole && aktuell.w1_aktiv ? `<a class="btn btn-sm sheet-topup" data-track="karte-guthaben" href="guthaben.html?id=${encodeURIComponent(aktuell.id)}"><i data-lucide="plus-circle"></i>Guthaben aufladen</a>` : ""}`;
     }
     UI.icons();
   }
@@ -137,8 +194,8 @@
   const panel = document.getElementById("searchPanel");
   function openSearch() {
     document.getElementById("festList").innerHTML = feste.length
-      ? feste.map((f) => `<button class="list-item" data-track="karte-suchergebnis" data-id="${f.id}"><span class="badge-icon soft"><i data-lucide="${UI.festIcon(f.id)}"></i></span>
-          <span style="flex:1"><div class="title">${f.name}</div><div class="sub">${f.ort || ""}</div></span><i data-lucide="map-pin"></i></button>`).join("")
+      ? feste.map((f) => `<button class="list-item" data-track="karte-suchergebnis" data-id="${UI.escape(f.id)}"><span class="badge-icon soft"><i data-lucide="${UI.festIcon(f.id)}"></i></span>
+          <span style="flex:1"><div class="title">${UI.escape(f.name)}</div><div class="sub">${UI.escape(f.ort || "")}</div></span><i data-lucide="map-pin"></i></button>`).join("")
       : `<div class="empty"><i data-lucide="calendar-x-2"></i><h3>Keine Feste</h3><p>Es sind noch keine Feste angelegt.</p></div>`;
     panel.classList.add("open"); UI.icons();
     panel.querySelectorAll("[data-id]").forEach((b) => (b.onclick = () => { panel.classList.remove("open"); fly(feste.find((f) => f.id === b.dataset.id)); }));
@@ -148,7 +205,9 @@
     const cy = f.zone.reduce((a, p) => a + p[1], 0) / f.zone.length;
     map.classList.add("animate");
     tx = wrap.clientWidth / 2 - cx * SCALE; ty = wrap.clientHeight / 2 - cy * SCALE; apply();
-    setTimeout(() => { map.classList.remove("animate"); check(); }, 300);
+    picked = f; check();
+    clearTimeout(fly.timer);
+    fly.timer = setTimeout(() => map.classList.remove("animate"), 300);
   }
   document.getElementById("btnSearch").onclick = openSearch;
   document.getElementById("btnSearchClose").onclick = () => panel.classList.remove("open");
