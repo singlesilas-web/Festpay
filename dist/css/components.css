@@ -165,4 +165,8 @@
 }
 .tab-center .tab-icon svg { width: 26px; height: 26px; }
 .tab-center.active .tab-icon { background: var(--primary); color: var(--accent); }
-body.has-tabbar .page { padding-bottom: calc(var(--tabbar-h) + 60px); }
+body.has-tabbar { --tabbar-space: calc(var(--tabbar-h) + env(safe-area-inset-bottom)); }
+@media (min-width: 700px) { body.has-tabbar { --tabbar-space: calc(var(--tabbar-h) + 28px); } }
+body.has-tabbar .page { padding-bottom: calc(var(--tabbar-space) + 60px); }
+body.has-tabbar .cta-bar { bottom: var(--tabbar-space); padding-bottom: 32px; border-radius: 0; }
+body.has-tabbar.has-payment-action .page { padding-bottom: calc(var(--tabbar-space) + 120px); }

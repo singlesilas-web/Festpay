@@ -25,8 +25,6 @@
 .wallet .saldo { font: 800 44px var(--font-head); margin: 6px 0 18px; }
 .qr-box { background: var(--bg); border-radius: 20px; padding: 18px; display: inline-block; position: relative; }
 .qr-box canvas, .qr-box img { display: block; width: 210px; height: 210px; }
-.qr-scanline { position: absolute; left: 12px; right: 12px; height: 3px; background: var(--accent); border-radius: 3px; animation: scan 2.4s ease-in-out infinite; box-shadow: 0 0 12px var(--accent); }
-@keyframes scan { 0%,100% { top: 14px; } 50% { top: calc(100% - 16px); } }
 .live-time { font-variant-numeric: tabular-nums; font-size: 13px; opacity: .7; margin-top: 12px; display: flex; gap: 6px; justify-content: center; align-items: center; }
 .live-time i { width: 14px; height: 14px; color: var(--accent); }
 .qr-help { max-width:360px; margin-inline:auto; line-height:1.5; }
@@ -81,23 +79,30 @@
 .marke.used::before { display: none; }
 .marke.used .perf { border-color: var(--line); }
 
-/* Vollbild-Entwertungsanimation (für Helfer sichtbar) */
+/* Bestätigung am Stand mit Artikel und laufender Uhr. */
 .validate-overlay {
-  position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; text-align: center;
+  position: fixed; inset: 0 0 var(--tabbar-space, 0px); z-index: 90;
+  display: grid; place-items: center; overflow: auto; text-align: center;
+  padding: max(18px, env(safe-area-inset-top)) 20px 30px;
   background: var(--ok); color: var(--bg); animation: ovIn .3s ease-out;
 }
+.redemption-open .tabbar { z-index: 91; }
+.topup-guide-open .tabbar { z-index: 1203; }
 .validate-overlay .stamp {
-  width: 180px; height: 180px; border-radius: 50%; border: 8px solid var(--bg);
-  display: grid; place-items: center; margin: 0 auto 24px; animation: stamp .6s var(--ease), spin 6s linear .6s infinite;
+  width: clamp(88px, 19svh, 152px); aspect-ratio: 1; border-radius: 50%;
+  display: grid; place-items: center; margin: 0 auto 16px; border: 2px solid currentColor;
 }
-.validate-overlay .stamp i { width: 90px; height: 90px; stroke-width: 2.5; animation: spin 6s linear .6s infinite reverse; }
-.validate-overlay h1 { font-size: 40px; }
-.validate-overlay .clock { font: 800 28px var(--font-head); font-variant-numeric: tabular-nums; margin-top: 10px; }
+.validate-overlay .stamp svg { width: 60%; height: 60%; stroke-width: 1.7; }
+.validate-overlay h1 { font-size: clamp(27px, 7vw, 44px); overflow-wrap: anywhere; }
+.validate-overlay .redemption-status { color: inherit; font-weight: 800; margin-bottom: 6px; }
+.validate-overlay .clock { font: 800 clamp(20px, 5.8vw, 28px) var(--font-head); font-variant-numeric: tabular-nums; margin-top: 12px; }
+.validate-overlay .redemption-close { min-height: 44px; margin-top: 12px; padding-inline: 12px; text-decoration: underline; }
 .validate-overlay .pulse { position: absolute; inset: 0; background: radial-gradient(circle, rgba(138,166,19,.35), transparent 60%); animation: pulse 1.2s ease-in-out infinite; pointer-events: none; }
 @keyframes ovIn { from { opacity: 0; } }
-@keyframes stamp { from { transform: scale(2.4) rotate(-30deg); opacity: 0; } }
-@keyframes spin { to { transform: rotate(360deg); } }
 @keyframes pulse { 50% { opacity: .2; transform: scale(1.2); } }
+@media (prefers-reduced-motion: reduce) {
+  .validate-overlay, .validate-overlay .pulse { animation: none; }
+}
 
 /* ---------- helfer.html ---------- */
 .scanner { aspect-ratio: 1; border-radius: var(--radius-lg); background: var(--ink); overflow: hidden; position: relative; display: grid; place-items: center; color: var(--bg); }
@@ -360,3 +365,6 @@ body.has-tabbar .search-panel { padding-bottom: calc(var(--tabbar-h) + 32px); }
 .wallet-content h3 { margin: 0; font-size: 16px; }
 .wallet-content .chips { gap: 6px; }
 .wallet-content .chip, .wallet-content #go { min-height: 44px; height: 44px; }
+
+.wallet-page.has-tabbar .wallet-content { padding-bottom: calc(var(--tabbar-space) + 24px); }
+.wallet-page.has-tabbar .wallet-content #qr { width: clamp(124px, calc(100svh - 500px), 210px); }

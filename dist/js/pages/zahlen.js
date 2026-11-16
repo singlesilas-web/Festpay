@@ -41,7 +41,7 @@
       <div class="wallet">
         <div class="small" style="opacity:.75">${UI.escape(fest.name)} · Dein Guthaben</div>
         <div class="saldo" id="saldo">${UI.euro(saldo)}</div>
-        <div class="qr-box"><div id="qr"></div><div class="qr-scanline"></div></div>
+        <div class="qr-box"><div id="qr"></div></div>
         <div class="live-time"><i data-lucide="radio"></i><span id="clock"></span></div>
       </div>
       <a class="btn btn-ghost" data-track="zahlen-aufladen" href="guthaben.html?id=${encodeURIComponent(fest.id)}"><i data-lucide="plus-circle"></i>Guthaben aufladen</a>`;

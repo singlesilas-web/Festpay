@@ -18,8 +18,8 @@
     const feste = Object.fromEntries((await API.getFeste()).map((f) => [f.id, f.name]));
     const karte = (m) => `
       <div class="marke ${m.status === "offen" ? "" : "used"}" data-id="${m.id}">
-        <div class="head"><span class="badge-icon ${m.status === "offen" ? "accent" : "soft"}"><i data-lucide="${m.icon || "ticket"}"></i></span>
-          <div><div class="name">${m.name}</div><div class="small" style="opacity:.7">${feste[m.fest_id] || ""}</div></div></div>
+        <div class="head"><span class="badge-icon ${m.status === "offen" ? "accent" : "soft"}"><i data-lucide="${UI.escape(m.icon || "ticket")}"></i></span>
+          <div><div class="name">${UI.escape(m.name)}</div><div class="small" style="opacity:.7">${UI.escape(feste[m.fest_id] || "")}</div></div></div>
         <div class="perf"></div>
         ${m.status === "offen"
           ? `<div class="hold-hint"><i data-lucide="hand"></i>Am Stand gedrückt halten zum Entwerten</div>
@@ -37,17 +37,18 @@
         ${offen.map(karte).join("")}
         ${alt.length ? `<div class="cat-title" style="margin-top:28px">Entwertet</div>` + alt.map(karte).join("") : ""}
       </div>`;
-    UI.icons(); bind();
+    UI.icons(); bind(offen);
   }
 
-  function bind() {
+  function bind(openTokens) {
+    const byId = new Map(openTokens.map(token => [String(token.id), token]));
     root.querySelectorAll(".marke:not(.used)").forEach((el) => {
       const fg = el.querySelector(".fg"); let t0 = 0, raf = 0;
       const stop = () => { cancelAnimationFrame(raf); el.classList.remove("holding"); fg.style.strokeDashoffset = 151; };
       const tick = () => {
         const p = Math.min(1, (performance.now() - t0) / HALTEZEIT);
         fg.style.strokeDashoffset = 151 * (1 - p);
-        if (p >= 1) { stop(); entwerten(el.dataset.id, el.querySelector(".name").textContent); } else raf = requestAnimationFrame(tick);
+        if (p >= 1) { stop(); entwerten(byId.get(el.dataset.id)); } else raf = requestAnimationFrame(tick);
       };
       el.addEventListener("pointerdown", () => { t0 = performance.now(); el.classList.add("holding"); if (navigator.vibrate) navigator.vibrate(15); raf = requestAnimationFrame(tick); });
       ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => el.addEventListener(ev, stop));
@@ -55,21 +56,35 @@
     });
   }
 
-  async function entwerten(id, name) {
+  async function entwerten({id, name, icon}) {
     const result = await API.markeEntwerten(id);
     if (result?.error) return UI.toast(result.error.message, "alert-triangle");
     if (navigator.vibrate) navigator.vibrate([40, 60, 40]);
     const ov = document.createElement("div"); ov.className = "validate-overlay";
-    ov.innerHTML = `<div class="pulse"></div><div>
-      <div class="stamp"><i data-lucide="check"></i></div>
-      <h1>Entwertet</h1><p style="font-size:20px;margin-top:6px">${name}</p>
+    ov.innerHTML = `<div class="pulse" aria-hidden="true"></div><section aria-labelledby="redeemedItem">
+      <div class="stamp" aria-hidden="true"><i data-lucide="${UI.escape(icon || "ticket")}"></i></div>
+      <p class="redemption-status">Entwertet</p>
+      <h1 id="redeemedItem">${UI.escape(name)}</h1>
       <div class="clock" id="ovClock"></div>
-      <p class="small" style="margin-top:28px;opacity:.85">Tippen zum Schließen</p></div>`;
+      <button type="button" class="redemption-close">Schließen</button></section>`;
+    document.body.classList.add("redemption-open");
     document.body.appendChild(ov); UI.icons();
+    ov.querySelector(".redemption-close").focus({preventScroll:true});
     const c = ov.querySelector("#ovClock");
     const upd = () => (c.textContent = new Date().toLocaleTimeString("de-DE") + "." + String(new Date().getMilliseconds()).padStart(3, "0").slice(0, 1));
     upd(); const h = setInterval(upd, 100);
-    ov.onclick = () => { clearInterval(h); ov.remove(); render(); };
+    function close(event) {
+      if (event.type === "keydown" && event.key !== "Escape") return;
+      clearInterval(h);
+      document.removeEventListener("keydown", close);
+      window.removeEventListener("pagehide", close);
+      document.body.classList.remove("redemption-open");
+      ov.remove();
+      render();
+    }
+    ov.onclick = close;
+    document.addEventListener("keydown", close);
+    window.addEventListener("pagehide", close);
   }
 
   render();

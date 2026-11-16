@@ -30,8 +30,7 @@ window.UI = (function () {
     return false;
   }
   // ---------- Untere Navigationsleiste (Hotbar) ----------
-  // Seiten mit <body data-tab="…"> zeigen die Leiste. Seiten mit eigener
-  // Aktionsleiste unten (Checkout, Aufladen, Speisekarte, Kasse) zeigen sie nicht.
+  // data-tab ordnet jede App-Seite einem Bereich der Hauptnavigation zu.
   async function tabbar(rolle) {
     const aktiv = document.body.dataset.tab;
     if (!aktiv) return;

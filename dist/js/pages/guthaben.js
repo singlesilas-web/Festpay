@@ -29,7 +29,7 @@
       <div class="wallet">
         <div class="small" style="opacity:.7">Dein Guthaben</div>
         <div class="saldo" id="saldo">${UI.euro(saldo)}</div>
-        <div class="qr-box"><div id="qr"></div><div class="qr-scanline"></div></div>
+        <div class="qr-box"><div id="qr"></div></div>
         <div class="live-time"><i data-lucide="radio"></i><span id="clock"></span></div>
       </div>
       <p class="small muted center qr-help">Zeig den QR-Code am Stand.</p>
