@@ -15,6 +15,8 @@ window.FestPayMining = (() => {
   const currentSessions=(sessions,version,task)=>sessions.filter(s=>s.version===version&&!!taskGoals[s.task]&&(!task||s.task===task));
   const assignedGoal = task => ({w1: 'wallet_topped_up', w2: 'token_redeemed', gast_guthaben: 'wallet_qr_shown', gast_marken: 'token_redeemed', helfer: 'wallet_charged', betreiber_marken: 'festival_created', betreiber_guthaben: 'festival_helper_saved'}[task] || task);
   const clickLabels = {
+    'article-more-icons': 'Weitere Artikel-Icons aufklappen',
+    'article-icon-select': 'Artikel-Icon auswählen',
     'karte-guthaben': 'Guthaben direkt von der Karte aufladen',
     'zone-start': 'Festzone zeichnen oder bearbeiten',
     'zone-points': 'Zeichenart: Punkte setzen',

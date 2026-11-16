@@ -14,7 +14,39 @@
     if (alsBetreiber) alsBetreiber.onclick = () => { API.setDemoRolle("betreiber"); location.reload(); };
     return UI.icons();
   }
-  const ICONS = ["cup-soda", "beer", "wine", "coffee", "sandwich", "pizza", "ice-cream-cone", "utensils"];
+  const articleIcons = [
+    ["cup-soda", "Softdrink", "spezi fanta cola limonade saft schorle"],
+    ["beer", "Bier", "radler pils weizen"],
+    ["wine", "Wein", "rotwein weißwein sekt"],
+    ["coffee", "Kaffee", "tee kakao espresso"],
+    ["sandwich", "Sandwich", "brot brötchen belegte semmel toast"],
+    ["pizza", "Pizza", "flammkuchen"],
+    ["ice-cream-cone", "Eis", "eiswaffel dessert"],
+    ["utensils", "Speise", "essen gericht hauptgericht pommes beilage schnitzel currywurst"],
+    ["flame", "Grillgericht", "currywurst bratwurst wurst rote steak barbecue"],
+    ["hamburger", "Burger", "hamburger cheeseburger"],
+    ["popcorn", "Popcorn", "snack"],
+    ["cake-slice", "Kuchen", "torte dessert"],
+    ["salad", "Salat", "gemüse vegan vegetarisch"],
+    ["glass-water", "Wasser", "mineralwasser sprudel still"],
+    ["martini", "Cocktail", "aperol aperitif spritz longdrink"],
+    ["drumstick", "Hähnchen", "huhn fleisch geflügel chicken nuggets"],
+    ["fish", "Fisch", "lachs forelle fischbrötchen"],
+    ["cooking-pot", "Warmes Gericht", "curry pommes eintopf nudeln pasta reis"],
+    ["soup", "Suppe", "brühe eintopf"],
+    ["croissant", "Gebäck", "croissant brezel brezeln laugengebäck"],
+    ["cheese", "Käse", "käsespätzle raclette"],
+    ["cookie", "Keks", "plätzchen cookie dessert"],
+    ["candy", "Süßigkeit", "bonbon schokolade süßes"],
+    ["milk", "Milch", "milchshake"],
+    ["vegan", "Vegan", "pflanzlich vegetarisch"],
+    ["apple", "Obst", "apfel früchte frucht"],
+  ];
+  const defaultIconCount = 8;
+  const iconNames = new Map(articleIcons.map(([id, name]) => [id, name]));
+  const iconButton = ([id, name], showName = false) =>
+    `<button type="button" data-icon="${id}" data-track="article-icon-select" aria-label="${name}" aria-pressed="false" title="${name}">
+      <i data-lucide="${id}"></i>${showName ? `<span>${name}</span>` : ""}</button>`;
   const TIME_OPTIONS = Array.from({ length: 96 }, (_, index) => {
     const minutes = index * 15;
     return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
@@ -95,7 +127,13 @@
           <div class="grid-2"><input class="input" id="iPreis" type="number" step="0.5" placeholder="Preis €"><select class="input" id="iKat" aria-label="Kategorie"><option value="" disabled selected>Kategorie</option>${["Alkoholfreie Getränke", "Bier", "Wein & Sekt", "Cocktails & Spirituosen", "Kaffee & Tee", "Grillgerichte", "Warme Speisen", "Snacks & Beilagen", "Vegetarisch & Vegan", "Süßspeisen & Kuchen", "Sonstiges"].map(k => `<option>${k}</option>`).join("")}</select></div>
           <input type="hidden" id="iIcon" value="">
           <details class="icon-picker" open><summary><span id="iconPreview">Icon auswählen</span></summary>
-            <div class="icon-options" role="group" aria-label="Icon auswählen">${ICONS.map(i => `<button type="button" data-icon="${i}" aria-label="${({"cup-soda":"Softdrink",beer:"Bier",wine:"Wein",coffee:"Kaffee",sandwich:"Sandwich",pizza:"Pizza","ice-cream-cone":"Eis",utensils:"Speise"})[i]}"><i data-lucide="${i}"></i></button>`).join("")}</div>
+            <div class="icon-options" role="group" aria-label="Standard-Icons">${articleIcons.slice(0, defaultIconCount).map(icon => iconButton(icon)).join("")}</div>
+            <details class="more-icons">
+              <summary data-track="article-more-icons"><i data-lucide="plus" aria-hidden="true"></i>Weitere Icons</summary>
+              <input type="search" id="articleIconSearch" class="input" aria-label="Icons suchen" placeholder="Z. B. Wasser, Burger, Kuchen">
+              <p id="articleIconStatus" class="small muted" role="status"></p>
+              <div class="icon-options icon-results" id="articleIconResults" role="group" aria-label="Suchergebnisse"></div>
+            </details>
           </details>
           <button class="btn btn-dark btn-sm" id="addItem" style="width:100%"><i data-lucide="plus"></i>Artikel hinzufügen</button>
         </div>
@@ -204,15 +242,52 @@
     closePickers();
   });
 
+  const iconPicker = root.querySelector(".icon-picker");
+  const moreIcons = iconPicker.querySelector(".more-icons");
+  const iconSearch = document.getElementById("articleIconSearch");
+  const iconResults = document.getElementById("articleIconResults");
+  const iconStatus = document.getElementById("articleIconStatus");
+  const selectedIcon = document.getElementById("iIcon");
+
   function showIcon() {
-    const value = document.getElementById("iIcon").value;
-    document.getElementById("iconPreview").innerHTML = value ? `<i data-lucide="${value}"></i> Icon ändern` : "Icon auswählen";
-    root.querySelectorAll('[data-icon]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.icon === value)));
+    const value = selectedIcon.value;
+    const name = iconNames.get(value) || "Icon ändern";
+    document.getElementById("iconPreview").innerHTML = value
+      ? `<i data-lucide="${UI.escape(value)}"></i> ${name}` : "Icon auswählen";
+    iconPicker.querySelectorAll("[data-icon]").forEach(button =>
+      button.setAttribute("aria-pressed", String(button.dataset.icon === value)));
     UI.icons();
   }
-  root.querySelectorAll('[data-icon]').forEach(b => b.onclick = () => {
-    document.getElementById("iIcon").value = b.dataset.icon; showIcon();
+
+  const searchKey = value => value.toLocaleLowerCase("de").replace(/ß/g, "ss")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const searchableIcons = articleIcons.map(icon => ({
+    icon, keywords: searchKey(icon.join(" "))
+  }));
+  function renderIconResults() {
+    const words = searchKey(iconSearch.value).trim().split(/\s+/).filter(Boolean);
+    const matches = words.length
+      ? searchableIcons.filter(entry => words.every(word => entry.keywords.includes(word))).map(entry => entry.icon)
+      : articleIcons.slice(defaultIconCount);
+    const shown = matches.slice(0, 8);
+    iconResults.innerHTML = shown.map(icon => iconButton(icon, true)).join("");
+    iconStatus.textContent = !matches.length ? "Keine passenden Icons gefunden." :
+      !words.length ? "Vorschläge" :
+      matches.length > shown.length ? `${shown.length} von ${matches.length} Treffern. Suche genauer.` :
+      `${matches.length} Treffer`;
+    showIcon();
+  }
+  moreIcons.addEventListener("toggle", () => {
+    if (moreIcons.open) renderIconResults();
   });
+  iconSearch.addEventListener("input", renderIconResults);
+  iconPicker.addEventListener("click", event => {
+    const button = event.target.closest("[data-icon]");
+    if (!button) return;
+    selectedIcon.value = button.dataset.icon;
+    showIcon();
+  });
+
   // ---------- Zone zeichnen ----------
   const mm = document.getElementById("mm");
   const zoneActions = document.getElementById("zoneActions");
