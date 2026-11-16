@@ -71,9 +71,9 @@
         <p id="zoneHint" class="small muted" role="status"></p>
         <div class="mini-map" id="mm" tabindex="-1" aria-describedby="zoneHint"></div>
         <div id="zoneActions" class="zone-actions">
-          <button type="button" class="btn btn-ghost btn-sm" id="zoneUndo" data-track="zone-undo">Letzten Punkt entfernen</button>
-          <button type="button" class="btn btn-ghost btn-sm" id="zoneCancel" data-track="zone-cancel">Änderungen verwerfen</button>
-          <button type="button" class="btn btn-sm" id="zoneAccept" data-track="zone-accept">Festzone übernehmen</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="zoneUndo" data-track="zone-undo" aria-label="Letzten Punkt entfernen" disabled>Rückgängig</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="zoneCancel" data-track="zone-cancel" aria-label="Änderungen verwerfen">Verwerfen</button>
+          <button type="button" class="btn btn-sm" id="zoneAccept" data-track="zone-accept" aria-label="Festzone übernehmen">Übernehmen</button>
         </div>
       </section>
 
@@ -255,8 +255,8 @@
     mm.dataset.mode = mode;
     mm.removeAttribute("aria-invalid");
     mm.classList.remove("field-error");
-    zoneUndo.hidden = !previousShape && (mode === "rectangle" || !draft.length);
-    zoneUndo.textContent = previousShape ? "Letzte Änderung rückgängig machen" : "Letzten Punkt entfernen";
+    zoneUndo.disabled = !previousShape && (mode === "rectangle" || !draft.length);
+    zoneUndo.setAttribute("aria-label", previousShape ? "Letzte Änderung rückgängig machen" : "Letzten Punkt entfernen");
     if (mode === "points") {
       const progress = draft.length < 3 ? `${draft.length} von mindestens 3 Punkten.` : `${draft.length} Eckpunkte gesetzt.`;
       zoneHint.textContent = progress + (draft.length < 3 ? " Tippe auf die Karte, um einen Punkt zu setzen." :
