@@ -188,7 +188,7 @@
     sending = true; submit.disabled = true; back.disabled = true; submit.textContent = 'Wird gespeichert …'; error.hidden = true;
     const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), 15000);
     try {
-      const response = await fetch(endpoint, {method:'POST',credentials:'omit',referrerPolicy:'no-referrer',headers:{apikey:key,'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({action:'survey',payload:pendingPayload}),signal:controller.signal});
+      const response = await fetch(endpoint, {method:'POST',credentials:'omit',referrerPolicy:'no-referrer',headers:{apikey:key,'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({action:'survey',version:FestPayStudy.version(person.value.trim()),payload:pendingPayload}),signal:controller.signal});
       let duplicate = false;
       if (response.status === 409) { const result = await response.json(); duplicate = result.code === '23505'; }
       if (!response.ok && !duplicate) { pendingPayload = null; throw new Error('save'); }

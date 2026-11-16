@@ -1,6 +1,9 @@
 /* Short display codes; random UUIDs remain internal keys and are never login credentials. */
 window.FestPayStudy = (() => {
   const key='festpay_study_v2';
+  const studyVersions=['festpay-2026-11-10-v9-clean','festpay-2026-11-16-v10-redesign'];
+  let linkedVersion=null,linkedPerson=null;
+  function version(person=current()){return window.APP_CONFIG?.BUILD_VERSION || (linkedPerson && (person===linkedPerson || personCode(person)===linkedPerson) ? linkedVersion : null);}
   const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   const personPattern=/^P[0-9]{3,}$/i,attemptPattern=/^P[0-9]{3,}-A[1-5]-[1-9][0-9]*$/i;
   const valid=value=>typeof value==='string'&&(uuid.test(value)||personPattern.test(value));
@@ -35,13 +38,13 @@ window.FestPayStudy = (() => {
   }
   function importLink(){
     const p=new URLSearchParams((location.hash||'').slice(1));if(!p.has('participant'))return;
-    const id=p.get('participant');if(!valid(id))return;choose(id);
+    const id=p.get('participant');if(!valid(id))return;choose(id);linkedPerson=norm(id);linkedVersion=studyVersions.includes(p.get('version'))?p.get('version'):null;
     const ids=(p.get('attempts')||'').split(','),tasks=(p.get('tasks')||'').split(',');
     if(ids.length<=100)ids.forEach((value,i)=>{if(validAttempt(value))remember(value,/^[a-z_]{1,40}$/.test(tasks[i]||'')?tasks[i]:'',id,attemptPattern.test(value)?value:'');});
     history.replaceState(null,'',location.pathname+location.search);
   }
   function fragment(person=current()){
-    const list=attempts(person);return '#'+new URLSearchParams({participant:personCode(person)||person,attempts:list.map(a=>a.code||a.id).join(','),tasks:list.map(a=>a.task).join(',')});
+    const list=attempts(person);return '#'+new URLSearchParams({...((version(person))?{version:version(person)}:{}),participant:personCode(person)||person,attempts:list.map(a=>a.code||a.id).join(','),tasks:list.map(a=>a.task).join(',')});
   }
   function root(){const u=new URL(location.href);u.hash='';u.search='';return /\/(umfrage|beobachtung)\//.test(u.pathname)?new URL('../',u):new URL('./',u);}
   function url(kind,person=current()){return new URL(kind==='app'?'index.html':kind+'/',root()).href+fragment(person);}
@@ -55,5 +58,5 @@ window.FestPayStudy = (() => {
     for(const a of attempts(person)){const line=document.createElement('p');line.textContent=a.code||'Aufgabe wird automatisch zugeordnet';d.append(line);}
     const close=document.createElement('button');close.textContent='Schließen';close.onclick=()=>d.remove();d.append(close);d.addEventListener('cancel',()=>d.remove());document.body.append(d);d.showModal();
   }
-  importLink();return {valid,validAttempt,choose,current,personCode,registerPerson,attempts,remember,refresh,fragment,url,show};
+  importLink();return {valid,validAttempt,choose,current,personCode,registerPerson,attempts,remember,refresh,version,fragment,url,show};
 })();

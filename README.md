@@ -179,3 +179,13 @@ Nach dem Veröffentlichen wird `accepting=true` gesetzt. Die SQL-Integrationspr�
 - **Karte:** Das Fest-Sheet sitzt nahtlos auf der Navigationsleiste. Die Kartenknöpfe für Festmarken, QR-Code und „Gesamte Karte anzeigen“ entfallen (Marken und QR-Code liegen im Tab Bezahlen). Der weiter oben beschriebene QR-Button auf der Startkarte gilt damit nicht mehr.
 - **Testleiste:** Die schwebende Leiste („Vorschau · keine Aufzeichnung“ / „Test läuft“) ist ausgeblendet. Testauswahl, IDs / Fragebögen und Auswertung stehen im Menü unter „Nutzertest“; während eines Tests bleibt oben der Knopf „← Zur Testauswahl“.
 - **Process Mining:** Die drei neuen Seiten werden für die bestehende Edge Function kompatibel übertragen. Das Dashboard ordnet Seiten und Klicks der tatsächlichen Ansicht zu.
+
+## Zwei Testrunden / UI-Versionen (16.11.2026)
+
+Im Dashboard wählt „Testrunde“ zwischen **Version 1 – ursprüngliche Oberfläche** (`festpay-2026-11-10-v9-clean`) und **Version 2 – überarbeitete Oberfläche** (`festpay-2026-11-16-v10-redesign`). Beide verwenden dieselben fünf Aufgaben. Sitzungen, verknüpfte Formulare, Diagramme, Kennzahlen, Heatmaps und Exporte werden nach der gewählten Runde getrennt. Neue Tests der überarbeiteten App erhalten Version 2. Alte bereits gestartete Versuche können innerhalb der bestehenden Token-Laufzeit noch übertragen werden.
+
+Die Migration `supabase/study-round-versions.sql` erhält die ursprünglich übermittelte Kennung in `analytics_sessions.recorded_version`. Nur die beobachteten, ohnehin ausgeschlossenen QA-Läufe P013/P014 werden der überarbeiteten Oberfläche zugeordnet; ihre Ausschlüsse und alle Ereignisse bleiben erhalten. Die regulären bisherigen Läufe liegen vor dem ersten Redesign-Commit vom 16.11.2026 und verbleiben in Version 1. Die Auswertung veröffentlicht keinen kombinierten Gesamtfilter.
+
+Formularlinks führen die Runde mit. Ohne Versionsangabe darf der Server die Runde nur eindeutig aus den verknüpften Versuchen ableiten. Hat dieselbe Person Versuche in beiden Runden, ist die Auswahl einer Runde erforderlich; rundenübergreifende Formulare werden abgelehnt. Bestehende Formulare und UUID-Verknüpfungen werden nicht umgeschrieben.
+
+Rollout: Die rückwärtskompatible Migration und Edge-Funktion zuerst veröffentlichen, danach die Oberfläche. Sobald sie live ist, `analytics_run_settings.active_version` auf `festpay-2026-11-16-v10-redesign` setzen; `accepting` bleibt freigegeben. Ab dann werden neue Starts mit der alten Kennung abgelehnt. Es erfolgt kein erneuter Datenreset.
