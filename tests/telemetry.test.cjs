@@ -1,6 +1,6 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs'),crypto=require('node:crypto');
 const source=fs.readFileSync(require('node:path').join(__dirname,'../dist/js/telemetry.js'),'utf8');
-function runtime({preview=false,guest=false,previous=[]}={}){
+function runtime({preview=false,guest=false,previous=[],pathname='/index.html'}={}){
  const appended=[];
  const local=new Map(preview?[['festpay_exclude_device','1']]:[]),session=new Map(),listeners={},timers=[];
  const store=m=>({getItem:k=>m.get(k)||null,setItem:(k,v)=>m.set(k,v),removeItem:k=>m.delete(k)});
@@ -8,7 +8,7 @@ function runtime({preview=false,guest=false,previous=[]}={}){
  const element=()=>({dataset:{},className:'',innerHTML:'',textContent:'',setAttribute(){},addEventListener(){},querySelector(selector){this.controls ||= new Map();if(!this.controls.has(selector))this.controls.set(selector,element());return this.controls.get(selector)},querySelectorAll(){return[]},replaceChildren(...items){this.value=items[0]?.value;},append(){},focus(){},remove(){}});
  const document={getElementById:()=>null,documentElement:{scrollHeight:800},hidden:false,body:{classList:{add(){},remove(){}},append(...items){appended.push(...items)},appendChild(item){appended.push(item)}},addEventListener:(n,f)=>listeners[n]=f,createElement:element,querySelector:s=>s==='.app'?{getBoundingClientRect:()=>({width:390,left:0})}:null};
  const api={};for(const k of ['aufladen','markenKaufen','markeEntwerten','abbuchen','festSpeichern'])api[k]=async()=>({error:null});
- const context={console,crypto,document,API:api,Date,URLSearchParams,innerWidth:390,innerHeight:800,scrollY:0,localStorage:store(local),sessionStorage:store(session),Option:function(title,value){this.text=title;this.value=value;},location:{pathname:'/index.html',search:'',href:'',replace(url){this.href=url}},history:{replaceState(){}},setInterval(fn){timers.push(fn)},setTimeout(){},clearTimeout(){},alert(){},fetch:async()=>({ok:true,json:async()=>({})})};
+ const context={console,crypto,document,API:api,Date,URLSearchParams,innerWidth:390,innerHeight:800,scrollY:0,localStorage:store(local),sessionStorage:store(session),Option:function(title,value){this.text=title;this.value=value;},location:{pathname,search:'',href:'',replace(url){this.href=url}},history:{replaceState(){}},setInterval(fn){timers.push(fn)},setTimeout(){},clearTimeout(){},alert(){},fetch:async()=>({ok:true,json:async()=>({})})};
  context.window=context;context.APP_CONFIG={ANALYTICS_URL:'https://test.supabase.co',ANALYTICS_KEY:'public',BUILD_VERSION:'test'};context.addEventListener=()=>{};
  vm.createContext(context);vm.runInContext(fs.readFileSync(require('node:path').join(__dirname,'../dist/js/study-link.js'),'utf8'),context);vm.runInContext(fs.readFileSync(require('node:path').join(__dirname,'../dist/js/test-tasks.js'),'utf8'),context);vm.runInContext(source,context);return{context,listeners,session,timers,appended,queue:()=>JSON.parse(session.get('festpay_test_session_v3')||'{"pending":[]}').pending};
 }
@@ -101,5 +101,23 @@ test('all five tasks initialize their catalogue role before recording the attemp
   assert.equal(funded,expected==='helfer'?20:0);
   const saved=JSON.parse(r.session.get('festpay_test_session_v3'));assert.equal(saved.task,task);assert.equal(saved.seq,0);
   assert.equal(r.context.location.href,'index.html');
+ }
+});
+
+test('new navigation screens keep their identity through the legacy ingestion format', async () => {
+ for (const [screen, target] of [['zahlen.html','zahlen-fest-wechseln'], ['demnaechst.html','erinnerung-an'], ['aktivitaeten.html','aktivitaeten-fest']]) {
+  const r=runtime({guest:true,pathname:'/Festpay/'+screen});
+  const control={dataset:{track:target},closest:selector=>selector==='a'?null:control};
+  r.listeners.click({target:{closest:selector=>selector.startsWith('[')?null:control},clientX:30,clientY:400,detail:1});
+  let recorded;
+  r.context.fetch=async (_,request)=>{recorded=JSON.parse(request.body).events;return {ok:true,json:async()=>({})};};
+  await r.timers[0]();
+  assert.equal(recorded.length,2);
+  assert.equal(recorded[1].props.target,target);
+  for (const event of recorded) {
+   assert.equal(event.screen,'index.html');
+   assert.equal(event.props.source,'screen:'+screen);
+   assert.match(event.props.source,/^[\w#.:>() -]+$/);
+  }
  }
 });

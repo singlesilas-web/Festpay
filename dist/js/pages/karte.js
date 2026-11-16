@@ -59,7 +59,6 @@
   }
   document.getElementById('zoomIn').onclick = () => zoomTo(SCALE * 1.7);
   document.getElementById('zoomOut').onclick = () => zoomTo(SCALE / 1.7);
-  document.getElementById('zoomFit').onclick = () => { SCALE = Math.min(wrap.clientWidth,wrap.clientHeight)/1000; centerOn(500,500); check(); window.TestLog?.event('map_zoom',{scale:SCALE,source:'fit'}); };
   wrap.addEventListener('wheel', e => {
     if(e.target.closest('button,a,.sheet,.search-panel')) return;
     e.preventDefault(); const r=wrap.getBoundingClientRect(); zoomTo(SCALE*Math.exp(-Math.max(-240,Math.min(240,e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?wrap.clientHeight:1)))*.008),e.clientX-r.left,e.clientY-r.top,'wheel');
@@ -116,16 +115,17 @@
   function renderSheet() {
     wrap.classList.add("sheet-open");
     if (!feste.length) {
-      sheet.innerHTML = `<div class="grip"></div><h2>Noch keine Feste</h2><p class="sub">Sobald Betreiber ein Fest anlegen, erscheint es hier auf der Karte.</p>`;
+      sheet.innerHTML = `<div class="sheet-row"><span class="badge-icon soft"><i data-lucide="calendar-x-2"></i></span>
+        <span class="sheet-text"><b>Noch keine Feste</b><span>Sobald Betreiber ein Fest anlegen, erscheint es hier.</span></span></div>`;
     } else if (!aktuell) {
-      sheet.innerHTML = `<div class="grip"></div><h2>Kein Fest hier</h2>
-        <p class="sub">Verschiebe die Karte in eine Fest-Zone oder suche nach einem Fest.</p>
-        <button class="btn" id="sheetSearch"><i data-lucide="search"></i>Fest suchen</button>`;
+      sheet.innerHTML = `<div class="sheet-row"><span class="badge-icon soft"><i data-lucide="footprints"></i></span>
+        <span class="sheet-text"><b>Kein Fest hier</b><span>Karte in eine Fest-Zone schieben</span></span>
+        <button class="btn btn-sm" id="sheetSearch"><i data-lucide="search"></i>Suchen</button></div>`;
       sheet.querySelector("#sheetSearch").onclick = openSearch;
     } else {
       const w = aktuell.w1_aktiv ? "Festguthaben" : "Festmarken";
-      sheet.innerHTML = `<div class="grip"></div><h2>Fest gefunden</h2><p class="sub">Du bist in der Zone von</p>
-        <a class="fest-card" href="${helperRole ? `helfer.html?fest=${encodeURIComponent(aktuell.id)}` : `fest.html?id=${encodeURIComponent(aktuell.id)}`}">
+      sheet.innerHTML = `<div class="sheet-eyebrow"><i data-lucide="sparkles"></i>Fest gefunden · du bist in der Zone</div>
+        <a class="fest-card" data-track="karte-fest-oeffnen" href="${helperRole ? `helfer.html?fest=${encodeURIComponent(aktuell.id)}` : `fest.html?id=${encodeURIComponent(aktuell.id)}`}">
           <span class="badge-icon accent"><i data-lucide="${UI.festIcon(aktuell.id)}"></i></span>
           <span style="flex:1"><div class="t">${helperRole ? "Scanner öffnen" : UI.escape(aktuell.name)}</div><div class="s">${aktuell.ort || ""} · ${w}</div></span>
           <i data-lucide="chevron-right"></i></a>`;
@@ -137,7 +137,7 @@
   const panel = document.getElementById("searchPanel");
   function openSearch() {
     document.getElementById("festList").innerHTML = feste.length
-      ? feste.map((f) => `<button class="list-item" data-id="${f.id}"><span class="badge-icon soft"><i data-lucide="${UI.festIcon(f.id)}"></i></span>
+      ? feste.map((f) => `<button class="list-item" data-track="karte-suchergebnis" data-id="${f.id}"><span class="badge-icon soft"><i data-lucide="${UI.festIcon(f.id)}"></i></span>
           <span style="flex:1"><div class="title">${f.name}</div><div class="sub">${f.ort || ""}</div></span><i data-lucide="map-pin"></i></button>`).join("")
       : `<div class="empty"><i data-lucide="calendar-x-2"></i><h3>Keine Feste</h3><p>Es sind noch keine Feste angelegt.</p></div>`;
     panel.classList.add("open"); UI.icons();

@@ -3,10 +3,12 @@
    Gast hält eine Marke 1,5 s gedrückt -> wird entwertet.
    Danach Vollbild-Animation mit laufender Uhr + Bewegung:
    so erkennt der Helfer sofort, dass es kein Screenshot ist.
+   Wird auch im Tab „Bezahlen“ (zahlen.html) in #markenRoot eingebettet.
    ========================================================= */
 (async function () {
   if (!(await UI.gastZugang(UI.param("id")))) return;
-  const root = document.getElementById("root");
+  const eingebettet = document.getElementById("markenRoot");
+  const root = eingebettet || document.getElementById("root");
   const HALTEZEIT = 1500;
 
   async function render() {
@@ -24,7 +26,11 @@
              <svg class="ring" viewBox="0 0 54 54"><circle class="bg" cx="27" cy="27" r="24"/><circle class="fg" cx="27" cy="27" r="24"/></svg>`
           : `<div class="hold-hint"><i data-lucide="check-check"></i>Entwertet ${m.entwertet_am ? new Date(m.entwertet_am).toLocaleString("de-DE") : ""}</div>`}
       </div>`;
-    root.innerHTML = `
+    root.innerHTML = eingebettet ? `
+      <div class="row section-head"><h3>Meine Festmarken</h3><div class="spacer"></div><span class="count-pill">${offen.length} offen</span></div>
+      ${marken.length ? "" : `<div class="empty compact"><i data-lucide="ticket"></i><p>Noch keine Marken. Kauf sie auf einem Fest mit Festmarken.</p></div>`}
+      ${offen.map(karte).join("")}
+      ${alt.length ? `<details class="used-list"><summary class="cat-title" data-track="marken-entwertete-anzeigen">Entwertet (${alt.length})</summary>` + alt.map(karte).join("") + `</details>` : ""}` : `
       <div class="page-head"><h1>Meine Festmarken</h1><p>${offen.length} offen</p></div>
       <div class="page">
         ${marken.length ? "" : `<div class="empty"><i data-lucide="ticket"></i><h3>Noch keine Marken</h3><p>Kauf auf einem Fest über W2 Festmarken.</p></div>`}

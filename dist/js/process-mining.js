@@ -14,7 +14,34 @@ window.FestPayMining = (() => {
   const goalForTask=task=>taskGoals[task];
   const currentSessions=(sessions,version,task)=>sessions.filter(s=>s.version===version&&!!taskGoals[s.task]&&(!task||s.task===task));
   const assignedGoal = task => ({w1: 'wallet_topped_up', w2: 'token_redeemed', gast_guthaben: 'wallet_qr_shown', gast_marken: 'token_redeemed', helfer: 'wallet_charged', betreiber_marken: 'festival_created', betreiber_guthaben: 'festival_helper_saved'}[task] || task);
+  const navigation = {
+    'nav-entdecken': 'Hotbar: Entdecken', 'nav-demnaechst': 'Hotbar: Demnächst',
+    'nav-bezahlen': 'Hotbar: Bezahlen', 'nav-kasse': 'Hotbar: Kasse',
+    'nav-aktivitaeten': 'Hotbar: Aktivitäten', 'nav-profil': 'Hotbar: Profil',
+    'menu-open': 'Menü öffnen', 'menu-close': 'Menü schließen',
+    'menu-entdecken': 'Menü: Entdecken', 'menu-demnaechst': 'Menü: Demnächst',
+    'menu-bezahlen': 'Menü: Bezahlen', 'menu-marken': 'Menü: Meine Festmarken',
+    'menu-guthaben': 'Menü: Mein Guthaben', 'menu-aktivitaeten': 'Menü: Aktivitäten',
+    'menu-profil': 'Menü: Profil und Rolle', 'menu-login': 'Menü: Anmelden',
+    'menu-fest-anlegen': 'Menü: Neues Fest anlegen', 'menu-eigenes-fest': 'Menü: Eigenes Fest öffnen',
+    '#sheetSearch': 'Festsuche öffnen', '#btnSearchClose': 'Festsuche schließen',
+    'karte-fest-oeffnen': 'Fest auf der Karte öffnen', 'karte-suchergebnis': 'Fest aus Suchergebnissen wählen',
+    'erinnerung-an': 'Erinnerung aktivieren', 'erinnerung-aus': 'Erinnerung deaktivieren',
+    'ankuendigung-bearbeiten': 'Angekündigtes Fest bearbeiten', 'fest-ankuendigen': 'Eigenes Fest ankündigen',
+    'aktivitaeten-fest': 'Aktivitäten für ein Fest öffnen', 'aktivitaeten-zurueck': 'Alle Aktivitäten anzeigen',
+    'zahlen-karte': 'Fest auf der Karte finden', 'zahlen-fest-wechseln': 'Fest für Guthaben-QR wechseln',
+    'zahlen-aufladen': 'Guthaben aus Bezahlen-Tab aufladen', 'marken-entwertete-anzeigen': 'Entwertete Marken ein- oder ausklappen'
+  };
+  const newScreens = new Set(['zahlen.html', 'demnaechst.html', 'aktivitaeten.html']);
+  function eventScreen(event) {
+    const source = event.props?.source;
+    const screen = typeof source === 'string' && source.startsWith('screen:') ? source.slice(7) : '';
+    return event.screen === 'index.html' && newScreens.has(screen) ? screen : event.screen;
+  }
   const names = {
+    ...navigation,
+    'zahlen.html': 'Bezahlen (Hotbar)', 'demnaechst.html': 'Demnächst',
+    'aktivitaeten.html': 'Aktivitäten', 'login.html': 'Anmelden',
     ...goals, 'index.html': 'Karte', 'fest.html': 'Fest', 'guthaben.html': 'Guthaben',
     'speisekarte.html': 'Speisekarte', 'bezahlen.html': 'Bezahlen', 'marken.html': 'Meine Festmarken',
     'betreiber.html': 'Festverwaltung', 'helfer.html': 'Kasse & Scanner', 'profil.html': 'Profil',
@@ -28,20 +55,20 @@ window.FestPayMining = (() => {
     '#addHelfer': 'Helfer vormerken', '#sim': 'Scan simulieren', '#cam': 'Kamera öffnen',
     '#book': 'Abbuchung bestätigen', '#clearOrder': 'Bestellung zurücksetzen'
   };
-  const actions = new Set(['#btnSearch','#btnLocate','#go','#pay','#save','#mm','#addTop','#addItem','#addHelfer','#sim','#cam','#book','#clearOrder']);
+  const actions = new Set([...Object.keys(navigation),'#btnSearch','#btnLocate','#go','#pay','#save','#mm','#addTop','#addItem','#addHelfer','#sim','#cam','#book','#clearOrder']);
   function step(event) {
     if (event.type === 'session_end') return 'session_end';
     if (event.type === 'activity') return event.props?.activity;
-    if (event.type === 'page_view') return event.screen;
+    if (event.type === 'page_view') return eventScreen(event);
     if (event.type === 'map_pan' || event.type === 'map_zoom') return event.type;
     if (event.type === 'click' && actions.has(event.props?.target)) return event.props.target;
   }
   const label = key => names[key] || key;
   const directRoutes = {
     wallet_topped_up: [['guthaben.html','bezahlen.html']],
-    wallet_qr_shown: [['guthaben.html'], ['guthaben.html','bezahlen.html','guthaben.html']],
+    wallet_qr_shown: [['guthaben.html'], ['guthaben.html','bezahlen.html','guthaben.html'], ['zahlen.html'], ['guthaben.html','bezahlen.html','zahlen.html'], ['zahlen.html','guthaben.html','bezahlen.html','zahlen.html']],
     tokens_purchased: [['speisekarte.html','bezahlen.html']],
-    token_redeemed: [['marken.html'], ['speisekarte.html','bezahlen.html','marken.html']],
+    token_redeemed: [['marken.html'], ['speisekarte.html','bezahlen.html','marken.html'], ['zahlen.html'], ['speisekarte.html','bezahlen.html','zahlen.html']],
     festival_created: [['betreiber.html']],
     festival_updated: [['betreiber.html']],
     festival_helper_saved: [['betreiber.html']],
@@ -49,7 +76,7 @@ window.FestPayMining = (() => {
   };
   function happyPath(goal, events) {
     // Role selection and the optional festival overview are valid entry steps.
-    const pages = events.filter(e => e.type === 'page_view').map(e => e.screen);
+    const pages = events.filter(e => e.type === 'page_view').map(eventScreen);
     if (pages[0] === 'index.html') pages.shift();
     if (pages[0] === 'profil.html') {
       pages.shift();
@@ -97,5 +124,5 @@ window.FestPayMining = (() => {
     const middle = Math.floor(sorted.length / 2);
     return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
   }
-  return {goals, label, step, casesForGoal, median, goalForTask, currentSessions};
+  return {goals, label, step, eventScreen, casesForGoal, median, goalForTask, currentSessions};
 })();

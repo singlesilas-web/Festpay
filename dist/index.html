@@ -8,35 +8,33 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=0.5, maximum-scale=4, user-scalable=yes, viewport-fit=cover" />
-  <title>FestPay – Feste in deiner Nähe</title>
+  <title>NearBuy – Feste in deiner Nähe</title>
   <meta name="description" content="Digital bezahlen auf Festen – ohne Kasse, ohne Papierwertkarte." />
+  <link rel="icon" type="image/png" href="img/favicon.png?v=20261114-green" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/base.css" />
-  <link rel="stylesheet" href="css/test.css?v=10" />
-  <link rel="stylesheet" href="css/components.css" />
-  <link rel="stylesheet" href="css/karte.css" />
-<link rel="stylesheet" href="css/study.css?v=10"></head>
-<body>
+  <link rel="stylesheet" href="css/base.css?v=20261114-green" />
+  <link rel="stylesheet" href="css/test.css?v=20261114-green" />
+  <link rel="stylesheet" href="css/components.css?v=20261114-green" />
+  <link rel="stylesheet" href="css/karte.css?v=20261114-green" />
+<link rel="stylesheet" href="css/study.css?v=20261114-green"><link rel="stylesheet" href="css/polish.css?v=20261114-green" /></head>
+<body data-tab="entdecken">
   <div class="app">
     <div class="map-wrap" id="mapWrap">
       <div class="map" id="map"></div>
 
       <div class="pin"><div class="pin-head"><i data-lucide="footprints" id="pinIcon"></i></div><div class="pin-dot"></div></div>
 
-      <div class="brand-pill"><i data-lucide="party-popper"></i>FestPay</div>
+      <div class="brand-pill"><img src="img/logo.png?v=20261114-green" alt="" />NearBuy</div>
       <div class="map-ui left">
         <button class="icon-btn" id="btnSearch" aria-label="Feste suchen"><i data-lucide="search"></i></button>
-        <a data-guest-only class="icon-btn" href="marken.html" aria-label="Meine Festmarken"><i data-lucide="ticket" class="accent"></i></a>
-        <a data-guest-only class="icon-btn" href="guthaben.html" aria-label="Mein Guthaben / QR-Code"><i data-lucide="qr-code" class="accent"></i></a>
       </div>
       <div class="map-ui right">
-        <button class="icon-btn" data-menu aria-label="Menü"><i data-lucide="menu"></i></button>
+        <button class="icon-btn" data-track="menu-open" data-menu aria-label="Menü"><i data-lucide="menu"></i></button>
       </div>
       <div class="map-ui zoom" aria-label="Kartenzoom">
         <button class="icon-btn" id="zoomIn" aria-label="Karte vergrößern">+</button>
         <button class="icon-btn" id="zoomOut" aria-label="Karte verkleinern">−</button>
-        <button class="icon-btn" id="zoomFit" aria-label="Gesamte Karte anzeigen"><i data-lucide="maximize"></i></button>
       <button class="icon-btn" id="btnLocate" aria-label="Zum nächsten Fest"><i data-lucide="navigation"></i></button>
       </div>
 
@@ -53,12 +51,12 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.99.2/dist/umd/supabase.min.js"></script>
   <script src="js/study-link.js?v=10"></script><script src="js/config.js?v=10"></script>
-  <script src="js/demo-data.js?v=7"></script>
+  <script src="js/demo-data.js?v=20261114-green"></script>
   <script src="js/supabase-client.js"></script>
-  <script src="js/api.js?v=5"></script>
-  <script src="js/layout.js?v=7"></script>
+  <script src="js/api.js?v=20261114-green"></script>
+  <script src="js/layout.js?v=20261114-green"></script>
   <script src="js/test-tasks.js?v=10"></script>
-  <script src="js/telemetry.js?v=10"></script>
-  <script src="js/pages/karte.js"></script>
+  <script src="js/telemetry.js?v=20261114-green"></script>
+  <script src="js/pages/karte.js?v=20261114-green"></script>
 </body>
 </html>

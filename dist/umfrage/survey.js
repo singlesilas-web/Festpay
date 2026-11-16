@@ -26,10 +26,10 @@
     ['payment_clarity','Der Ablauf beim Bezahlen war für mich verständlich.'],
     ['balance_clarity','Ich konnte erkennen, wie viel Guthaben bzw. welche Marken ich noch hatte.']
   ];
-  const value = [['usefulness','Festpay bietet die Funktionen, die ich auf einem Fest brauche.']];
+  const value = [['usefulness','NearBuy bietet die Funktionen, die ich auf einem Fest brauche.']];
   const perspectives = [
-    ['guest_usefulness','Stell dir vor, du bist Gast auf einem Fest, auf dem Festpay als Bezahlweg angeboten wird. Wie nützlich wäre Festpay für dich?'],
-    ['organizer_usefulness','Für wie sinnvoll hältst du es, als Veranstalter Festpay auf einem Fest als Bezahlmöglichkeit anzubieten?']
+    ['guest_usefulness','Stell dir vor, du bist Gast auf einem Fest, auf dem NearBuy als Bezahlweg angeboten wird. Wie nützlich wäre NearBuy für dich?'],
+    ['organizer_usefulness','Für wie sinnvoll hältst du es, als Veranstalter NearBuy auf einem Fest als Bezahlmöglichkeit anzubieten?']
   ];
   function question(name, title, options, rating = false, ratingLabels = ['','stimme gar nicht zu','stimme eher nicht zu','neutral','stimme eher zu','stimme voll zu']) {
     const field = document.createElement('fieldset'); field.dataset.name = name;

@@ -1,13 +1,13 @@
 <!doctype html>
-<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer"><title>Beobachtungsbogen · FestPay</title><link rel="stylesheet" href="../umfrage/survey.css?v=3"><link rel="stylesheet" href="observation.css?v=2"><script src="../js/test-tasks.js?v=10" defer></script><link rel="stylesheet" href="../css/study.css?v=10"><script src="../js/study-link.js?v=10" defer></script><script src="observation.js?v=10" defer></script></head>
-<body><header><span class="brand">festpay<span class="dot">.</span></span><span class="badge">NUTZERTEST · BEOBACHTUNG</span></header>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer"><title>Beobachtungsbogen · NearBay</title><link rel="stylesheet" href="../umfrage/survey.css?v=3"><link rel="stylesheet" href="observation.css?v=2"><script src="../js/test-tasks.js?v=10" defer></script><link rel="stylesheet" href="../css/study.css?v=10"><script src="../js/study-link.js?v=10" defer></script><script src="observation.js?v=10" defer></script><link rel="stylesheet" href="../css/polish.css" /></head>
+<body><header><span class="brand">nearbuy<span class="dot">.</span></span><span class="badge">NUTZERTEST · BEOBACHTUNG</span></header>
 <main><h1>Beobachtungsbogen</h1>
 <form id="observation">
 <div class="study-fields"><label class="study-field">Personencode<input id="studyParticipant" placeholder="P001" required autocomplete="off"></label><p>Aus dem Klickdummy übernehmen oder den Zuordnungslink öffnen. Die Aufgaben werden automatisch zugeordnet. Nur wenn dieselbe Aufgabe mehrfach bearbeitet wurde, ist der konkrete Versuch anzugeben, z. B. P001-A2-2. Bei Wiederholungen einen neuen Bogen verwenden.</p></div><section class="metadata" aria-label="Testdaten">
 <input type="hidden" name="participant_code">
 <label>Alter (Jahre)<input name="age" type="number" min="0" max="120" step="1" inputmode="numeric"></label>
 <label>Geschlecht<select name="gender"><option value="">Bitte auswählen</option><option value="female">Weiblich</option><option value="male">Männlich</option><option value="diverse">Divers</option><option value="not_specified">Keine Angabe</option></select></label>
-<label>App<input name="app" required value="FestPay" maxlength="80"></label>
+<label>App<input name="app" required value="NearBuy" maxlength="80"></label>
 <label>Datum<input name="test_date" type="date" required></label>
 <label>Beobachter<input name="observer" maxlength="80"></label>
 </section>
@@ -23,5 +23,5 @@
 <p class="hint">Die Beobachtungen werden mit Einverständnis der Testperson über Testpersonen- und Versuchs-IDs mit Fragebogen und App-Protokoll verknüpft in Supabase gespeichert. Bitte keine Namen erfassen.</p>
 <label class="consent"><input type="checkbox" id="linkConsent" required><span>Die Testperson wurde über die verknüpfte Auswertung informiert und hat zugestimmt.</span></label><p id="error" role="alert" hidden></p><div class="actions"><button class="primary" type="submit">Beobachtungsbogen speichern</button></div>
 </form>
-<section id="success" hidden aria-live="polite"><h2>Beobachtungsbogen gespeichert</h2><p>Danach: Fragebogen geben (oder durchgehen), Raum lassen.</p><div class="after"><a href="../umfrage/">Zur FestPay-Umfrage</a><button type="button" id="again">Neuen Bogen öffnen</button></div></section>
+<section id="success" hidden aria-live="polite"><h2>Beobachtungsbogen gespeichert</h2><p>Danach: Fragebogen geben (oder durchgehen), Raum lassen.</p><div class="after"><a href="../umfrage/">Zur NearBuy-Umfrage</a><button type="button" id="again">Neuen Bogen öffnen</button></div></section>
 </main></body></html>

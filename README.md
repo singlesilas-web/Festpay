@@ -1,4 +1,4 @@
-# FestPay – Klickdummy & Nutzertest
+# NearBuy (ehemals FestPay) – Klickdummy & Nutzertest
 
 FestPay simuliert zwei Bezahlwege auf Vereinsfesten: **W1 Festguthaben** (aufladen und QR-Code vorzeigen) und **W2 Festmarken** (Speisekarte, Kauf und Entwertung). Alle Zahlungen sind simuliert.
 
@@ -167,3 +167,15 @@ Das Dashboard zeigt jetzt genau die fünf aktuellen Aufgaben und ausschließlich
 `analytics_run_settings` steuert die aktive Testreihe. Datenbank-Trigger prüfen Version und Aufgabe für Sitzungen und Ereignisse. Während Sicherung und Reset war die Aufzeichnung gesperrt; dadurch konnten zwischen Export und Löschung keine Ereignisse verloren gehen. Alte Browserstände und ausgemusterte Aufgaben werden auch serverseitig abgelehnt. Die Oberfläche verwendet neue Sitzungs-, Zuordnungs- und Entwurfsschlüssel, damit bereits gelöschte Versuchs-IDs nicht aus dem Browser übernommen werden. Nach der Veröffentlichung einmal neu laden und für die nächste Person eine neue Testpersonen-ID verwenden.
 
 Nach dem Veröffentlichen wird `accepting=true` gesetzt. Die SQL-Integrationsprüfung öffnet die Sperre nur innerhalb ihrer eigenen Transaktion und setzt alles per Rollback zurück. Sie erzeugt keine verbleibenden Testdaten.
+
+## NearBuy-Umstellung (14.11.2026)
+
+- **Name & Corporate Design:** Sichtbarer App-Name ist jetzt **NearBuy**. Farben ausschließlich aus der CD-Palette (Dunkelgrün `#02513C`, Limegrün `#8AA613`, Beige `#E3D8D4`, Warmweiß `#EDE8E4`), zentral als Tokens in `dist/css/base.css`. Logo unter `dist/img/logo.png`. Technische Kennungen (`festpay_*`-Speicherschlüssel, QR-Präfix `FESTPAY|`, `BUILD_VERSION`, JS-Globals) bleiben bewusst unverändert, damit Analyse, Scanner und gespeicherte Zustände weiter funktionieren.
+- **Untere Navigation:** Entdecken (Karte) · Demnächst · Bezahlen (Mittelknopf) · Aktivitäten · Profil. Seiten mit `<body data-tab="…">` zeigen die Leiste (`dist/js/layout.js`). Seiten mit eigener Aktionsleiste (Aufladen, Speisekarte, Checkout, Kasse, Betreiber) zeigen sie nicht. Helfer sehen in der Mitte „Kasse“.
+- **Bezahlen** (`zahlen.html`): oben eigener QR-Code fürs Festguthaben (meldet wie `guthaben.html` `wallet_qr_shown`), darunter die Festmarken zum Entwerten (eingebettetes `marken.js`).
+- **Demnächst** (`demnaechst.html`): Demo-Ankündigungen aus `demo-data.js` und eigene Feste mit künftigem Anfang; „Erinnern“ wird nur lokal gemerkt.
+- **Aktivitäten** (`aktivitaeten.html`): besuchte Feste mit Suche und Ausgaben; Detailansicht listet Aufladungen, Abbuchungen, gekaufte und entwertete Marken. Neue Abbuchungen/Aufladungen werden dafür im Demo-Zustand unter `verlauf` protokolliert.
+- **Menü:** „Neues Fest anlegen“ steht oben im Menü und im Profil. Ohne Betreiberrolle bietet der Klickdummy direkt „Als Betreiber Fest anlegen“ an.
+- **Karte:** Das Fest-Sheet sitzt nahtlos auf der Navigationsleiste. Die Kartenknöpfe für Festmarken, QR-Code und „Gesamte Karte anzeigen“ entfallen (Marken und QR-Code liegen im Tab Bezahlen). Der weiter oben beschriebene QR-Button auf der Startkarte gilt damit nicht mehr.
+- **Testleiste:** Die schwebende Leiste („Vorschau · keine Aufzeichnung“ / „Test läuft“) ist ausgeblendet. Testauswahl, IDs / Fragebögen und Auswertung stehen im Menü unter „Nutzertest“; während eines Tests bleibt oben der Knopf „← Zur Testauswahl“.
+- **Process Mining:** Die drei neuen Seiten werden für die bestehende Edge Function kompatibel übertragen. Das Dashboard ordnet Seiten und Klicks der tatsächlichen Ansicht zu.

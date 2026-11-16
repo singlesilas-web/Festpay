@@ -3,31 +3,41 @@
    Hier NUR globale Tokens & Grundstile ändern.
    ========================================================= */
 :root {
-  --bg: #ffffff;
-  --surface: #f4f4f2;
-  --surface-2: #ebebe7;
-  --ink: #111111;
-  --ink-2: #4b4b48;
-  --ink-3: #8a8a85;
-  --line: #e2e2dd;
-  --accent: #ff5a36;          /* Festrot – Hauptakzent */
-  --accent-soft: #ffe7e0;
-  --accent-ink: #ffffff;
-  --ok: #12a150;
-  --ok-soft: #dff5e8;
-  --warn: #e8a400;
-  --danger: #d92d20;
-  --zone: rgba(255, 90, 54, 0.18);
-  --zone-line: #ff5a36;
-  --map-land: #eef0e8;
-  --map-green: #d6e8c8;
-  --map-road: #ffffff;
-  --map-water: #cfe3f2;
-  --map-build: #e2e2da;
+  /* NearBuy Corporate Design (sRGB) – Basisfarben; Ergänzungen in polish.css:
+     Dunkelgrün #02513C · Limegrün #8AA613 · Beige #E3D8D4 · Warmweiß #EDE8E4 */
+  --cd-dunkelgruen: #02513C;  /* Primärfarbe: Logo, Headlines, Text, tragende Flächen */
+  --cd-limegruen: #8AA613;    /* Akzentfarbe: Highlights, grafische Akzente, Details */
+  --cd-beige: #E3D8D4;        /* Sekundärfarbe: Karten, Hintergrundflächen */
+  --cd-warmweiss: #EDE8E4;    /* Basisfarbe: Hintergründe, Freiraum */
+
+  --bg: var(--cd-warmweiss);
+  --surface: var(--cd-beige);
+  --surface-2: var(--cd-beige);
+  --ink: var(--cd-dunkelgruen);
+  --ink-2: var(--cd-dunkelgruen);
+  --ink-3: rgba(2, 81, 60, 0.68);
+  --line: rgba(2, 81, 60, 0.16);
+  --primary: var(--cd-dunkelgruen);
+  --primary-ink: var(--cd-warmweiss);
+  --accent: var(--cd-limegruen);
+  --accent-soft: var(--cd-beige);
+  --accent-ink: var(--cd-dunkelgruen);
+  --ok: var(--cd-dunkelgruen);
+  --ok-soft: var(--cd-beige);
+  --warn: var(--cd-limegruen);
+  --danger: #c52222;           /* nur für Fehlermeldungen (funktional) */
+  --zone: rgba(138, 166, 19, 0.22);
+  --zone-line: var(--cd-limegruen);
+  --map-land: var(--cd-beige);
+  --map-green: rgba(138, 166, 19, 0.28);
+  --map-road: var(--cd-warmweiss);
+  --map-water: rgba(2, 81, 60, 0.16);
+  --map-build: rgba(2, 81, 60, 0.09);
+  --tabbar-h: 68px;
   --radius: 18px;
   --radius-lg: 28px;
-  --shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.25);
-  --shadow-sheet: 0 -10px 40px -10px rgba(0, 0, 0, 0.18);
+  --shadow: 0 10px 30px -12px rgba(2, 81, 60, 0.35);
+  --shadow-sheet: 0 -10px 40px -10px rgba(2, 81, 60, 0.25);
   --font-head: "Sora", system-ui, sans-serif;
   --font-body: "Manrope", system-ui, sans-serif;
   --ease: cubic-bezier(.2, .9, .25, 1.15);

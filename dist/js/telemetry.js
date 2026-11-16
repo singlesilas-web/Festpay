@@ -2,6 +2,8 @@
 (() => {
   const C=window.APP_CONFIG, KEY='festpay_test_session_v3', OFF='festpay_exclude_device';
   const screen=location.pathname.split('/').pop()||'index.html';
+  // Keep new screens compatible with the deployed ingestion allowlist.
+  const newScreen = ['zahlen.html', 'demnaechst.html', 'aktivitaeten.html'].includes(screen);
   let session, currentRequest=null, stopped=false, pill, scrollTimer, finishing=false, lastZoom=1, clicks=[], returnButton;
   function readSession() {
     try { return JSON.parse(sessionStorage.getItem(KEY)); } catch { return null; }
@@ -21,7 +23,7 @@
     const elapsed = Date.now() - session.started;
     if (elapsed < 0 || elapsed > 14400000 || session.seq >= 5000) return;
     if (type !== 'session_end' && (session.ending || session.seq >= 4999)) return;
-    const e = {id:crypto.randomUUID(),seq:++session.seq,type,screen,at:new Date().toISOString(),elapsed,props:{...dimensions(),...props}};
+    const e = {id:crypto.randomUUID(),seq:++session.seq,type,screen:newScreen?'index.html':screen,at:new Date().toISOString(),elapsed,props:{...dimensions(),...props,...(newScreen?{source:'screen:'+screen}:{})}};
     (session.pending ||= []).push(e);
     persist();
     if (session.pending.length >= 15) flush();
@@ -110,8 +112,8 @@
     }
   }
   function gate(){
-    const g=document.createElement('section');g.className='test-gate';g.dataset.noTrack='1';g.setAttribute('role','dialog');g.setAttribute('aria-modal','true');g.setAttribute('aria-label','FestPay Nutzertest');
-    g.innerHTML='<div class="test-card"><div class="eyebrow">FESTPAY / NUTZERTEST</div><h1>Welche Aufgabe testest du?</h1><p>Teste unseren Klickdummy. Alle Beträge und Zahlungen sind simuliert.</p><label class="study-field">Personencode<input id="studyParticipant" aria-label="Personencode" placeholder="Wird beim Start vergeben"><span class="small">Für weitere Aufgaben derselben Person den Code behalten.</span></label><button type="button" class="secondary" id="newParticipant">Neue Testperson</button><button type="button" class="secondary" id="studyLinks">IDs und Links zu den Fragebögen</button><select aria-label="Testaufgabe"></select><p id="taskInstructions" class="task-instructions"></p><p>Mit deiner Zustimmung erfassen wir Klickpositionen, Seitenwechsel, Scrollen, Zoom, Zeitpunkte und erfolgreiche Schritte unter einer zufälligen Sitzungs-ID. Die Testpersonen-ID und die Versuchs-ID verknüpfen diese Aufzeichnung mit Fragebogen und Beobachtungsbogen, einschließlich freiwilliger Altersangaben. Keine Eingabetexte, Passwörter oder echten Zahlungsdaten. Aktuell erfolgt keine automatische Löschung. Die Projektverantwortlichen verwalten die Aufbewahrung und Löschung der Testdaten.</p><label><input type="checkbox">Ich möchte am aufgezeichneten Nutzertest teilnehmen.</label><p class="test-alert" id="testStatus"></p><button id="startTest" disabled>Aufgabe starten</button><button class="secondary" id="previewTest">Admin / Vorschau ohne Aufzeichnung</button><a href="admin.html">Zur geschützten Auswertung</a></div>';
+    const g=document.createElement('section');g.className='test-gate';g.dataset.noTrack='1';g.setAttribute('role','dialog');g.setAttribute('aria-modal','true');g.setAttribute('aria-label','NearBuy Nutzertest');
+    g.innerHTML='<div class="test-card"><div class="eyebrow">NEARBUY / NUTZERTEST</div><h1>Welche Aufgabe testest du?</h1><p>Teste unseren Klickdummy. Alle Beträge und Zahlungen sind simuliert.</p><label class="study-field">Personencode<input id="studyParticipant" aria-label="Personencode" placeholder="Wird beim Start vergeben"><span class="small">Für weitere Aufgaben derselben Person den Code behalten.</span></label><button type="button" class="secondary" id="newParticipant">Neue Testperson</button><button type="button" class="secondary" id="studyLinks">IDs und Links zu den Fragebögen</button><select aria-label="Testaufgabe"></select><p id="taskInstructions" class="task-instructions"></p><p>Mit deiner Zustimmung erfassen wir Klickpositionen, Seitenwechsel, Scrollen, Zoom, Zeitpunkte und erfolgreiche Schritte unter einer zufälligen Sitzungs-ID. Die Testpersonen-ID und die Versuchs-ID verknüpfen diese Aufzeichnung mit Fragebogen und Beobachtungsbogen, einschließlich freiwilliger Altersangaben. Keine Eingabetexte, Passwörter oder echten Zahlungsdaten. Aktuell erfolgt keine automatische Löschung. Die Projektverantwortlichen verwalten die Aufbewahrung und Löschung der Testdaten.</p><label><input type="checkbox">Ich möchte am aufgezeichneten Nutzertest teilnehmen.</label><p class="test-alert" id="testStatus"></p><button id="startTest" disabled>Aufgabe starten</button><button class="secondary" id="previewTest">Admin / Vorschau ohne Aufzeichnung</button><a href="admin.html">Zur geschützten Auswertung</a></div>';
     const personInput=g.querySelector('#studyParticipant');personInput.value=FestPayStudy.personCode();const originalPerson=FestPayStudy.current();FestPayStudy.refresh().then(()=>{if(!personInput.value&&FestPayStudy.current()===originalPerson)personInput.value=FestPayStudy.personCode();}).catch(()=>{});
     g.querySelector('#newParticipant').onclick=()=>{FestPayStudy.choose(crypto.randomUUID());personInput.value='';};
     g.querySelector('#studyLinks').onclick=()=>{if(personInput.value.trim()){if(!FestPayStudy.valid(personInput.value.trim()))return;FestPayStudy.choose(personInput.value.trim());}FestPayStudy.show();};
@@ -182,7 +184,7 @@
   if(active())event('page_view');
   document.addEventListener('click',e=>{
     if(!active() || e.isTrusted === false || e.target.closest('[data-no-track],.test-gate,.test-pill'))return;
-    const el=e.target.closest('button,a,input,select,.marke')||e.target;
+    const el=e.target.closest('button,a,input,select,summary,[data-track],.marke')||e.target;
     const viewport = window.visualViewport;
     const width = viewport?.width || innerWidth;
     const height = viewport?.height || innerHeight;
@@ -192,7 +194,7 @@
       ? {x, y, coordinate_space: 'viewport_v1', viewport_width: Math.round(width), viewport_height: Math.round(height)}
       : {};
     const id = target(el);
-    event('click', {target: id, ...position, interactive: !!el.closest('button,a,input,select,.marke')});
+    event('click', {target: id, ...position, interactive: !!el.closest('button,a,input,select,summary,[data-track],.marke')});
     const now=Date.now();clicks=clicks.filter(c=>now-c.t<1000);clicks.push({id,t:now});if(clicks.filter(c=>c.id===id).length===3)event('repeated_click',{target:id});
     const link=el.closest('a');if(link)flush(true);
   },true);

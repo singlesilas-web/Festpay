@@ -7,8 +7,11 @@
 (async function () {
   const root = document.getElementById("root");
   if ((await API.getRolle()) !== "betreiber") {
-    root.innerHTML = `<div class="empty"><i data-lucide="shield-alert"></i><h3>Nur für Betreiber</h3><p>Im Profil kannst du im Klickdummy die Rolle wechseln.</p>
-      <a class="btn btn-dark" style="margin-top:16px" href="profil.html">Zum Profil</a></div>`;
+    root.innerHTML = `<div class="empty"><i data-lucide="shield-alert"></i><h3>Nur für Betreiber</h3><p>Feste legen Betreiber an. ${API.istDemo() ? "Im Klickdummy kannst du direkt als Betreiber weitermachen." : "Im Profil siehst du deine Rolle."}</p>
+      ${API.istDemo() ? `<button class="btn" style="margin-top:16px" id="alsBetreiber"><i data-lucide="plus"></i>Als Betreiber Fest anlegen</button>` : ""}
+      <a class="btn btn-ghost" style="margin-top:10px" href="profil.html">Zum Profil</a></div>`;
+    const alsBetreiber = document.getElementById("alsBetreiber");
+    if (alsBetreiber) alsBetreiber.onclick = () => { API.setDemoRolle("betreiber"); location.reload(); };
     return UI.icons();
   }
   const ICONS = ["cup-soda", "beer", "wine", "coffee", "sandwich", "pizza", "ice-cream-cone", "utensils"];

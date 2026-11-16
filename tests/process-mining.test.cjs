@@ -42,3 +42,22 @@ test('current run accepts only the five scripted tasks and exact current version
  assert.equal(mining.goalForTask('gast_guthaben'),'wallet_qr_shown');
  assert.equal(mining.goalForTask('festival_updated'),undefined);
 });
+
+test('discovery labels hotbar clicks and recognizes the new payment screen without changing goals', () => {
+  const {eventScreen, label, step} = context.window.FestPayMining;
+  const events = [
+    {type:'page_view',screen:'index.html'},
+    {type:'click',screen:'index.html',props:{target:'nav-bezahlen'}},
+    {type:'page_view',screen:'index.html',props:{source:'screen:zahlen.html'}},
+    {type:'click',screen:'index.html',props:{source:'screen:zahlen.html',target:'zahlen-fest-wechseln'}},
+    {type:'activity',screen:'index.html',props:{source:'screen:zahlen.html',activity:'wallet_qr_shown'}}
+  ].map((event, i) => ({...event, session_id:'one', seq:i}));
+  const [result] = casesForGoal([{id:'one',task:'gast_guthaben'}],events,'wallet_qr_shown');
+  assert.equal(result.route,'happy');
+  assert.equal(result.completed,true);
+  assert.equal(eventScreen(events[3]),'zahlen.html');
+  assert.equal(label(step(events[1])),'Hotbar: Bezahlen');
+  assert.equal(label(step(events[3])),'Fest für Guthaben-QR wechseln');
+  assert.equal(eventScreen({screen:'demnaechst.html'}),'demnaechst.html');
+  assert.equal(eventScreen({screen:'index.html',props:{source:'screen:unexpected.html'}}),'index.html');
+});

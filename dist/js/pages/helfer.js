@@ -76,7 +76,7 @@
     processing = true;
     try {
       const [tag, qrFestId, userId, extra] = text.split('|');
-      if (tag !== 'FESTPAY' || !qrFestId || !userId || extra !== undefined) return UI.toast('Kein gültiger FestPay-Code', 'x-circle');
+      if (tag !== 'FESTPAY' || !qrFestId || !userId || extra !== undefined) return UI.toast('Kein gültiger NearBuy-Code', 'x-circle');
       if (qrFestId !== festId) return UI.toast('QR-Code gehört zu einem anderen Fest', 'x-circle');
       if (!(await API.istHelferFuer(festId))) return UI.toast('Kein Helferzugang für dieses Fest', 'shield-alert');
       scanned = { userId, balance: await API.getGuthaben(festId, userId) };

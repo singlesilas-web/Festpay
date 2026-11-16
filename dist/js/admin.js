@@ -2,7 +2,7 @@
   localStorage.setItem('festpay_exclude_device','1');sessionStorage.removeItem('festpay_test_session_v3');
   const $=id=>document.getElementById(id),C=APP_CONFIG;
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const {goals, label, step, casesForGoal, median, goalForTask, currentSessions} = FestPayMining;
+  const {goals, label, step, eventScreen, casesForGoal, median, goalForTask, currentSessions} = FestPayMining;
   let client,sessions=[],events=[],selected=[],linked=[];
   const configured=/^https:\/\//.test(C.ANALYTICS_URL)&&!!C.ANALYTICS_KEY;
   if(configured&&window.supabase)client=supabase.createClient(C.ANALYTICS_URL,C.ANALYTICS_KEY,{auth:{storageKey:'festpay_analyst_auth'}});
@@ -85,7 +85,7 @@
     }).join('');
     drawGraph(visibleGroups);
     const clicks = heatClicks();
-    options('screen', [...new Set(clicks.map(e => e.screen))].map(screen => [screen,label(screen)]), 'Keine Klickpositionen');
+    options('screen', [...new Set(clicks.map(eventScreen))].map(screen => [screen,label(screen)]), 'Keine Klickpositionen');
     contexts();
   }
   function drawGraph(groups) {
@@ -152,12 +152,12 @@
   }
   function contexts() {
     const counts = new Map();
-    for (const e of heatClicks().filter(e => e.screen === $('screen').value)) counts.set(context(e), (counts.get(context(e)) || 0) + 1);
+    for (const e of heatClicks().filter(e => eventScreen(e) === $('screen').value)) counts.set(context(e), (counts.get(context(e)) || 0) + 1);
     options('context', [...counts].sort((a,b) => Number(b[0].startsWith('Sichtbar')) - Number(a[0].startsWith('Sichtbar')) || b[1]-a[1]).map(([key,n]) => [key, key+' · '+n+' Klicks']), 'Keine Ansicht');
     heat();
   }
   function heat() {
-    const clicks = heatClicks().filter(e => e.screen === $('screen').value && context(e) === $('context').value);
+    const clicks = heatClicks().filter(e => eventScreen(e) === $('screen').value && context(e) === $('context').value);
     const canvas = $('heat');
     const props = clicks[0]?.props || {};
     const viewport = props.coordinate_space === 'viewport_v1';

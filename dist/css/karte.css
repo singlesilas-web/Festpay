@@ -9,7 +9,7 @@
 .map svg { width: 100%; height: 100%; display: block; }
 
 .zone { fill: var(--zone); stroke: var(--zone-line); stroke-width: 3; transition: fill .4s, stroke-width .4s; }
-.zone.active { fill: rgba(255, 90, 54, .32); stroke-width: 5; }
+.zone.active { fill: rgba(138, 166, 19, .4); stroke-width: 5; }
 .zone-label rect { fill: var(--bg); stroke: var(--ink); stroke-width: 2; }
 .zone-label text { font: 700 22px var(--font-head); fill: var(--ink); }
 .zone-label.active rect { fill: var(--accent); stroke: var(--accent); }
@@ -26,9 +26,9 @@
   transition: background .35s, border-radius .35s, transform .5s var(--ease);
 }
 .pin-head i { transform: rotate(45deg); color: var(--bg); width: 26px; height: 26px; }
-.pin-dot { position: absolute; left: 50%; bottom: -14px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; background: var(--accent); border: 3px solid var(--bg); box-shadow: 0 0 0 10px rgba(255,90,54,.18); }
+.pin-dot { position: absolute; left: 50%; bottom: -14px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; background: var(--accent); border: 3px solid var(--bg); box-shadow: 0 0 0 10px rgba(138,166,19,.22); }
 .lifted .pin { transform: translate(-50%, calc(-100% - 18px)); }
-.lifted .pin-dot { box-shadow: 0 0 0 22px rgba(255,90,54,.12); }
+.lifted .pin-dot { box-shadow: 0 0 0 22px rgba(138,166,19,.16); }
 .inside .pin-head { background: var(--accent); border-radius: 50%; transform: rotate(0) scale(1.12); }
 .inside .pin-head i { transform: none; }
 .inside .pin-dot { opacity: 0; }
@@ -41,6 +41,8 @@
 
 .brand-pill { position: absolute; top: 30px; left: 50%; transform: translateX(-50%); z-index: 6; background: var(--bg); padding: 10px 16px; border-radius: 99px; font: 800 15px var(--font-head); box-shadow: var(--shadow); display: flex; gap: 8px; align-items: center; }
 .brand-pill i { color: var(--accent); width: 18px; height: 18px; }
+.brand-pill img { width: 24px; height: 24px; display: block; }
+.brand-pill { color: var(--ink); }
 
 /* Bottom-Sheet */
 .sheet {
@@ -70,7 +72,26 @@
 .map-ui.zoom .icon-btn { flex:0 0 48px; width:48px; height:48px; }
 .map-ui.zoom #btnLocate { margin-top:8px; }
 .map-ui.zoom button { font-size:25px; font-weight:700; }
-.pin-head svg { transform:rotate(45deg);color:white; }
+.pin-head svg { transform:rotate(45deg);color:var(--bg); }
 .inside .pin-head svg {transform:none;}
 
 [data-guest-only][hidden] { display:none !important; }
+
+/* Fest-Sheet nahtlos auf der unteren Navigationsleiste: gleiche Fläche, keine Trennlinie.
+   Der Bezahlen-Mittelknopf ragt bewusst ein Stück in das Sheet hinein. */
+body.has-tabbar .sheet {
+  left: 0; right: 0; bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
+  padding: 14px 16px 26px; border-radius: 24px 24px 0 0;
+  background: var(--bg); backdrop-filter: none; box-shadow: var(--shadow-sheet);
+}
+@media (min-width: 700px) { body.has-tabbar .sheet { bottom: calc(var(--tabbar-h) + 4px); } }
+body[data-tab="entdecken"] .tabbar { border-top: 0; box-shadow: none; }
+.sheet-row { display: flex; align-items: center; gap: 12px; }
+.sheet-text { flex: 1; min-width: 0; }
+.sheet-text b { display: block; font: 700 16px var(--font-head); }
+.sheet-text span { display: block; font-size: 13px; color: var(--ink-3); }
+.sheet-row .btn-sm { flex-shrink: 0; gap: 6px; padding: 0 14px; }
+.sheet-row .btn-sm svg { width: 18px; height: 18px; }
+.sheet-eyebrow { display: flex; align-items: center; gap: 6px; font: 800 11px var(--font-head); letter-spacing: .06em; text-transform: uppercase; color: var(--ink); margin: 2px 4px 10px; }
+.sheet-eyebrow svg { width: 15px; height: 15px; color: var(--accent); }
+.sheet .fest-card { padding: 12px 14px; border-radius: 16px; }

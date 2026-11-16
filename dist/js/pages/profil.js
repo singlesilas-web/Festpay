@@ -27,7 +27,7 @@
           <span style="flex:1"><div class="title">${r.name}</div><div class="sub">${r.sub}</div></span>
           <i data-lucide="${r.id === rolle ? "circle-check" : "circle"}"></i></button>`).join("")}</div>
       ${rolle === "helfer" ? `<div class="info"><i data-lucide="scan-line"></i><span>Du bist bei Demo-Fest B als Helfer eingetragen. Öffne dein Fest, um Gäste-Codes zu scannen.</span></div><a class="btn btn-dark" href="index.html"><i data-lucide="map"></i>Feste ansehen</a>` : ""}
-      ${rolle === "betreiber" ? `<a class="btn" href="betreiber.html"><i data-lucide="plus"></i>Fest anlegen</a>` : ""}
+      <a class="btn" href="betreiber.html"><i data-lucide="plus"></i>Neues Fest anlegen</a>
       ${window.sb ? `<button class="btn btn-ghost" id="out"><i data-lucide="log-out"></i>Abmelden</button>` : `<a class="btn btn-ghost" href="login.html"><i data-lucide="log-in"></i>Anmelden</a>`}
     </div>`;
   UI.icons();

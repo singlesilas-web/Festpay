@@ -1,0 +1,110 @@
+/* =========================================================
+   polish.css – UI/UX-Feinschliff (wird zuletzt geladen)
+   Erweiterte CD-Palette: festlich-warm + clean/modern
+   ========================================================= */
+:root {
+  /* Bestehendes CD bleibt Basis. Neue Ergänzungsfarben: */
+  --cd-tannengruen: #013A2B;   /* tieferes Grün für Verläufe & Tiefe */
+  --cd-salbei: #DCE5D6;        /* helles Grün für ruhige Flächen, Erfolg */
+  --cd-papier: #F7F4F1;        /* sehr helles Warmweiß für Karten */
+  --cd-bernstein: #E8A33D;     /* festlicher Warmton: Highlights, Hinweise */
+  --cd-bernstein-soft: #FBEBD2;
+  --cd-ziegel: #C2553A;        /* warmes Rot für Fehler/Löschen */
+
+  --surface: var(--cd-papier);
+  --surface-2: var(--cd-beige);
+  --ok-soft: var(--cd-salbei);
+  --warn: var(--cd-bernstein);
+  --danger: var(--cd-ziegel);
+  --line: rgba(2, 81, 60, 0.10);
+  --radius: 20px;
+  --grad-primary: var(--cd-dunkelgruen);
+  --grad-fest: var(--cd-dunkelgruen);
+  --shadow-xs: 0 1px 2px rgba(2,81,60,.06), 0 1px 1px rgba(2,81,60,.04);
+  --shadow-sm: 0 2px 6px -1px rgba(2,81,60,.08), 0 6px 18px -8px rgba(2,81,60,.18);
+  --shadow: 0 14px 34px -14px rgba(2,81,60,.38);
+  --shadow-glow: 0 10px 26px -10px rgba(138,166,19,.65);
+  --focus: 0 0 0 3px var(--cd-warmweiss), 0 0 0 5px var(--cd-limegruen);
+}
+
+body {
+  background: var(--cd-beige);
+  font-feature-settings: "tnum" 1, "ss01" 1;
+}
+.app { background: var(--bg); }
+h1 { font-weight: 800; letter-spacing: -0.03em; }
+h2, h3 { font-weight: 700; }
+::selection { background: var(--cd-limegruen); color: var(--cd-dunkelgruen); }
+
+/* Fokus sichtbar & barrierefrei */
+:focus-visible { outline: none; box-shadow: var(--focus); border-radius: 12px; }
+
+/* Buttons */
+.btn {
+  background: var(--grad-primary); border-radius: 16px; letter-spacing: .01em;
+  box-shadow: var(--shadow-xs);
+  transition: transform .15s var(--ease), background .2s;
+}
+@media (hover: hover) { .btn:hover { background: var(--cd-tannengruen); } }
+.btn-ghost { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-xs); border: 1px solid var(--line); }
+.btn-dark { background: var(--grad-primary); }
+.icon-btn { background: var(--grad-primary); border-radius: 16px; }
+.icon-btn.light { background: var(--surface); box-shadow: var(--shadow-xs); }
+
+/* Karten & Listen */
+.card { background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-sm); }
+.card.outline { border: 1.5px solid var(--cd-dunkelgruen); box-shadow: none; }
+.list { background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-sm); }
+.list-item { transition: background .15s; }
+@media (hover: hover) { .list-item:hover { background: rgba(138,166,19,.07); } }
+.list-item.selected { background: var(--cd-salbei); box-shadow: inset 4px 0 0 var(--accent); }
+.badge-icon { background: var(--grad-primary); border-radius: 14px; box-shadow: var(--shadow-xs); }
+.badge-icon.soft { background: var(--cd-salbei); }
+.info { background: var(--cd-salbei); color: var(--ink); border: 1px solid rgba(2,81,60,.12); border-radius: 16px; }
+.info i, .info svg { color: var(--cd-dunkelgruen); flex-shrink: 0; }
+
+/* Betrags-Chips */
+.chip { background: var(--surface); border: 1.5px solid var(--line); box-shadow: var(--shadow-xs); }
+.chip.active { border-color: var(--accent); background: var(--cd-salbei); box-shadow: var(--shadow-glow); }
+
+/* Formulare */
+.input { background: var(--surface); border: 1.5px solid var(--line); transition: border-color .15s, box-shadow .15s; }
+.input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px rgba(138,166,19,.2); }
+
+/* Segment */
+.segment { background: var(--cd-beige); }
+.segment button { transition: color .2s, background .2s; }
+.segment button.active { background: var(--surface); box-shadow: var(--shadow-sm); }
+
+/* Navigation */
+.tabbar { background: var(--cd-papier); }
+.tab-center .tab-icon { background: var(--grad-fest); box-shadow: 0 0 0 5px var(--bg), var(--shadow); }
+.drawer { background: var(--cd-papier); }
+.drawer.open { box-shadow: -20px 0 50px -20px rgba(2,81,60,.4); }
+.drawer a { transition: background .15s; }
+@media (hover: hover) { .drawer a:hover { background: rgba(138,166,19,.10); } }
+.drawer a.drawer-create { background: var(--grad-fest); box-shadow: var(--shadow-sm); }
+.drawer-bg { background: rgba(1,58,43,.45); }
+
+/* Toast */
+.toast { background: var(--grad-primary); box-shadow: var(--shadow); border-left: 4px solid var(--accent); }
+
+/* Hero-Karten der Bezahlwege & Guthaben */
+.weg-card { box-shadow: var(--shadow-sm); border: 1px solid var(--line); transition: transform .2s var(--ease), box-shadow .2s; }
+@media (hover: hover) { .weg-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); } }
+.weg-card.dark, .wallet { background: var(--cd-dunkelgruen); color: var(--cd-warmweiss); }
+.weg-card .tag { background: var(--cd-bernstein-soft); color: var(--cd-tannengruen); }
+.qr-box { background: #fff; }
+.wallet-spotlight .qr-box { z-index: 2; }
+
+/* Festmarken: Ticket-Look */
+.marke { box-shadow: var(--shadow-sm); }
+.menu-item { transition: background .15s; }
+.qty button { box-shadow: var(--shadow-xs); }
+.qty button.plus { background: var(--grad-primary); }
+
+/* Dialoge */
+dialog { border: 1px solid var(--line); box-shadow: var(--shadow); border-radius: 24px; }
+dialog::backdrop { background: rgba(1,58,43,.45); backdrop-filter: blur(4px); }
+
+.demo-flag { background: var(--cd-bernstein); }

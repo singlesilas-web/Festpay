@@ -6,7 +6,7 @@ const headers={apikey:service,Authorization:`Bearer ${service}`,'Content-Type':'
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const personCode=/^P[0-9]{3,}$/i;
 const attemptCode=/^P[0-9]{3,}-A[1-5]-[1-9][0-9]*$/i;
-const screens=new Set(['index.html','fest.html','guthaben.html','speisekarte.html','bezahlen.html','marken.html','profil.html','login.html','helfer.html','betreiber.html']);
+const screens=new Set(['index.html','fest.html','guthaben.html','speisekarte.html','bezahlen.html','marken.html','profil.html','login.html','helfer.html','betreiber.html','zahlen.html','demnaechst.html','aktivitaeten.html']);
 const types=new Set(['page_view','click','repeated_click','field_focus','scroll','browser_zoom','map_zoom','map_pan','activity','session_end','page_hidden','page_visible','page_leave','heartbeat']);
 const tasks = new Set(['gast_guthaben','gast_marken','helfer','betreiber_marken','betreiber_guthaben']);
 const numeric=new Set(['vw','vh','aw','dh','scroll','browser_scale','map_scale','x','y','scale','depth','viewport_width','viewport_height']);
@@ -18,7 +18,7 @@ async function db(path:string,init:RequestInit={}){
 }
 Deno.serve(async req=>{
  const origin=req.headers.get('origin')||'';
- const cors={'Access-Control-Allow-Origin':origin,'Access-Control-Allow-Headers':'content-type,apikey,authorization','Access-Control-Allow-Methods':'POST,OPTIONS','Vary':'Origin'};
+ const cors={'Access-Control-Allow-Origin':origin,'Access-Control-Allow-Headers':'content-type,apikey,authorization,prefer','Access-Control-Allow-Methods':'POST,OPTIONS','Vary':'Origin'};
  const reply=(status:number,data:unknown)=>new Response(JSON.stringify(data),{status,headers:{...cors,'Content-Type':'application/json','Cache-Control':'no-store'}});
  if(!allowedOrigins.has(origin))return reply(403,{error:'origin'});
  if(req.method==='OPTIONS')return new Response(null,{status:204,headers:cors});

@@ -15,7 +15,7 @@ window.API = (function () {
   function save(s) { localStorage.setItem(LS, JSON.stringify(s)); }
   function state() {
     const s = load();
-    s.guthaben ??= {}; s.marken ??= []; s.rolle ??= "gast"; s.eigeneFeste ??= [];
+    s.guthaben ??= {}; s.marken ??= []; s.rolle ??= "gast"; s.eigeneFeste ??= []; s.verlauf ??= [];
     s.userId ??= "gast-" + Math.random().toString(36).slice(2, 8);
     save(s); return s;
   }
@@ -149,7 +149,9 @@ window.API = (function () {
     // Gutschrift erst per Webhook serverseitig buchen – nie direkt aus dem Browser!
     if (window.sb) return sb.rpc("guthaben_aufladen_demo", { _fest_id: festId, _betrag: betrag, _zahlungsart: zahlungsart });
     const s = state(); const k = festId + ":" + s.userId;
-    s.guthaben[k] = (s.guthaben[k] || 0) + betrag; save(s); return { error: null };
+    s.guthaben[k] = (s.guthaben[k] || 0) + betrag;
+    s.verlauf.push({ typ: "aufladen", fest_id: festId, user_id: s.userId, betrag, zahlungsart, am: Date.now() });
+    save(s); return { error: null };
   }
   async function abbuchen(festId, userId, betrag) {
     if (window.sb) return sb.rpc("guthaben_abbuchen", { _fest_id: festId, _user_id: userId, _betrag: betrag });
@@ -157,7 +159,9 @@ window.API = (function () {
     const s = state(); const k = festId + ":" + userId;
     if (!(betrag > 0) || !Number.isFinite(betrag)) return { error: { message: "Ungültiger Betrag" } };
     if ((s.guthaben[k] || 0) < betrag) return { error: { message: "Guthaben reicht nicht aus" } };
-    s.guthaben[k] -= betrag; save(s); return { error: null, data: s.guthaben[k] };
+    s.guthaben[k] -= betrag;
+    s.verlauf.push({ typ: "abbuchung", fest_id: festId, user_id: userId, betrag, am: Date.now() });
+    save(s); return { error: null, data: s.guthaben[k] };
   }
 
   // ---------- W2: Festmarken ----------
@@ -167,7 +171,7 @@ window.API = (function () {
     const s = state();
     warenkorb.forEach((pos) => {
       for (let i = 0; i < pos.menge; i++)
-        s.marken.push({ id: uid(), fest_id: festId, name: pos.name, icon: pos.icon, preis: pos.preis, status: "offen", gekauft_am: Date.now() });
+        s.marken.push({ id: uid(), fest_id: festId, name: pos.name, icon: pos.icon, preis: pos.preis, status: "offen", gekauft_am: Date.now(), zahlungsart });
     });
     save(s); return { error: null };
   }
@@ -187,7 +191,29 @@ window.API = (function () {
     save(s); return { error: null };
   }
 
+  // ---------- Aktivitäten: Verlauf pro Fest ----------
+  // Liefert alle eigenen Buchungen (Aufladen, Abbuchung am Stand, Markenkauf,
+  // Entwertung) als flache Liste, neueste zuerst.
+  async function getAktivitaeten() {
+    if (window.sb) return []; // TODO Echtbetrieb: Buchungsjournal serverseitig abfragen.
+    const s = state();
+    const eintraege = s.verlauf.filter((v) => v.user_id === s.userId).map((v) => ({ ...v }));
+    const kaeufe = new Map();
+    for (const m of s.marken) {
+      const key = m.fest_id + ":" + m.gekauft_am;
+      if (!kaeufe.has(key)) kaeufe.set(key, { typ: "markenkauf", fest_id: m.fest_id, am: m.gekauft_am, zahlungsart: m.zahlungsart, betrag: 0, positionen: [] });
+      const k = kaeufe.get(key); k.betrag += Number(m.preis) || 0;
+      const pos = k.positionen.find((p) => p.name === m.name);
+      if (pos) pos.menge++; else k.positionen.push({ name: m.name, icon: m.icon, preis: m.preis, menge: 1 });
+      if (m.entwertet_am) eintraege.push({ typ: "entwertung", fest_id: m.fest_id, am: m.entwertet_am, name: m.name, icon: m.icon, preis: m.preis });
+    }
+    eintraege.push(...kaeufe.values());
+    if (demoOn() && DEMO_DATA.vergangeneAktivitaeten) eintraege.push(...DEMO_DATA.vergangeneAktivitaeten.map((v) => ({ ...v, beispiel: true })));
+    return eintraege.sort((a, b) => b.am - a.am);
+  }
+
   return {
+    getAktivitaeten,
     getUser, getRolle, setDemoRolle, login, registrieren, logout,
     istBetreiberFuer, istFestAktiv, getFeste, getFest, getAufladeoptionen, getSpeisekarte, festSpeichern,
     getEmail, setDemoEmail, istHelferFuer,

@@ -1,0 +1,48 @@
+<!doctype html>
+<!-- =========================================================
+     zahlen.html – TAB „BEZAHLEN“: oben der eigene QR-Code (Festguthaben), darunter die Festmarken.
+     Logik: js/pages/zahlen.js + js/pages/marken.js (eingebettet)   ·   Styles: css/seiten.css
+     ========================================================= -->
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=0.5, maximum-scale=4, user-scalable=yes, viewport-fit=cover" />
+  <title>NearBuy – Bezahlen</title>
+  <link rel="icon" type="image/png" href="img/favicon.png?v=20261114-green" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/base.css?v=20261114-green" />
+  <link rel="stylesheet" href="css/test.css?v=20261114-green" />
+  <link rel="stylesheet" href="css/components.css?v=20261114-green" />
+  <link rel="stylesheet" href="css/seiten.css?v=20261114-green" />
+<link rel="stylesheet" href="css/study.css?v=20261114-green"><link rel="stylesheet" href="css/polish.css?v=20261114-green" /></head>
+<body data-tab="bezahlen">
+  <div class="app">
+    <header class="tab-topbar">
+      <a class="tab-brand" href="index.html"><img src="img/logo.png?v=20261114-green" alt="" />NearBuy</a>
+      <button class="icon-btn" data-track="menu-open" data-menu aria-label="Menü"><i data-lucide="menu"></i></button>
+    </header>
+    <main id="root">
+      <div class="page-head"><h1>Bezahlen</h1><p>Zeig deinen Code am Stand oder entwerte eine Festmarke.</p></div>
+      <div class="page stack">
+        <div class="row section-head"><h3>Mein QR-Code</h3></div>
+        <div id="qrBereich"></div>
+        <section id="markenRoot" class="marken-embed" aria-label="Meine Festmarken"></section>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.99.2/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <script src="js/study-link.js?v=10"></script><script src="js/config.js?v=10"></script>
+  <script src="js/demo-data.js?v=20261114-green"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/api.js?v=20261114-green"></script>
+  <script src="js/layout.js?v=20261114-green"></script>
+  <script src="js/test-tasks.js?v=10"></script>
+  <script src="js/telemetry.js?v=20261114-green"></script>
+  <script src="js/pages/zahlen.js?v=20261114-green"></script>
+  <script src="js/pages/marken.js?v=20261114-green"></script>
+</body>
+</html>

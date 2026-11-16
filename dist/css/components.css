@@ -8,7 +8,7 @@
   display: flex; align-items: center; justify-content: center; gap: 10px;
   width: 100%; height: 56px; border-radius: 14px;
   font-weight: 700; font-size: 16px;
-  background: var(--accent); color: var(--accent-ink);
+  background: var(--primary); color: var(--primary-ink);
   transition: transform .15s, opacity .2s;
 }
 .btn:active { transform: scale(.97); }
@@ -44,13 +44,13 @@
 .list-item + .list-item { border-top: 1px solid var(--line); }
 .list-item .title { font-weight: 700; }
 .list-item .sub { font-size: 14px; color: var(--ink-3); }
-.list-item.selected { background: var(--accent-soft); }
+.list-item.selected { background: var(--bg); box-shadow: inset 4px 0 0 var(--accent); }
 .badge-icon {
   width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center;
   background: var(--ink); color: var(--bg);
 }
 .badge-icon.accent { background: var(--accent); color: var(--accent-ink); }
-.badge-icon.soft { background: var(--accent-soft); color: var(--accent); }
+.badge-icon.soft { background: var(--accent-soft); color: var(--ink); }
 
 .info {
   display: flex; gap: 12px; align-items: flex-start;
@@ -60,7 +60,7 @@
 .empty {
   text-align: center; padding: 40px 20px; color: var(--ink-3);
 }
-.empty i { width: 44px; height: 44px; color: var(--accent); margin-bottom: 12px; }
+.empty i { width: 44px; height: 44px; color: var(--ink); margin-bottom: 12px; }
 .empty h3 { color: var(--ink); margin-bottom: 6px; }
 
 /* ---------- Chips / Beträge ---------- */
@@ -91,7 +91,7 @@
 @media (min-width: 700px) { .cta-bar { bottom: 24px; border-radius: 0 0 36px 36px; } }
 
 /* ---------- Seiten-Menü (Drawer) ---------- */
-.drawer-bg { position: fixed; inset: 0; background: rgba(0,0,0,.35); opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 50; }
+.drawer-bg { position: fixed; inset: 0; background: rgba(2,81,60,.35); opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 50; }
 .drawer {
   position: fixed; top: 0; right: 0; height: 100%; width: min(320px, 85vw);
   background: var(--bg); z-index: 51; padding: 28px 20px;
@@ -101,7 +101,7 @@
 .drawer-bg.open { opacity: 1; pointer-events: auto; }
 .drawer a { display: flex; align-items: center; gap: 14px; padding: 14px 8px; font-weight: 600; border-radius: 12px; }
 .drawer a:active { background: var(--surface); }
-.drawer .role-tag { display: inline-block; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 99px; background: var(--accent-soft); color: var(--accent); }
+.drawer .role-tag { display: inline-block; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 99px; background: var(--accent); color: var(--accent-ink); }
 
 /* ---------- Toast ---------- */
 .toast {
@@ -115,10 +115,54 @@
 /* ---------- Segment (Tabs) ---------- */
 .segment { display: flex; background: var(--surface); border-radius: 14px; padding: 4px; }
 .segment button { flex: 1; height: 42px; border-radius: 10px; font-weight: 700; color: var(--ink-3); }
-.segment button.active { background: var(--bg); color: var(--ink); box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+.segment button.active { background: var(--bg); color: var(--ink); box-shadow: 0 2px 8px rgba(2,81,60,.12); }
 
 /* ---------- Demo-Hinweis ---------- */
 .demo-flag {
   position: fixed; bottom: 8px; left: 8px; font-size: 11px; font-weight: 700;
   background: var(--warn); color: var(--ink); padding: 4px 8px; border-radius: 8px; z-index: 200; opacity: .85;
 }
+
+/* ---------- Menü: Bereiche & „Neues Fest anlegen“ ---------- */
+.drawer { overflow-y: auto; }
+.drawer a.drawer-create {
+  display: flex; align-items: center; gap: 14px; padding: 14px; margin-bottom: 16px;
+  border-radius: 16px; background: var(--primary); color: var(--primary-ink);
+}
+.drawer a.drawer-create b { display: block; font-size: 16px; }
+.drawer a.drawer-create small { display: block; font-size: 12px; font-weight: 500; opacity: .8; }
+.drawer-section { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--line); }
+.drawer-section:first-of-type { border-top: 0; }
+.drawer a[hidden] { display: none; }
+.drawer-title .test-status { text-transform: none; letter-spacing: 0; font-weight: 700; }
+.drawer-title { font: 800 11px var(--font-head); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); padding: 6px 8px 2px; }
+
+/* ---------- Untere Navigationsleiste (Hotbar) ---------- */
+.tabbar {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); z-index: 30;
+  width: 100%; max-width: 480px; height: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
+  padding: 6px 6px env(safe-area-inset-bottom);
+  display: grid; grid-template-columns: repeat(5, 1fr); align-items: end;
+  background: var(--bg); border-top: 1px solid var(--line);
+  box-shadow: 0 -6px 24px -12px rgba(2, 81, 60, .3);
+}
+@media (min-width: 700px) { .tabbar { bottom: 24px; border-radius: 0 0 36px 36px; padding-bottom: 10px; height: calc(var(--tabbar-h) + 4px); } }
+.tab {
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px;
+  height: 100%; padding-bottom: 8px; color: var(--ink-3); font-size: 11px; font-weight: 700;
+  border-radius: 14px; position: relative; transition: color .2s;
+}
+.tab .tab-icon { display: grid; place-items: center; width: 44px; height: 30px; border-radius: 99px; transition: background .2s; }
+.tab .tab-icon svg, .tab .tab-icon i { width: 22px; height: 22px; }
+.tab.active { color: var(--ink); }
+.tab.active .tab-icon { background: var(--accent); color: var(--accent-ink); }
+.tab:active .tab-icon { transform: scale(.92); }
+/* Bezahlen: hervorgehobener Mittelknopf */
+.tab-center .tab-icon {
+  width: 58px; height: 58px; margin-top: -26px; border-radius: 50%;
+  background: var(--primary); color: var(--primary-ink);
+  box-shadow: 0 0 0 5px var(--bg), var(--shadow);
+}
+.tab-center .tab-icon svg { width: 26px; height: 26px; }
+.tab-center.active .tab-icon { background: var(--primary); color: var(--accent); }
+body.has-tabbar .page { padding-bottom: calc(var(--tabbar-h) + 60px); }
