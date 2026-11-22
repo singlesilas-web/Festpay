@@ -2,8 +2,8 @@
   localStorage.setItem('festpay_exclude_device','1');sessionStorage.removeItem('festpay_test_session_v3');
   const $=id=>document.getElementById(id),C=APP_CONFIG;
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const {goals, label, step, eventScreen, casesForGoal, median, goalForTask, currentSessions} = FestPayMining;
-  let client,sessions=[],events=[],selected=[],linked=[],loadedVersion=C.BUILD_VERSION,loadSequence=0;
+  const {goals, label, step, eventScreen, casesForGoal, representativeCases, median, goalForTask, currentSessions} = FestPayMining;
+  let client,sessions=[],events=[],selected=[],taskCases=[],linked=[],loadedVersion=C.BUILD_VERSION,loadSequence=0;
   const versions=C.STUDY_VERSIONS||[[C.BUILD_VERSION,"Aktuelle Testrunde"]];
   options("version",versions);$("version").value=C.BUILD_VERSION;
   const configured=/^https:\/\//.test(C.ANALYTICS_URL)&&!!C.ANALYTICS_KEY;
@@ -48,15 +48,21 @@
   }
   function linkedSelection(){
     const task=$('task').value;
-    return linked.filter(r=>r.version===loadedVersion&&r.task===task);
+    const chosen=new Map(taskCases.map(c=>[c.session.id,c]));
+    return linked.filter(r=>r.version===loadedVersion&&r.task===task&&chosen.has(r.attempt_id)).map(r=>{
+      const selection=chosen.get(r.attempt_id).selection;
+      const otherIds=new Set(selection.alternatives.map(a=>a.id));
+      const otherRows=linked.filter(row=>otherIds.has(row.attempt_id));
+      return {...r,attempt_selection_policy:selection.policy,attempt_selection_reason:selection.reason,attempt_count:selection.attemptCount,other_attempt_codes:selection.alternatives.map(a=>a.code||a.id),other_attempt_observation_count:new Set(otherRows.flatMap(row=>row.observation_ids||[])).size};
+    });
   }
   function renderLinked(){
     const rows=linkedSelection();
-    $('linkedRows').innerHTML=rows.map(r=>'<tr><td>'+esc(r.participant_code||'—')+'</td><td>'+esc(r.attempt_code||'—')+'</td><td>'+esc(taskNames[r.task]||r.task)+'</td><td>'+esc(r.age_conflict?'Widersprüchlich':r.age??'—')+'</td><td>'+esc(r.observation_result||'—')+'</td><td>'+duration(r.goal_elapsed_ms)+'</td><td>'+esc(r.linkage_status)+' · '+r.survey_count+' Fragebögen / '+r.observation_count+' Beobachtungen</td></tr>').join('')||'<tr><td colspan="7">Noch keine passenden Versuche.</td></tr>';
-    $('linkSummary').textContent=rows.length+' Versuche · '+new Set(rows.map(r=>r.participant_id).filter(Boolean)).size+' Testpersonen · '+rows.filter(r=>r.linkage_status==='all_three_linked').length+' vollständig verknüpft · '+rows.filter(r=>r.age_conflict).length+' mit widersprüchlichem Alter.';
+    $('linkedRows').innerHTML=rows.map(r=>'<tr><td>'+esc(r.participant_code||'—')+'</td><td>'+esc(r.attempt_code||'—')+'</td><td>'+esc(taskNames[r.task]||r.task)+'</td><td>'+esc(r.age_conflict?'Widersprüchlich':r.age??'—')+'</td><td>'+esc(r.observation_result||'—')+'</td><td>'+duration(r.goal_elapsed_ms)+'</td><td>'+esc(r.linkage_status)+' · '+r.survey_count+' Fragebögen / '+r.observation_count+' Beobachtungen'+(r.other_attempt_observation_count?' · Hinweis: Beobachtungsbogen an anderem Versuch verknüpft':'')+'</td></tr>').join('')||'<tr><td colspan="7">Noch keine passenden Versuche.</td></tr>';
+    $('linkSummary').textContent=rows.length+' ausgewählte Versuche · '+new Set(rows.map(r=>r.participant_id).filter(Boolean)).size+' Testpersonen · '+rows.filter(r=>r.linkage_status==='all_three_linked').length+' vollständig verknüpft · '+rows.filter(r=>r.age_conflict).length+' mit widersprüchlichem Alter.';
   }
   $('linkedCsv').onclick=()=>{
-    const columns=['participant_code','attempt_code','attempt_number','participant_id','attempt_id','task','version','started_at','age','age_group','age_conflict','linkage_status','survey_ids','observation_ids','survey_count','observation_count','selected_survey_id','selected_observation_id','survey_task_result','survey_reported_task_result','survey_task_attempt_count','survey_helper_result','observation_result','observation_duration_ms','goal_elapsed_ms','end_elapsed_ms','last_elapsed_ms','clicks','recorded_errors','repeated_clicks','mining_outcome','survey_ease','survey_navigation'];
+    const columns=['attempt_selection_policy','attempt_selection_reason','attempt_count','other_attempt_codes','other_attempt_observation_count','participant_code','attempt_code','attempt_number','participant_id','attempt_id','task','version','started_at','age','age_group','age_conflict','linkage_status','survey_ids','observation_ids','survey_count','observation_count','selected_survey_id','selected_observation_id','survey_task_result','survey_reported_task_result','survey_task_attempt_count','survey_helper_result','observation_result','observation_duration_ms','goal_elapsed_ms','end_elapsed_ms','last_elapsed_ms','clicks','recorded_errors','repeated_clicks','mining_outcome','survey_ease','survey_navigation'];
     const quote=value=>'"'+String(Array.isArray(value)?value.join('|'):value??'').replace(/"/g,'""')+'"';
     download('festpay-linked-study-'+loadedVersion+'.csv','\uFEFF'+[columns,...linkedSelection().map(row=>columns.map(k=>row[k]))].map(row=>row.map(quote).join(',')).join('\r\n'),'text/csv;charset=utf-8');
   };
@@ -73,8 +79,11 @@
   function render() {
     const goal=goalForTask($('task').value),route=$('route').value;
     $('goalDescription').textContent='Gemessener Zielschritt: '+label(goal);
+    const rawCases = casesForGoal(currentSessions(sessions,loadedVersion,$('task').value), events, goal);
+    const cases = taskCases = representativeCases(rawCases);
     renderLinked();
-    const cases = casesForGoal(currentSessions(sessions,loadedVersion,$('task').value), events, goal);
+    $('attemptSummary').textContent=cases.length+' ausgewählte Fälle aus '+rawCases.length+' gespeicherten Versuchen · '+(rawCases.length-cases.length)+' Mehrfachversuche zusätzlich gespeichert, ohne Doppelzählung. Auswahl erfolgt vor Wege- und Variantenfiltern.';
+    $('attemptSelection').innerHTML=cases.filter(c=>c.selection.attemptCount>1).map(c=>'<p><b>'+esc(c.session.participant_code||'Ohne Personen-ID')+' · '+esc(c.session.attempt_code||c.session.id)+'</b> zählt: '+esc(c.selection.reason)+'.<br>'+c.selection.candidates.map(a=>esc(a.code||a.id)+(a.id===c.session.id?' (ausgewählt)':'')+' · '+(a.completed?'Ziel erreicht':'ohne Ziel')+' · Fortschrittsstufe '+a.stage+' · '+a.distinctActions+' unterschiedliche Aktionen').join('<br>')+'</p>').join('')||'<p>Keine Mehrfachversuche für diese Aufgabe und Testrunde.</p>';
     const filtered = cases.filter(c => route === 'all' || route === c.route);
     const groups = variants(filtered);
     options('variant', [['all','Alle Varianten'], ...groups.map(([key,v],i) => [key, 'Weg ' + (i+1) + ' · ' + v.cases.length + ' Fälle · ' + routeNames[v.route]])]);
@@ -83,12 +92,12 @@
     const assigned = selected.filter(c => c.assigned);
     const reached = assigned.filter(c => c.completed);
     $('metrics').innerHTML = metric(completed.length,'Zielschritt erreicht')
-      + metric(assigned.length ? reached.length + ' / ' + assigned.length : '—','Zielschritt erreicht / Versuche')
+      + metric(assigned.length ? reached.length + ' / ' + assigned.length : '—','Zielschritt erreicht / ausgewählte Fälle')
       + metric(duration(median(completed.map(c => c.duration))),'Median bis Zielschritt')
       + metric(median(completed.map(c => c.clicks)) ?? '—','Median Klicks bis Ziel');
     $('sessions').innerHTML = selected.map(c =>
       '<tr><td>' + esc(c.session.attempt_code||'—') + '</td><td>' + esc(taskNames[c.session.task] || c.session.task) +
-      '</td><td>' + esc(c.status) + (c.endReason ? ' · Versuch beendet' : '') + '</td><td>' + c.clicks + '</td><td>' + duration(c.duration) +
+      '</td><td>' + esc(c.status) + (c.selection.attemptCount>1 ? ' · '+c.selection.attemptCount+' Versuche, einer gezählt' : '') + (c.endReason ? ' · Versuch beendet' : '') + '</td><td>' + c.clicks + '</td><td>' + duration(c.duration) +
       '</td><td><details><summary>' + routeNames[c.route] + '</summary><p>' + esc(pathText(c.path)) + '</p></details></td></tr>'
     ).join('') || '<tr><td colspan="6">Für dieses Endziel und diese Filter liegen noch keine Fälle vor.</td></tr>';
     const visibleGroups = variants(selected);
@@ -212,15 +221,15 @@
   }
   $('csv').onclick = () => {
     const quote = value => '"'+String(value??'').replace(/"/g,'""')+'"';
-    const rows = [['person_code','attempt_code','case_id','activity','timestamp','sequence','task','version','goal','outcome','route','elapsed_ms','end_reason']];
+    const rows = [['person_code','attempt_code','case_id','activity','timestamp','sequence','task','version','goal','outcome','route','elapsed_ms','end_reason','attempt_count','selection_reason']];
     for (const c of selected) for (const e of c.fullTrace) {
       const key = step(e);
-      if (key) rows.push([c.session.participant_code,c.session.attempt_code,c.session.id,label(key),e.at,e.seq,c.session.task,c.session.version,goalForTask($('task').value),c.status,c.route,e.elapsed,c.endReason]);
+      if (key) rows.push([c.session.participant_code,c.session.attempt_code,c.session.id,label(key),e.at,e.seq,c.session.task,c.session.version,goalForTask($('task').value),c.status,c.route,e.elapsed,c.endReason,c.selection.attemptCount,c.selection.reason]);
     }
     download('festpay-process-log-'+loadedVersion+'.csv','\uFEFF'+rows.map(row => row.map(quote).join(',')).join('\r\n'),'text/csv;charset=utf-8');
   };
   $('raw').onclick = () => download('festpay-events-'+loadedVersion+'.json',JSON.stringify({
-    example:false, version:loadedVersion, goal:goalForTask($('task').value), sessions:selected.map(c => c.session), events:selected.flatMap(c => c.fullTrace)
+    example:false, selection_policy:'best-progress-per-person-task-version-v1', attempt_selection:selected.map(c=>({selected_attempt_id:c.session.id,...c.selection})), version:loadedVersion, goal:goalForTask($('task').value), sessions:selected.map(c => c.session), events:selected.flatMap(c => c.fullTrace)
   },null,2),'application/json');
   for(const id of ['task','route','variant'])$(id).onchange=render;
   $('screen').onchange=contexts;
