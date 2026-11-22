@@ -33,6 +33,8 @@ jobs:
         run: |
           for attempt in {1..12}; do
             if count=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?per_page=100" --jq ".artifacts | map(select(.name == \"$PAGES_ARTIFACT_NAME\" and .expired == false)) | length") && [ "$count" = 1 ]; then
+              # The deployment artifact service can lag behind the REST API.
+              sleep 15
               exit 0
             fi
             sleep 5
