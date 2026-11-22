@@ -133,11 +133,80 @@ window.FestPayMining = (() => {
     }
     return cases;
   }
+  // One analytical case per person, assigned task and UI version. Raw cases remain available.
+  // Compare observed progress, never elapsed time: waiting/repeated clicks are not progress.
+  const progressStages = {
+    gast_guthaben: [
+      ['page:guthaben.html','page:zahlen.html'], ['click:#go','page:bezahlen.html'],
+      ['click:#pay'], ['activity:wallet_topped_up'], ['activity:wallet_qr_shown']
+    ],
+    gast_marken: [
+      ['page:speisekarte.html'], ['click:#go','page:bezahlen.html'], ['click:#pay'],
+      ['activity:tokens_purchased'], ['page:marken.html'], ['activity:token_redeemed']
+    ],
+    helfer: [
+      ['page:helfer.html'], ['activity:helper_scanner_opened','click:#cam','click:#sim'],
+      ['activity:helper_qr_recognized'], ['click:helper-product-add','click:#book'], ['activity:wallet_charged']
+    ],
+    betreiber_marken: [
+      ['page:betreiber.html'], ['click:#name','click:#startDateTrigger','click:zone-start','click:zone-rectangle','click:#mm'],
+      ['activity:zone_accepted','click:#w2'], ['click:#addItem'], ['click:#save'], ['activity:festival_created']
+    ],
+    betreiber_guthaben: [
+      ['page:betreiber.html'], ['click:#name','click:#w1','activity:zone_accepted'],
+      ['click:#save','activity:festival_created'], ['click:#addHelfer'], ['activity:festival_helper_saved']
+    ]
+  };
+  function attemptProgress(c) {
+    const keys = new Set();
+    for (const event of c.trace) {
+      const screen = eventScreen(event);
+      if (event.type === 'page_view') keys.add('page:' + screen);
+      if (event.type === 'activity' && event.props?.activity && !event.props.activity.endsWith('_failed')) keys.add('activity:' + event.props.activity);
+      if (event.type === 'click' && event.props?.target) keys.add('click:' + event.props.target);
+      if (event.type === 'field_focus' && event.props?.target) keys.add('field:' + screen + ':' + event.props.target);
+    }
+    const stages = progressStages[c.session.task] || [];
+    let stage = 0;
+    stages.forEach((milestones, i) => { if (milestones.some(key => keys.has(key))) stage = i + 1; });
+    return [Number(c.completed), stage, keys.size];
+  }
+  function representativeCases(cases) {
+    const participantsByCode = new Map(cases.filter(c => c.session.participant_id && c.session.participant_code)
+      .map(c => [c.session.participant_code, c.session.participant_id]));
+    const groups = new Map();
+    for (const c of cases) {
+      const s = c.session;
+      const participant = s.participant_id || participantsByCode.get(s.participant_code);
+      const identity = participant ? ['participant',participant] : s.participant_code ? ['code',s.participant_code] : ['session',s.id];
+      const key = JSON.stringify([identity,s.task,s.version]);
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(c);
+    }
+    return [...groups.values()].map(group => {
+      const scored = group.map(c => ({c, score:attemptProgress(c)}));
+      scored.sort((a,b) => {
+        for (let i=0;i<a.score.length;i++) if (a.score[i] !== b.score[i]) return b.score[i] - a.score[i];
+        return (a.c.session.attempt_number ?? Infinity) - (b.c.session.attempt_number ?? Infinity)
+          || (Date.parse(a.c.session.started_at) || 0) - (Date.parse(b.c.session.started_at) || 0)
+          || String(a.c.session.id).localeCompare(String(b.c.session.id));
+      });
+      const winner = scored[0];
+      const tied = scored.length > 1 && winner.score.every((value,i) => value === scored[1].score[i]);
+      const reason = group.length === 1 ? 'Einziger Versuch' : tied ? 'Gleicher Fortschritt: früherer Versuch'
+        : winner.c.completed ? 'Zielschritt erreicht' : 'Weitester beobachteter Fortschritt';
+      return {...winner.c, selection:{
+        policy:'best-progress-per-person-task-version-v1', reason, tied, attemptCount:group.length,
+        alternatives:scored.slice(1).map(({c}) => ({id:c.session.id,code:c.session.attempt_code})),
+        candidates:scored.map(({c,score}) => ({id:c.session.id,code:c.session.attempt_code,completed:c.completed,stage:score[1],distinctActions:score[2]}))
+      }};
+    });
+  }
   function median(values) {
     const sorted = values.filter(Number.isFinite).sort((a,b) => a-b);
     if (!sorted.length) return null;
     const middle = Math.floor(sorted.length / 2);
     return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
   }
-  return {goals, label, step, eventScreen, casesForGoal, median, goalForTask, currentSessions};
+  return {goals, label, step, eventScreen, casesForGoal, representativeCases, median, goalForTask, currentSessions};
 })();

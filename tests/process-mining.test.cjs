@@ -76,3 +76,41 @@ test('festival selection, zone editing and cash register clicks appear as distin
   ];
   for (const [event, expected] of trail) assert.equal(label(step(event)), expected);
 });
+
+const {representativeCases}=context.window.FestPayMining;
+function attempt(id,person='person',task='gast_guthaben',version='v2',number=1){return {id,participant_id:person,task,version,attempt_number:number};}
+function trail(id,events){return events.map((e,i)=>({session_id:id,seq:i+1,elapsed:(i+1)*1000,...e}));}
+const activity=name=>({type:'activity',screen:'guthaben.html',props:{activity:name}});
+const click=target=>({type:'click',props:{target}});
+test('one representative per person, task and version, with anonymous attempts kept separate',()=>{
+ const sessions=[attempt('old','p','gast_guthaben','v1'),attempt('new','p'),attempt('repeat','p'),attempt('other-task','p','helfer'),attempt('other-person','q'),attempt('anon-1',null),attempt('anon-2',null)];
+ const cases=sessions.map(session=>({session,trace:[],completed:false}));
+ assert.equal(representativeCases(cases).length,6);
+ assert.equal(cases.length,7);
+ const mixed=[{session:{id:'a',participant_id:'p',participant_code:'P001'},trace:[]},{session:{id:'b',participant_code:'P001'},trace:[]}];
+ assert.equal(representativeCases(mixed).length,1);
+});
+test('goal success wins over a long incomplete attempt and a later accidental restart',()=>{
+ const sessions=[attempt('long'),attempt('success','person','gast_guthaben','v2',2),attempt('restart','person','gast_guthaben','v2',3)];
+ const events=[...trail('long',Array.from({length:100},()=>click('#pay'))),...trail('success',[activity('wallet_qr_shown'),{type:'session_end'}]),...trail('restart',[{type:'page_view',screen:'index.html'}])];
+ const raw=casesForGoal(sessions,events,'wallet_qr_shown');const [chosen]=representativeCases(raw);
+ assert.equal(chosen.session.id,'success');assert.equal(chosen.selection.attemptCount,3);
+ assert.equal(chosen.fullTrace.length,2);assert.equal(chosen.trace.length,1);assert.equal(raw.length,3);
+});
+test('task progress wins over navigation noise, repeated clicks and passive events',()=>{
+ const sessions=[attempt('noise'),attempt('progress')];
+ const events=[...trail('noise',[...Array.from({length:50},()=>click('menu-open')),...Array.from({length:50},()=>({type:'heartbeat'}))]),...trail('progress',[activity('wallet_topped_up')])];
+ assert.equal(representativeCases(casesForGoal(sessions,events,'wallet_qr_shown'))[0].session.id,'progress');
+});
+test('equal progress uses a stable earlier attempt, independent of input order or duration',()=>{
+ const sessions=[attempt('second','person','gast_guthaben','v2',2),attempt('first')];
+ const events=[...trail('second',[{type:'page_view',screen:'index.html',elapsed:999999}]),...trail('first',[{type:'page_view',screen:'index.html'}])];
+ const raw=casesForGoal(sessions,events,'wallet_qr_shown');const [chosen]=representativeCases(raw);
+ assert.equal(chosen.session.id,'first');assert.equal(chosen.selection.tied,true);
+ assert.equal(representativeCases([...raw].reverse())[0].session.id,'first');
+});
+test('route filtering cannot resurrect a discarded failed attempt of a successful person',()=>{
+ const sessions=[attempt('failed'),attempt('success')];const events=trail('success',[activity('wallet_qr_shown')]);
+ const cases=representativeCases(casesForGoal(sessions,events,'wallet_qr_shown'));
+ assert.equal(cases.filter(c=>c.route==='open').length,0);
+});
